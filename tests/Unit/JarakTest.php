@@ -21,3 +21,12 @@ test('Monas ke Kota Tua kurang lebih 4,7 kilometer', function () {
 test('titik antipodal tidak memicu NaN', function () {
     expect(Jarak::meter(0.0, 0.0, 0.0, 180.0))->toBeGreaterThan(20_000_000);
 });
+
+test('faktor cos lintang benar-benar diterapkan pada selisih bujur', function () {
+    // Pada lintang 60 derajat, satu derajat bujur kira-kira separuh dari satu
+    // derajat lintang. Rumus yang membuang faktor cos(lintang) akan
+    // mengembalikan sekitar 111 km dan gagal di sini.
+    expect(Jarak::meter(60.0, 0.0, 60.0, 1.0))
+        ->toBeGreaterThan(55_400)
+        ->toBeLessThan(55_800);
+});
