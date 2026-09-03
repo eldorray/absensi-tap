@@ -103,7 +103,7 @@ tanpa tabel ini, keputusan "perlu QR gerbang atau tidak" hanya tebakan.
 `user_id` FK · `tipe` enum(`masuk`,`pulang`) · `latitude` decimal(10,7) ·
 `longitude` decimal(10,7) · `accuracy_meter` int · `jarak_meter` int nullable ·
 `lokasi_id` FK nullable · `perangkat_uuid` string · `terverifikasi` bool ·
-`hasil` enum(`diterima`,`luar_radius`,`akurasi_buruk`,`perangkat_asing`,`duplikat`,`passkey_invalid`) ·
+`hasil` enum(`diterima`,`luar_radius`,`akurasi_buruk`,`perangkat_asing`,`duplikat`,`passkey_invalid`,`belum_masuk`) ·
 `created_at`
 
 Index: (`user_id`, `created_at`), (`hasil`, `created_at`).
@@ -139,9 +139,10 @@ Klien **tidak** menghitung jarak, **tidak** menentukan status, **tidak** menentu
 2. `navigator.geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 10000 })`
 3. `device_uuid` dibaca dari `localStorage`; kalau kosong, baca dari cookie pemulihan
    (lihat §9); kalau dua-duanya kosong, `crypto.randomUUID()` lalu simpan
-4. Kalau `Passkeys.isSupported()` dan guru punya passkey terdaftar:
-   `GET /absensi/passkey-options` → `navigator.credentials.get()` → dapat assertion
-5. `POST /absensi` dengan `{ tipe, latitude, longitude, accuracy, device_uuid, credential? }`
+4. Kalau guru punya passkey terdaftar: `usePasskeyVerify` menjalankan upacara WebAuthn
+   (`GET /absensi/passkey-options` → prompt biometrik → `POST /absensi/passkey-verify`),
+   yang menandai session sebagai terverifikasi
+5. `POST /absensi` dengan `{ tipe, latitude, longitude, accuracy, device_uuid }`
 
 ### Server — `app/Actions/Absensi/CatatAbsensi.php`, dipanggil `AbsensiController@store`
 
@@ -155,7 +156,8 @@ Urutan gerbang. Setiap kegagalan **tetap menulis baris `absensi_attempts`** lalu
 | `accuracy_meter <= 75` | `akurasi_buruk` | "Sinyal GPS lemah (±120 m). Coba di luar ruangan." |
 | Haversine ke tiap `lokasis` aktif, ambil terdekat, `jarak_meter <= radius_meter` | `luar_radius` | "Kamu 340 m dari sekolah. Absen hanya dalam 100 m." |
 | Belum ada tap `tipe` sama hari ini | `duplikat` | "Sudah absen masuk 07:02." |
-| Kalau `credential` dikirim: `VerifyPasskey` lolos | `passkey_invalid` | "Verifikasi sidik jari gagal." |
+| Guru berpasskey punya penanda verifikasi session yang masih segar (≤ 120 detik, sekali pakai) | `passkey_invalid` | "Verifikasi sidik jari dulu, lalu tap lagi." |
+| Tap `pulang` hanya setelah ada tap `masuk` hari itu | `belum_masuk` | "Belum ada absen masuk hari ini." |
 
 Lolos semua → tulis attempt `diterima`, lalu `upsert` `absensis`:
 
@@ -171,8 +173,18 @@ Haversine ditulis sebagai fungsi murni di `app/Support/Jarak.php` supaya bisa di
 Tidak perlu dependency baru. Pakai yang sudah ada di `vendor/laravel/passkeys/src`:
 
 - `GET /absensi/passkey-options` → `Actions\GenerateVerificationOptions`, simpan hasil
-  serialisasi di session dengan key milik sendiri (`absensi.passkey_options`)
-- `POST /absensi` → `Actions\VerifyPasskey` dengan credential dari request
+  serialisasi di session dengan key **`passkey.verification_options`**. Key itu tidak bisa
+  dipilih sendiri: `Http\Requests\PasskeyVerificationRequest::verificationOptions()`
+  meng-hardcode nama tersebut.
+- `POST /absensi/passkey-verify` → `Actions\VerifyPasskey`, lalu tandai session sebagai
+  terverifikasi. Tap berikutnya membaca penanda itu (berumur pendek, sekali pakai) —
+  pola yang sama dengan konfirmasi password Laravel.
+- Frontend memakai `usePasskeyVerify` dari `@laravel/passkeys/svelte` dengan override
+  `routes`, seperti `resources/js/components/PasskeyVerify.svelte` yang sudah ada. Tidak
+  ada konversi base64url yang ditulis tangan.
+- **Guru yang punya passkey wajib verifikasi.** Kalau boleh melewatinya, lapisan biometrik
+  jadi opsional bagi orang yang memilikinya dan jaminan anti-titip bubar. Kelonggaran
+  hanya untuk guru yang memang belum punya passkey.
 
 **Catatan keamanan yang menentukan seluruh desain:** passkey bisa sinkron antar perangkat
 (iCloud Keychain, Google Password Manager). Jadi passkey **sendirian bukan** bukti
