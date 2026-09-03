@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AbsensiController;
 use App\Http\Controllers\AbsensiPasskeyController;
+use App\Http\Controllers\IzinController;
 use App\Http\Controllers\PerangkatController;
 use Illuminate\Support\Facades\Route;
 
@@ -22,6 +23,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('absensi.passkey-verify');
 
     Route::post('perangkat', [PerangkatController::class, 'store'])->name('perangkat.store');
+
+    Route::get('izin', [IzinController::class, 'index'])->name('izin.index');
+    Route::post('izin', [IzinController::class, 'store'])->name('izin.store');
+    Route::get('izin/{izin}/lampiran', [IzinController::class, 'lampiran'])
+        ->middleware('can:view,izin')
+        ->name('izin.lampiran');
 });
 
 require __DIR__.'/settings.php';
