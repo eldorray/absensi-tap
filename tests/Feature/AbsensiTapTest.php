@@ -10,6 +10,7 @@ use App\Models\AbsensiAttempt;
 use App\Models\Perangkat;
 use App\Models\User;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
@@ -119,6 +120,42 @@ test('tap masuk dua kali ditolak sebagai duplikat', function () {
 
     expect(AbsensiAttempt::where('hasil', HasilTap::Duplikat)->count())->toBe(1)
         ->and(Absensi::count())->toBe(1);
+});
+
+test('tap serentak yang lolos pengecekan duplikat tetap ditolak, jejak audit tidak ikut rollback', function () {
+    [$guru, $perangkat] = guruSiapAbsen();
+
+    // Simulasikan race dua tap bersamaan secara deterministik: sisipkan baris
+    // "absensis" pesaing tepat sebelum INSERT nyata terjadi -- persis meniru
+    // request lain yang menang balapan setelah pengecekan duplikat di atas
+    // sudah lolos (row belum ada saat itu). Ini memaksa constraint unique
+    // (user_id, tanggal) gagal justru di dalam transaksi, bukan di
+    // pengecekan awal.
+    Absensi::creating(function (Absensi $absensi) use ($guru): void {
+        DB::table('absensis')->insert([
+            'user_id' => $guru->id,
+            'tanggal' => Carbon::today()->toDateTimeString(),
+            'pulang_cepat' => false,
+        ]);
+    });
+
+    try {
+        $this->actingAs($guru)
+            ->post(route('absensi.store'), payloadTap($perangkat))
+            ->assertSessionHasErrors('tap');
+
+        // Transaksi rollback menghapus baris Absensi (punya kita maupun
+        // pesaing) dan baris AbsensiAttempt "Diterima" yang dibuat di
+        // dalamnya -- tapi catch block di CatatAbsensi menulis ulang jejak
+        // Duplikat DI LUAR transaksi, jadi baris ini harus tetap ada.
+        expect(AbsensiAttempt::where('hasil', HasilTap::Duplikat)->count())->toBe(1)
+            ->and(AbsensiAttempt::where('hasil', HasilTap::Diterima)->count())->toBe(0);
+    } finally {
+        // Listener model statis tidak dibersihkan oleh RefreshDatabase --
+        // harus dilepas manual supaya tidak bocor ke test lain yang
+        // menyimpan Absensi.
+        Absensi::flushEventListeners();
+    }
 });
 
 test('tap pulang tanpa tap masuk ditolak', function () {

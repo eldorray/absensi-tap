@@ -13,6 +13,7 @@ use App\Models\Lokasi;
 use App\Models\Perangkat;
 use App\Models\User;
 use App\Support\Jarak;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -123,32 +124,41 @@ class CatatAbsensi
             $this->tolak($dasar, HasilTap::BelumMasuk, 'Belum ada absen masuk hari ini.');
         }
 
-        return DB::transaction(function () use ($guru, $tipe, $dasar, $passkeyTerverifikasi, $absensi, $kolom): Absensi {
-            $attempt = AbsensiAttempt::create([
-                ...$dasar,
-                'terverifikasi' => $passkeyTerverifikasi,
-                'hasil' => HasilTap::Diterima,
-            ]);
+        try {
+            return DB::transaction(function () use ($guru, $tipe, $dasar, $passkeyTerverifikasi, $absensi, $kolom): Absensi {
+                $attempt = AbsensiAttempt::create([
+                    ...$dasar,
+                    'terverifikasi' => $passkeyTerverifikasi,
+                    'hasil' => HasilTap::Diterima,
+                ]);
 
-            $jadwal = JadwalKerja::query()->where('day_of_week', now()->dayOfWeek)->first();
+                $jadwal = JadwalKerja::query()->where('day_of_week', now()->dayOfWeek)->first();
 
-            $absensi->user_id = $guru->id;
-            // Carbon::today(), bukan today(): AppServiceProvider memasang
-            // Date::use(CarbonImmutable::class), tapi Absensi::$tanggal
-            // bertipe Illuminate\Support\Carbon (mutable).
-            $absensi->tanggal = Carbon::today();
-            $absensi->{$kolom} = $attempt->id;
+                $absensi->user_id = $guru->id;
+                // Carbon::today(), bukan today(): AppServiceProvider memasang
+                // Date::use(CarbonImmutable::class), tapi Absensi::$tanggal
+                // bertipe Illuminate\Support\Carbon (mutable).
+                $absensi->tanggal = Carbon::today();
+                $absensi->{$kolom} = $attempt->id;
 
-            if ($tipe === TipeTap::Masuk) {
-                $absensi->status = $this->statusMasuk($jadwal);
-            } else {
-                $absensi->pulang_cepat = $this->pulangCepat($jadwal);
-            }
+                if ($tipe === TipeTap::Masuk) {
+                    $absensi->status = $this->statusMasuk($jadwal);
+                } else {
+                    $absensi->pulang_cepat = $this->pulangCepat($jadwal);
+                }
 
-            $absensi->save();
+                $absensi->save();
 
-            return $absensi;
-        });
+                return $absensi;
+            });
+        } catch (UniqueConstraintViolationException) {
+            // Tap serentak: dua request lolos pengecekan duplikat di atas sebelum
+            // salah satunya sempat menyimpan, lalu bentrok di constraint unique
+            // (user_id, tanggal) saat INSERT. Transaksi sudah di-rollback --
+            // termasuk baris AbsensiAttempt "Diterima" yang dibuat di dalamnya --
+            // jadi tolak() di sini menulis ulang jejak auditnya di luar transaksi.
+            $this->tolak($dasar, HasilTap::Duplikat, "Sudah absen {$tipe->value} hari ini.");
+        }
     }
 
     /**
