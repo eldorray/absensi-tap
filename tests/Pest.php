@@ -1,6 +1,11 @@
 <?php
 
+use App\Models\Lokasi;
+use App\Models\Perangkat;
+use App\Models\User;
+use Database\Seeders\JadwalKerjaSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Passkeys\Passkey;
 use Tests\TestCase;
 
 /*
@@ -44,7 +49,37 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+/**
+ * Seorang guru dengan HP terikat, satu lokasi absen aktif, dan jadwal kerja terisi.
+ *
+ * @return array{0: User, 1: Perangkat, 2: Lokasi}
+ */
+function guruSiapAbsen(): array
 {
-    // ..
+    app(JadwalKerjaSeeder::class)->run();
+
+    $guru = User::factory()->create();
+
+    return [
+        $guru,
+        Perangkat::factory()->for($guru)->create(),
+        Lokasi::factory()->create(),
+    ];
+}
+
+/**
+ * Daftarkan satu passkey palsu supaya hasPasskeysEnabled() bernilai true.
+ *
+ * Kredensialnya tidak sah untuk upacara WebAuthn -- itu memang tidak diperlukan:
+ * yang diuji di sini adalah gerbang "punya passkey wajib verifikasi", bukan
+ * validasi tanda tangan.
+ */
+function pasangPasskeyPalsu(User $guru): void
+{
+    Passkey::forceCreate([
+        'user_id' => $guru->id,
+        'name' => 'HP Guru',
+        'credential_id' => 'kredensial-uji-'.$guru->id,
+        'credential' => [],
+    ]);
 }
