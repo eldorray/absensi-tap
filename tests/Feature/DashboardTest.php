@@ -1,16 +1,73 @@
 <?php
 
+use App\Models\Absensi;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 
-test('guests are redirected to the login page', function () {
-    $response = $this->get(route('dashboard'));
-    $response->assertRedirect(route('login'));
+test('tamu diarahkan ke halaman login', function () {
+    $this->get(route('dashboard'))->assertRedirect(route('login'));
 });
 
-test('authenticated users can visit the dashboard', function () {
-    $user = User::factory()->create();
-    $this->actingAs($user);
+test('guru melihat halaman tap dengan jadwal hari ini', function () {
+    Carbon::setTestNow('2026-09-07 07:00:00');
 
-    $response = $this->get(route('dashboard'));
-    $response->assertOk();
+    [$guru] = guruSiapAbsen();
+
+    $this->actingAs($guru)
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Dashboard')
+            ->where('jadwal.jam_masuk', '07:00')
+            ->where('jadwal.jam_pulang', '14:00')
+            ->where('jadwal.is_hari_kerja', true)
+            ->where('hariIni', null)
+            ->where('namaLokasi', 'Gerbang Utama')
+            ->where('punyaPasskey', false)
+        );
+});
+
+test('status hari ini muncul setelah tap masuk', function () {
+    Carbon::setTestNow('2026-09-07 07:00:00');
+
+    [$guru, $perangkat] = guruSiapAbsen();
+
+    $this->actingAs($guru)->post(route('absensi.store'), [
+        'tipe' => 'masuk',
+        'latitude' => -6.1753924,
+        'longitude' => 106.8271528,
+        'accuracy' => 12,
+        'device_uuid' => $perangkat->uuid,
+    ]);
+
+    $this->actingAs($guru)
+        ->get(route('dashboard'))
+        ->assertInertia(fn ($page) => $page
+            ->where('hariIni.status', 'hadir')
+            ->where('hariIni.jam_masuk', '07:00')
+            ->where('hariIni.jam_pulang', null)
+        );
+});
+
+test('riwayat hanya memuat 30 hari terakhir milik guru sendiri', function () {
+    Carbon::setTestNow('2026-09-07 07:00:00');
+
+    [$guru] = guruSiapAbsen();
+
+    Absensi::factory()->for($guru)->create(['tanggal' => today()->subDays(5)]);
+    Absensi::factory()->for($guru)->create(['tanggal' => today()->subDays(40)]);
+    Absensi::factory()->for(User::factory())->create(['tanggal' => today()]);
+
+    $this->actingAs($guru)
+        ->get(route('dashboard'))
+        ->assertInertia(fn ($page) => $page->has('riwayat', 1));
+});
+
+test('uuid perangkat dari cookie diteruskan sebagai prop', function () {
+    [$guru, $perangkat] = guruSiapAbsen();
+
+    $this->actingAs($guru)
+        ->withCookie('perangkat_uuid', $perangkat->uuid)
+        ->get(route('dashboard'))
+        ->assertInertia(fn ($page) => $page->where('perangkatUuidTersimpan', $perangkat->uuid));
 });
