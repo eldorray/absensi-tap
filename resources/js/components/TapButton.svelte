@@ -97,6 +97,13 @@
             return;
         }
 
+        if (punyaPasskey && !passkeyVerify.isSupported) {
+            pesanGalat =
+                'Browser di HP ini tidak mendukung verifikasi sidik jari. Buka lewat Chrome atau Safari terbaru, atau hubungi TU.';
+
+            return;
+        }
+
         sedangProses = true;
 
         try {
@@ -108,7 +115,7 @@
             return;
         }
 
-        if (punyaPasskey && passkeyVerify.isSupported) {
+        if (punyaPasskey) {
             // onSuccess akan memanggil kirim().
             passkeyVerify.verify();
 
