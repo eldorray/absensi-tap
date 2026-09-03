@@ -1,0 +1,367 @@
+@import 'tailwindcss';
+
+@import 'tw-animate-css';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+    --font-sans:
+        'Roboto Flex', ui-sans-serif, system-ui, sans-serif,
+        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+        'Noto Color Emoji';
+
+    --font-mono: 'Roboto Mono', ui-monospace, SFMono-Regular, monospace;
+
+    --radius-lg: var(--radius);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-sm: calc(var(--radius) - 4px);
+
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+
+    --color-sidebar: var(--sidebar-background);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
+}
+
+/*
+  The default border color has changed to `currentColor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+    *,
+    ::after,
+    ::before,
+    ::backdrop,
+    ::file-selector-button {
+        border-color: var(--color-gray-200, currentColor);
+    }
+}
+
+@layer utilities {
+    body,
+    html {
+        --font-sans:
+            'Roboto Flex', ui-sans-serif, system-ui, sans-serif,
+            'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+            'Noto Color Emoji';
+    }
+}
+
+:root {
+    /* Material 3 tonal palette, green hues. Source of truth for the app.
+       `--g-blue` keeps its name but holds the brand hue, now green. */
+    --g-bg: #f7faf0;
+    --g-surface: #eaf2d9;
+    --g-surface-2: #ddebc4;
+    --g-ink: #16210f;
+    --g-ink-2: #4c5c3d;
+    --g-line: #d8e5bf;
+
+    --g-blue: #2f6d21;
+    --g-blue-c: #d7edb8;
+    --g-blue-ink: #10300c;
+    --g-blue-ink-2: #2c5a22;
+    --g-on-blue: #ffffff;
+
+    --g-lime: #b6e26a;
+    --g-lime-2: #97d449;
+    --g-lime-ink: #14330d;
+
+    --g-green-c: #c9ecb4;
+    --g-green-ink: #0d2a0b;
+    --g-green-ink-2: #24551c;
+
+    --g-yellow-c: #f2e6a0;
+    --g-yellow-ink: #3a3200;
+    --g-yellow-ink-2: #63560a;
+
+    --g-red-c: #fad2cf;
+    --g-red-ink: #4c1210;
+    --g-red-ink-2: #8c1d18;
+
+    --g-band: #2f6d21;
+    --g-band-ink: #ffffff;
+    --g-band-ink-2: #d9edc0;
+    --g-band-field: rgba(255, 255, 255, 0.14);
+
+    --g-shadow:
+        0 1px 2px rgba(24, 45, 15, 0.08), 0 6px 20px -8px rgba(24, 45, 15, 0.18);
+    --g-emphasized: cubic-bezier(0.2, 0, 0, 1);
+
+    /* Component tokens, all derived from the palette above. */
+    --background: var(--g-bg);
+    --foreground: var(--g-ink);
+    --card: var(--g-surface);
+    --card-foreground: var(--g-ink);
+    --popover: var(--g-bg);
+    --popover-foreground: var(--g-ink);
+    --primary: var(--g-blue);
+    --primary-foreground: var(--g-on-blue);
+    --secondary: var(--g-surface-2);
+    --secondary-foreground: var(--g-blue-ink);
+    --muted: var(--g-surface);
+    --muted-foreground: var(--g-ink-2);
+    --accent: var(--g-blue-c);
+    --accent-foreground: var(--g-blue-ink);
+    --destructive: #b3261e;
+    --destructive-foreground: #ffffff;
+    --border: var(--g-line);
+    --input: #c4c7c5;
+    --ring: var(--g-blue);
+    --chart-1: #2f6d21;
+    --chart-2: #97d449;
+    --chart-3: #c9a227;
+    --chart-4: #d0603a;
+    --chart-5: #5a8f6b;
+    --radius: 1rem;
+    --sidebar-background: var(--g-surface);
+    --sidebar-foreground: var(--g-ink);
+    --sidebar-primary: var(--g-blue);
+    --sidebar-primary-foreground: var(--g-on-blue);
+    --sidebar-accent: var(--g-blue-c);
+    --sidebar-accent-foreground: var(--g-blue-ink);
+    --sidebar-border: var(--g-line);
+    --sidebar-ring: var(--g-blue);
+    --sidebar: var(--g-surface);
+}
+
+.dark {
+    --g-bg: #0f1410;
+    --g-surface: #18211a;
+    --g-surface-2: #212d22;
+    --g-ink: #e2ebd8;
+    --g-ink-2: #9fb094;
+    --g-line: #2e3c2f;
+
+    --g-blue: #a9dc7c;
+    --g-blue-c: #1f4a1c;
+    --g-blue-ink: #d8f0bd;
+    --g-blue-ink-2: #b8e394;
+    --g-on-blue: #10280c;
+
+    --g-lime: #8ec95a;
+    --g-lime-2: #6fb03c;
+    --g-lime-ink: #0d1f08;
+
+    --g-green-c: #17381a;
+    --g-green-ink: #d3f4c4;
+    --g-green-ink-2: #a8dfa0;
+
+    --g-yellow-c: #37310a;
+    --g-yellow-ink: #f4e7ab;
+    --g-yellow-ink-2: #d3c483;
+
+    --g-red-c: #5c1a16;
+    --g-red-ink: #ffdad6;
+    --g-red-ink-2: #efb9b4;
+
+    --g-band: #1f4a1c;
+    --g-band-ink: #ffffff;
+    --g-band-ink-2: #c9e8ac;
+    --g-band-field: rgba(255, 255, 255, 0.1);
+
+    --g-shadow:
+        0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 24px -8px rgba(0, 0, 0, 0.6);
+
+    /* Cards sit one step above the page in dark, or they vanish into it. */
+    --card: var(--g-surface-2);
+    --popover: var(--g-surface-2);
+    --secondary-foreground: var(--g-ink);
+    --muted: var(--g-surface);
+    --destructive: #f2b8b5;
+    --destructive-foreground: #601410;
+    --input: #444746;
+    --chart-1: #a9dc7c;
+    --chart-2: #6fb03c;
+    --chart-3: #e0c86a;
+    --chart-4: #e39a7d;
+    --chart-5: #8fc0a0;
+    --sidebar: var(--g-surface);
+    --sidebar-background: var(--g-surface);
+}
+
+@layer base {
+    * {
+        @apply border-border outline-ring/50;
+    }
+    body {
+        @apply bg-background text-foreground;
+        caret-color: var(--g-blue);
+    }
+
+    ::selection {
+        background: var(--g-blue-c);
+        color: var(--g-blue-ink);
+    }
+
+    :focus-visible {
+        outline: 3px solid var(--g-blue);
+        outline-offset: 3px;
+        border-radius: 6px;
+    }
+
+    ::-webkit-scrollbar {
+        width: 12px;
+        height: 12px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: color-mix(in srgb, var(--g-ink-2) 35%, transparent);
+        border: 3px solid var(--g-bg);
+        border-radius: 999px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: color-mix(in srgb, var(--g-ink-2) 55%, transparent);
+    }
+
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+}
+
+@layer components {
+    /* Section labels in the sidebar read as small caps, like the reference. */
+    [data-sidebar='group-label'] {
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        font-size: 0.68rem;
+    }
+
+    /* Material 3 Expressive tonal tile, shared by every surface. */
+    .g-tile {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        border-radius: 28px;
+        padding: clamp(1.5rem, 3vw, 2.25rem);
+        transition: border-radius 0.5s var(--g-emphasized);
+    }
+
+    .g-tile:hover {
+        border-radius: 56px 28px 56px 28px;
+    }
+
+    /* A tile that is itself a link. */
+    .g-tile-link {
+        text-decoration: none;
+        transition:
+            border-radius 0.5s var(--g-emphasized),
+            transform 0.3s var(--g-emphasized);
+    }
+
+    .g-tile-link:hover {
+        transform: translateY(-2px);
+    }
+
+    .g-tile h3 {
+        font-size: 1.3125rem;
+        font-weight: 700;
+        line-height: 1.2;
+        letter-spacing: -0.02em;
+        text-wrap: balance;
+    }
+
+    .g-tile p {
+        max-width: 44ch;
+        font-size: 0.9375rem;
+        line-height: 1.6;
+    }
+
+    .g-tile code {
+        font-family: var(--font-mono);
+        font-size: 0.8125em;
+    }
+
+    .g-tone-blue {
+        background: var(--g-blue-c);
+        color: var(--g-blue-ink);
+    }
+    .g-tone-blue p {
+        color: var(--g-blue-ink-2);
+    }
+
+    .g-tone-green {
+        background: var(--g-green-c);
+        color: var(--g-green-ink);
+    }
+    .g-tone-green p {
+        color: var(--g-green-ink-2);
+    }
+
+    .g-tone-yellow {
+        background: var(--g-yellow-c);
+        color: var(--g-yellow-ink);
+    }
+    .g-tone-yellow p {
+        color: var(--g-yellow-ink-2);
+    }
+
+    .g-tone-red {
+        background: var(--g-red-c);
+        color: var(--g-red-ink);
+    }
+    .g-tone-red p {
+        color: var(--g-red-ink-2);
+    }
+
+    .g-tone-plain {
+        background: var(--g-surface);
+        color: var(--g-ink);
+    }
+    .g-tone-plain p {
+        color: var(--g-ink-2);
+    }
+
+    /* Display voice: one scale, used by hero, section, and page titles. */
+    .g-display {
+        font-weight: 700;
+        line-height: 1.05;
+        letter-spacing: -0.03em;
+        text-wrap: balance;
+    }
+}
