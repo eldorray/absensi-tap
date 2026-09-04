@@ -18,6 +18,9 @@ test('avatar guru membuka modal bottom sheet profil', function () {
         ->toContain('Pengaturan akun')
         ->toContain('min-h-16')
         ->toContain('h-fit')
+        ->toContain('inset-x-0')
+        ->not->toContain('left-1/2')
+        ->not->toContain('-translate-x-1/2')
         ->not->toContain('max-h-[92svh]')
         ->toContain('Keluar');
 

@@ -70,7 +70,7 @@
 
     <SheetContent
         side="bottom"
-        class="left-1/2 mx-0 h-fit max-h-[78svh] w-full max-w-lg -translate-x-1/2 gap-0 overflow-hidden rounded-t-[2rem] border-x border-t border-border/70 bg-background px-0 pt-0 pb-0 shadow-[0_-24px_80px_rgba(15,23,42,0.24)]"
+        class="inset-x-0 mx-auto h-fit max-h-[78svh] w-full max-w-lg gap-0 overflow-hidden rounded-t-[2rem] border-x border-t border-border/70 bg-background px-0 pt-0 pb-0 shadow-[0_-24px_80px_rgba(15,23,42,0.24)]"
     >
         <div
             class="sticky top-0 z-10 bg-background/95 px-5 pt-3 pb-3 backdrop-blur-xl"
