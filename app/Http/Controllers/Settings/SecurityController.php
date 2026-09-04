@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Settings;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\PasswordUpdateRequest;
 use App\Http\Requests\Settings\TwoFactorAuthenticationRequest;
+use App\Models\Perangkat;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
@@ -38,6 +39,16 @@ class SecurityController extends Controller
                     ->all()
                 : [],
             'passwordRules' => Password::defaults()->toPasswordRulesString(),
+            'perangkats' => $request->user()->perangkats()
+                ->orderByDesc('created_at')
+                ->get()
+                ->map(fn (Perangkat $perangkat): array => [
+                    'id' => $perangkat->id,
+                    'label' => $perangkat->label,
+                    'status' => $perangkat->status->value,
+                    'terdaftar' => $perangkat->created_at?->format('d M Y'),
+                ])
+                ->all(),
         ];
 
         if (Features::canManageTwoFactorAuthentication()) {

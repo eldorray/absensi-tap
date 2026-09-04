@@ -40,6 +40,9 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
             'auth' => [
                 'user' => $request->user(),
+                // This flag only controls menu visibility. Authorization remains
+                // enforced by the `admin` gate on the route group.
+                'isAdmin' => (bool) $request->user()?->can('admin'),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];

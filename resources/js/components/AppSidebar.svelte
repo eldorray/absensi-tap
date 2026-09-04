@@ -1,11 +1,15 @@
 <script lang="ts">
-    import { Link } from '@inertiajs/svelte';
+    import { Link, page } from '@inertiajs/svelte';
     import BookOpen from 'lucide-svelte/icons/book-open';
+    import CalendarOff from 'lucide-svelte/icons/calendar-off';
+    import Fingerprint from 'lucide-svelte/icons/fingerprint';
     import FolderGit2 from 'lucide-svelte/icons/folder-git-2';
-    import LayoutGrid from 'lucide-svelte/icons/layout-grid';
     import Palette from 'lucide-svelte/icons/palette';
+    import Settings2 from 'lucide-svelte/icons/settings-2';
     import ShieldCheck from 'lucide-svelte/icons/shield-check';
+    import Table2 from 'lucide-svelte/icons/table-2';
     import UserRound from 'lucide-svelte/icons/user-round';
+    import Users from 'lucide-svelte/icons/users';
     import type { Snippet } from 'svelte';
     import AppLogo from '@/components/AppLogo.svelte';
     import NavFooter from '@/components/NavFooter.svelte';
@@ -22,7 +26,12 @@
     } from '@/components/ui/sidebar';
     import { toUrl } from '@/lib/utils';
     import { dashboard } from '@/routes';
+    import { index as guruIndex } from '@/routes/admin/guru';
+    import { index as adminIzinIndex } from '@/routes/admin/izin';
+    import { edit as pengaturanEdit } from '@/routes/admin/pengaturan';
+    import { index as rekapIndex } from '@/routes/admin/rekap';
     import { edit as appearanceEdit } from '@/routes/appearance';
+    import { index as izinIndex } from '@/routes/izin';
     import { edit as profileEdit } from '@/routes/profile';
     import { edit as securityEdit } from '@/routes/security';
     import type { NavItem } from '@/types';
@@ -33,12 +42,18 @@
         children?: Snippet;
     } = $props();
 
+    const isAdmin = $derived(page.props.auth.isAdmin === true);
+
     const mainNavItems: NavItem[] = [
-        {
-            title: 'Dashboard',
-            href: dashboard(),
-            icon: LayoutGrid,
-        },
+        { title: 'Absensi', href: dashboard(), icon: Fingerprint },
+        { title: 'Izin', href: izinIndex(), icon: CalendarOff },
+    ];
+
+    const adminNavItems: NavItem[] = [
+        { title: 'Rekap', href: rekapIndex(), icon: Table2 },
+        { title: 'Izin masuk', href: adminIzinIndex(), icon: CalendarOff },
+        { title: 'Guru', href: guruIndex(), icon: Users },
+        { title: 'Pengaturan', href: pengaturanEdit(), icon: Settings2 },
     ];
 
     const settingsNavItems: NavItem[] = [
@@ -93,7 +108,10 @@
     </SidebarHeader>
 
     <SidebarContent class="gap-4">
-        <NavMain items={mainNavItems} label="APLIKASI" />
+        <NavMain items={mainNavItems} label="ABSENSI" />
+        {#if isAdmin}
+            <NavMain items={adminNavItems} label="ADMIN" />
+        {/if}
         <NavMain items={settingsNavItems} label="PENGATURAN" />
     </SidebarContent>
 

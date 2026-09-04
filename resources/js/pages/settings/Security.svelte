@@ -21,6 +21,7 @@
     import type { Props as ManagePasskeysProps } from '@/components/ManagePasskeys.svelte';
     import ManageTwoFactor from '@/components/ManageTwoFactor.svelte';
     import PasswordInput from '@/components/PasswordInput.svelte';
+    import { Badge } from '@/components/ui/badge';
     import { Button } from '@/components/ui/button';
     import { Label } from '@/components/ui/label';
     const canManageTwoFactor = $derived(Boolean(page.props.canManageTwoFactor));
@@ -35,7 +36,17 @@
             : []) as ManagePasskeysProps['passkeys'],
     );
 
-    let { passwordRules }: { passwordRules: string } = $props();
+    type Perangkat = {
+        id: number;
+        label: string;
+        status: string;
+        terdaftar: string | null;
+    };
+
+    let {
+        passwordRules,
+        perangkats,
+    }: { passwordRules: string; perangkats: Perangkat[] } = $props();
 </script>
 
 <AppHead title="Security settings" />
@@ -115,3 +126,38 @@
 />
 
 <ManagePasskeys {canManagePasskeys} {passkeys} />
+
+<div class="space-y-6">
+    <Heading
+        variant="small"
+        title="Perangkat absensi"
+        description="HP yang terikat ke akunmu untuk absen"
+    />
+
+    <ul
+        class="divide-y divide-border overflow-hidden rounded-lg border border-border"
+    >
+        {#each perangkats as perangkat (perangkat.id)}
+            <li class="flex items-center justify-between gap-3 p-4 text-sm">
+                <span>
+                    <span class="font-medium">{perangkat.label}</span>
+                    <span class="block text-muted-foreground">
+                        Terdaftar {perangkat.terdaftar ?? '-'}
+                    </span>
+                </span>
+                <Badge
+                    variant={perangkat.status === 'active'
+                        ? 'default'
+                        : 'outline'}
+                >
+                    {perangkat.status}
+                </Badge>
+            </li>
+        {/each}
+    </ul>
+
+    <p class="text-sm text-muted-foreground">
+        Ganti HP? Buka aplikasi dari HP baru sekali, lalu minta TU
+        menyetujuinya. Satu guru hanya boleh punya satu HP aktif.
+    </p>
+</div>
