@@ -3,6 +3,7 @@
 use App\Http\Controllers\AbsensiController;
 use App\Http\Controllers\AbsensiPasskeyController;
 use App\Http\Controllers\Admin\IzinController as AdminIzinController;
+use App\Http\Controllers\Admin\PengaturanController;
 use App\Http\Controllers\IzinController;
 use App\Http\Controllers\PerangkatController;
 use Illuminate\Support\Facades\Route;
@@ -38,6 +39,11 @@ Route::middleware(['auth', 'verified', 'can:admin'])
     ->group(function () {
         Route::get('izin', [AdminIzinController::class, 'index'])->name('izin.index');
         Route::patch('izin/{izin}', [AdminIzinController::class, 'update'])->name('izin.update');
+        Route::get('pengaturan', [PengaturanController::class, 'edit'])->name('pengaturan.edit');
+        Route::post('lokasi', [PengaturanController::class, 'simpanLokasi'])->name('lokasi.store');
+        Route::put('jadwal', [PengaturanController::class, 'simpanJadwal'])->name('jadwal.update');
+        Route::post('hari-libur', [PengaturanController::class, 'simpanHariLibur'])->name('hari-libur.store');
+        Route::delete('hari-libur/{hariLibur}', [PengaturanController::class, 'hapusHariLibur'])->name('hari-libur.destroy');
     });
 
 require __DIR__.'/settings.php';

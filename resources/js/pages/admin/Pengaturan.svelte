@@ -1,0 +1,15 @@
+<script module lang="ts">
+ import { edit } from '@/routes/admin/pengaturan';
+ export const layout={breadcrumbs:[{title:'Pengaturan',href:edit()}]};
+</script>
+<script lang="ts">
+ import {router,useForm} from '@inertiajs/svelte'; import AppHead from '@/components/AppHead.svelte'; import {Button} from '@/components/ui/button'; import {Input} from '@/components/ui/input';
+ import {store as lokasiStore} from '@/routes/admin/lokasi'; import {update as jadwalUpdate} from '@/routes/admin/jadwal'; import {store as liburStore,destroy as liburDestroy} from '@/routes/admin/hari-libur';
+ type L={id:number;nama:string;latitude:number;longitude:number;radius_meter:number}; type J={day_of_week:number;jam_masuk:string;jam_pulang:string;toleransi_menit:number;is_hari_kerja:boolean}; type H={id:number;tanggal:string;nama:string};
+ let {lokasis,jadwals,hariLiburs}:{lokasis:L[];jadwals:J[];hariLiburs:H[]}=$props(); const lokasi=useForm({nama:'',latitude:'',longitude:'',radius_meter:100,is_active:true}); const jadwal=useForm({jadwals:jadwals.map(j=>({...j,jam_masuk:j.jam_masuk.slice(0,5),jam_pulang:j.jam_pulang.slice(0,5)}))}); const libur=useForm({tanggal:'',nama:''}); const hari=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+ function gps(){navigator.geolocation.getCurrentPosition(p=>{lokasi.latitude=p.coords.latitude.toFixed(7);lokasi.longitude=p.coords.longitude.toFixed(7)})}
+</script>
+<AppHead title="Pengaturan"/><div class="mx-auto grid max-w-4xl gap-4 p-5">
+<section class="g-tile"><h3>Lokasi absen</h3>{#each lokasis as l}<p>{l.nama} · {l.latitude}, {l.longitude} · {l.radius_meter} m</p>{/each}<form class="grid gap-2" onsubmit={e=>{e.preventDefault();lokasi.submit(lokasiStore(),{onSuccess:()=>lokasi.reset()})}}><Input placeholder="Nama" bind:value={lokasi.nama}/><Input placeholder="Latitude" bind:value={lokasi.latitude}/><Input placeholder="Longitude" bind:value={lokasi.longitude}/><Input type="number" bind:value={lokasi.radius_meter}/><Button type="button" variant="outline" onclick={gps}>Pakai lokasi saya</Button><Button>Tambah</Button></form></section>
+<section class="g-tile"><h3>Jadwal kerja</h3><form class="grid gap-2" onsubmit={e=>{e.preventDefault();jadwal.submit(jadwalUpdate())}}>{#each jadwal.jadwals as j,i}<div class="grid grid-cols-5 gap-2"><span>{hari[j.day_of_week]}</span><Input type="time" bind:value={jadwal.jadwals[i].jam_masuk}/><Input type="time" bind:value={jadwal.jadwals[i].jam_pulang}/><Input type="number" bind:value={jadwal.jadwals[i].toleransi_menit}/><input type="checkbox" bind:checked={jadwal.jadwals[i].is_hari_kerja}/></div>{/each}<Button>Simpan jadwal</Button></form></section>
+<section class="g-tile"><h3>Hari libur</h3>{#each hariLiburs as h}<p>{h.tanggal} · {h.nama} <Button size="sm" onclick={()=>router.delete(liburDestroy(h.id).url)}>Hapus</Button></p>{/each}<form class="flex gap-2" onsubmit={e=>{e.preventDefault();libur.submit(liburStore(),{onSuccess:()=>libur.reset()})}}><Input type="date" bind:value={libur.tanggal}/><Input bind:value={libur.nama}/><Button>Tambah</Button></form></section></div>
