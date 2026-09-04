@@ -1,9 +1,11 @@
 {
-    "name": "Laravel",
-    "short_name": "Laravel",
-    "start_url": "/",
+    "name": "Absensi Syekh Yusuf",
+    "short_name": "Absensi",
+    "start_url": "/dashboard",
     "scope": "/",
     "display": "standalone",
+    "display_override": ["standalone"],
+    "orientation": "portrait",
     "background_color": "#ffffff",
     "theme_color": "#ffffff",
     "icons": [

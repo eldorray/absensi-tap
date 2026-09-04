@@ -14,8 +14,7 @@
     import ShieldAlert from 'lucide-svelte/icons/shield-alert';
     import { store as daftarkanPerangkat } from '@/actions/App/Http/Controllers/PerangkatController';
     import AppHead from '@/components/AppHead.svelte';
-    // TODO(Task 15): InstallPrompt belum ada -- restore import & tag ini setelah dibuat.
-    // import InstallPrompt from '@/components/InstallPrompt.svelte';
+    import InstallPrompt from '@/components/InstallPrompt.svelte';
     import TapButton from '@/components/TapButton.svelte';
     import { Badge } from '@/components/ui/badge';
     import {
@@ -124,7 +123,9 @@
     };
 
     function labelRiwayat(baris: Riwayat): string {
-        const dasar = baris.status ? (labelStatus[baris.status] ?? baris.status) : '-';
+        const dasar = baris.status
+            ? (labelStatus[baris.status] ?? baris.status)
+            : '-';
 
         return baris.pulang_cepat ? `${dasar} · pulang cepat` : dasar;
     }
@@ -132,22 +133,28 @@
 
 <AppHead title="Absensi" />
 
-<div class="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-5 safe-bottom sm:px-6">
-    <!-- TODO(Task 15): InstallPrompt belum ada -- restore tag ini setelah dibuat. -->
-    <!-- <InstallPrompt /> -->
+<div
+    class="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-5 safe-bottom sm:px-6"
+>
+    <InstallPrompt />
 
     <section class="g-tile g-tone-plain">
-        <p class="text-xs font-semibold tracking-[0.14em] uppercase text-muted-foreground">
+        <p
+            class="text-xs font-semibold tracking-[0.14em] uppercase text-muted-foreground"
+        >
             {tanggalPanjang.format(new Date())}
         </p>
-        <p class="g-display text-[clamp(2.5rem,10vw,3.5rem)] font-mono tabular-nums">
+        <p
+            class="g-display text-[clamp(2.5rem,10vw,3.5rem)] font-mono tabular-nums"
+        >
             {jam}
         </p>
 
         {#if jadwal && jadwal.is_hari_kerja}
             <p class="flex items-center gap-2 text-sm text-muted-foreground">
                 <CalendarClock class="size-4" aria-hidden="true" />
-                Masuk {jadwal.jam_masuk} · Pulang {jadwal.jam_pulang} · Toleransi {jadwal.toleransi_menit} menit
+                Masuk {jadwal.jam_masuk} · Pulang {jadwal.jam_pulang} · Toleransi
+                {jadwal.toleransi_menit} menit
             </p>
         {:else}
             <p class="text-sm text-muted-foreground">
@@ -169,7 +176,9 @@
         {#if hariIni}
             <div class="flex flex-wrap items-center gap-2">
                 <Badge variant="secondary">
-                    {hariIni.status ? (labelStatus[hariIni.status] ?? hariIni.status) : 'Tercatat'}
+                    {hariIni.status
+                        ? (labelStatus[hariIni.status] ?? hariIni.status)
+                        : 'Tercatat'}
                 </Badge>
                 {#if hariIni.pulang_cepat}
                     <Badge variant="outline">Pulang cepat</Badge>
@@ -182,7 +191,8 @@
                 {/if}
             </div>
             <p>
-                Masuk {hariIni.jam_masuk ?? '-'} · Pulang {hariIni.jam_pulang ?? '-'}
+                Masuk {hariIni.jam_masuk ?? '-'} · Pulang {hariIni.jam_pulang ??
+                    '-'}
             </p>
         {:else}
             <p>Belum ada absen hari ini.</p>
@@ -190,7 +200,9 @@
     </section>
 
     {#if selesai}
-        <p class="flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground">
+        <p
+            class="flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground"
+        >
             <CircleCheck class="size-4" aria-hidden="true" />
             Absen hari ini sudah lengkap.
         </p>
@@ -212,7 +224,9 @@
         {:else}
             <ul class="divide-y divide-border">
                 {#each riwayat as baris (baris.tanggal)}
-                    <li class="flex items-center justify-between gap-4 py-2.5 text-sm">
+                    <li
+                        class="flex items-center justify-between gap-4 py-2.5 text-sm"
+                    >
                         <span class="font-medium">
                             {tanggalPendek.format(new Date(baris.tanggal))}
                         </span>

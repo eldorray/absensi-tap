@@ -365,3 +365,39 @@
         text-wrap: balance;
     }
 }
+
+@layer base {
+    html {
+        -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+        /* Matikan bounce dan pull-to-refresh iOS: keduanya terasa seperti bug
+           di app yang terpasang. */
+        overscroll-behavior-y: none;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    /* iOS auto-zoom saat fokus ke input yang font-nya di bawah 16px. */
+    input,
+    select,
+    textarea {
+        font-size: max(1rem, 16px);
+    }
+}
+
+@layer utilities {
+    /* 100vh salah di mobile saat toolbar muncul-hilang; dvh mengikuti. */
+    .app-viewport {
+        min-height: 100dvh;
+    }
+
+    /* Tombol TAP tidak boleh tertutup home indicator iPhone. */
+    .safe-bottom {
+        padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+    }
+
+    .safe-top {
+        padding-top: env(safe-area-inset-top);
+    }
+}
