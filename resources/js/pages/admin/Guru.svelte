@@ -1,1 +1,82 @@
-<script lang="ts">import {router,useForm} from '@inertiajs/svelte';import AppHead from '@/components/AppHead.svelte';import {Button} from '@/components/ui/button';import {Input} from '@/components/ui/input';import {store,update} from '@/routes/admin/guru';import {update as updateDevice} from '@/routes/admin/perangkat'; type P={id:number;label:string;status:string;terdaftar:string|null};type G={id:number;name:string;nip:string|null;email:string;role:string;is_active:boolean;perangkats:P[]};let {gurus}:{gurus:G[]}=$props();const form=useForm({name:'',nip:'',email:'',password:''});</script><AppHead title="Guru"/><div class="mx-auto grid max-w-4xl gap-4 p-5"><section class="g-tile"><h3>Buat akun guru</h3><form class="grid gap-2" onsubmit={e=>{e.preventDefault();form.submit(store(),{onSuccess:()=>form.reset()})}}><Input placeholder="Nama" bind:value={form.name}/><Input placeholder="NIP" bind:value={form.nip}/><Input type="email" placeholder="Email" bind:value={form.email}/><Input type="password" placeholder="Password awal" bind:value={form.password}/><Button>Buat akun</Button></form></section><section class="g-tile"><h3>Daftar guru</h3>{#each gurus as g}<article class="border-b py-3"><b>{g.name}</b> · {g.email} <Button size="sm" onclick={()=>router.patch(update(g.id).url,{is_active:!g.is_active})}>{g.is_active?'Nonaktifkan':'Aktifkan'}</Button>{#each g.perangkats as p}<p>{p.label} · {p.status} <Button size="sm" onclick={()=>router.patch(updateDevice(p.id).url,{status:'active'})}>Setujui</Button><Button size="sm" variant="outline" onclick={()=>router.patch(updateDevice(p.id).url,{status:'revoked'})}>Cabut</Button></p>{/each}</article>{/each}</section></div>
+<script lang="ts">
+    import { router, useForm } from '@inertiajs/svelte';
+    import AppHead from '@/components/AppHead.svelte';
+    import { Button } from '@/components/ui/button';
+    import { Input } from '@/components/ui/input';
+    import { store, update } from '@/routes/admin/guru';
+    import { update as updateDevice } from '@/routes/admin/perangkat';
+    type P = {
+        id: number;
+        label: string;
+        status: string;
+        terdaftar: string | null;
+    };
+    type G = {
+        id: number;
+        name: string;
+        nip: string | null;
+        email: string;
+        role: string;
+        is_active: boolean;
+        perangkats: P[];
+    };
+    let { gurus }: { gurus: G[] } = $props();
+    const form = useForm({ name: '', nip: '', email: '', password: '' });
+</script>
+
+<AppHead title="Guru" />
+<div class="mx-auto grid max-w-4xl gap-4 p-5">
+    <section class="g-tile">
+        <h3>Buat akun guru</h3>
+        <form
+            class="grid gap-2"
+            onsubmit={(e) => {
+                e.preventDefault();
+                form.submit(store(), { onSuccess: () => form.reset() });
+            }}
+        >
+            <Input placeholder="Nama" bind:value={form.name} /><Input
+                placeholder="NIP"
+                bind:value={form.nip}
+            /><Input
+                type="email"
+                placeholder="Email"
+                bind:value={form.email}
+            /><Input
+                type="password"
+                placeholder="Password awal"
+                bind:value={form.password}
+            /><Button type="submit" disabled={form.processing}>Buat akun</Button
+            >
+        </form>
+    </section>
+    <section class="g-tile">
+        <h3>Daftar guru</h3>
+        {#each gurus as g}<article class="border-b py-3">
+                <b>{g.name}</b> · {g.email}
+                <Button
+                    size="sm"
+                    onclick={() =>
+                        router.patch(update(g.id).url, {
+                            is_active: !g.is_active,
+                        })}>{g.is_active ? 'Nonaktifkan' : 'Aktifkan'}</Button
+                >{#each g.perangkats as p}<p>
+                        {p.label} · {p.status}
+                        <Button
+                            size="sm"
+                            onclick={() =>
+                                router.patch(updateDevice(p.id).url, {
+                                    status: 'active',
+                                })}>Setujui</Button
+                        ><Button
+                            size="sm"
+                            variant="outline"
+                            onclick={() =>
+                                router.patch(updateDevice(p.id).url, {
+                                    status: 'revoked',
+                                })}>Cabut</Button
+                        >
+                    </p>{/each}
+            </article>{/each}
+    </section>
+</div>
