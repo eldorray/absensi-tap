@@ -14,5 +14,8 @@ test('avatar guru membuka modal bottom sheet profil', function () {
         ->toContain('Edit profil')
         ->toContain('Keamanan akun')
         ->toContain('Tampilan')
+        ->toContain('Akun terverifikasi')
+        ->toContain('Pengaturan akun')
+        ->toContain('min-h-16')
         ->toContain('Keluar');
 });
