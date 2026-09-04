@@ -5,6 +5,7 @@ use App\Http\Controllers\AbsensiPasskeyController;
 use App\Http\Controllers\Admin\GuruController;
 use App\Http\Controllers\Admin\IzinController as AdminIzinController;
 use App\Http\Controllers\Admin\PengaturanController;
+use App\Http\Controllers\Admin\RekapController;
 use App\Http\Controllers\IzinController;
 use App\Http\Controllers\PerangkatController;
 use Illuminate\Support\Facades\Route;
@@ -38,6 +39,8 @@ Route::middleware(['auth', 'verified', 'can:admin'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
+        Route::get('rekap', [RekapController::class, 'index'])->name('rekap.index');
+        Route::get('rekap/export', [RekapController::class, 'export'])->name('rekap.export');
         Route::get('izin', [AdminIzinController::class, 'index'])->name('izin.index');
         Route::patch('izin/{izin}', [AdminIzinController::class, 'update'])->name('izin.update');
         Route::get('pengaturan', [PengaturanController::class, 'edit'])->name('pengaturan.edit');
