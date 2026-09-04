@@ -17,5 +17,10 @@ test('avatar guru membuka modal bottom sheet profil', function () {
         ->toContain('Akun terverifikasi')
         ->toContain('Pengaturan akun')
         ->toContain('min-h-16')
+        ->toContain('h-fit')
+        ->not->toContain('max-h-[92svh]')
         ->toContain('Keluar');
+
+    expect(file_get_contents(resource_path('js/components/ui/sheet/SheetContent.svelte')))
+        ->not->toContain("'fixed relative flex");
 });
