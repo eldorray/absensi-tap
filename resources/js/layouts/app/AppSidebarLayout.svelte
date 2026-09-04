@@ -1,14 +1,13 @@
 <script lang="ts">
-    import { Link, page } from '@inertiajs/svelte';
+    import { page } from '@inertiajs/svelte';
     import type { Snippet } from 'svelte';
     import AppContent from '@/components/AppContent.svelte';
     import AppShell from '@/components/AppShell.svelte';
     import AppSidebar from '@/components/AppSidebar.svelte';
     import AppSidebarHeader from '@/components/AppSidebarHeader.svelte';
     import GuruBottomNavigation from '@/components/GuruBottomNavigation.svelte';
+    import GuruProfileSheet from '@/components/GuruProfileSheet.svelte';
     import { Toaster } from '@/components/ui/sonner';
-    import { toUrl } from '@/lib/utils';
-    import { edit as profileEdit } from '@/routes/profile';
     import type { BreadcrumbItem } from '@/types';
 
     let {
@@ -51,13 +50,7 @@
                         {userName}
                     </p>
                 </div>
-                <Link
-                    href={toUrl(profileEdit())}
-                    aria-label="Buka profil"
-                    class="grid size-10 place-items-center rounded-2xl bg-primary text-sm font-bold text-primary-foreground shadow-sm transition-transform active:scale-95"
-                >
-                    {userName.charAt(0).toUpperCase()}
-                </Link>
+                <GuruProfileSheet />
             </div>
         </header>
 

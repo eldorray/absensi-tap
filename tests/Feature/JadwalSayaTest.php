@@ -31,8 +31,7 @@ test('avatar header menuju profil dan navbar bawah memakai jadwal saya', functio
     $navigation = file_get_contents(resource_path('js/components/GuruBottomNavigation.svelte'));
 
     expect($layout)
-        ->toContain('href={toUrl(profileEdit())}')
-        ->toContain('aria-label="Buka profil"')
+        ->toContain('<GuruProfileSheet />')
         ->and($navigation)
         ->toContain("label: 'Jadwal Saya'")
         ->toContain('@/routes/jadwal')
