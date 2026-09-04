@@ -1,19 +1,19 @@
 <script lang="ts">
     import { Link, page } from '@inertiajs/svelte';
+    import CalendarClock from 'lucide-svelte/icons/calendar-clock';
     import CalendarOff from 'lucide-svelte/icons/calendar-off';
     import Fingerprint from 'lucide-svelte/icons/fingerprint';
     import History from 'lucide-svelte/icons/history';
-    import UserRound from 'lucide-svelte/icons/user-round';
     import { toUrl } from '@/lib/utils';
     import { dashboard } from '@/routes';
     import { index as izinIndex } from '@/routes/izin';
-    import { edit as profileEdit } from '@/routes/profile';
+    import { index as jadwalIndex } from '@/routes/jadwal';
     import { index as riwayatIndex } from '@/routes/riwayat';
 
     const items = [
         { label: 'Absensi', href: dashboard(), icon: Fingerprint },
         { label: 'Izin', href: izinIndex(), icon: CalendarOff },
-        { label: 'Profil', href: profileEdit(), icon: UserRound },
+        { label: 'Jadwal Saya', href: jadwalIndex(), icon: CalendarClock },
         {
             label: 'Riwayat',
             href: riwayatIndex(),

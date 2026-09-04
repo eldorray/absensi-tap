@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { page } from '@inertiajs/svelte';
+    import { Link, page } from '@inertiajs/svelte';
     import type { Snippet } from 'svelte';
     import AppContent from '@/components/AppContent.svelte';
     import AppShell from '@/components/AppShell.svelte';
@@ -7,6 +7,8 @@
     import AppSidebarHeader from '@/components/AppSidebarHeader.svelte';
     import GuruBottomNavigation from '@/components/GuruBottomNavigation.svelte';
     import { Toaster } from '@/components/ui/sonner';
+    import { toUrl } from '@/lib/utils';
+    import { edit as profileEdit } from '@/routes/profile';
     import type { BreadcrumbItem } from '@/types';
 
     let {
@@ -49,12 +51,13 @@
                         {userName}
                     </p>
                 </div>
-                <div
-                    class="grid size-10 place-items-center rounded-2xl bg-primary text-sm font-bold text-primary-foreground shadow-sm"
-                    aria-hidden="true"
+                <Link
+                    href={toUrl(profileEdit())}
+                    aria-label="Buka profil"
+                    class="grid size-10 place-items-center rounded-2xl bg-primary text-sm font-bold text-primary-foreground shadow-sm transition-transform active:scale-95"
                 >
                     {userName.charAt(0).toUpperCase()}
-                </div>
+                </Link>
             </div>
         </header>
 
