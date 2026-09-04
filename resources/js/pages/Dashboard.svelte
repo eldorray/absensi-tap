@@ -216,7 +216,7 @@
         />
     {/if}
 
-    <section class="g-tile g-tone-plain">
+    <section id="riwayat-absensi" class="g-tile g-tone-plain scroll-mt-20">
         <h3>Riwayat 30 hari</h3>
 
         {#if riwayat.length === 0}

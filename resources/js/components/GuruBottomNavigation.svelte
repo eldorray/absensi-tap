@@ -2,23 +2,30 @@
     import { Link, page } from '@inertiajs/svelte';
     import CalendarOff from 'lucide-svelte/icons/calendar-off';
     import Fingerprint from 'lucide-svelte/icons/fingerprint';
-    import ShieldCheck from 'lucide-svelte/icons/shield-check';
+    import History from 'lucide-svelte/icons/history';
     import UserRound from 'lucide-svelte/icons/user-round';
     import { toUrl } from '@/lib/utils';
     import { dashboard } from '@/routes';
     import { index as izinIndex } from '@/routes/izin';
     import { edit as profileEdit } from '@/routes/profile';
-    import { edit as securityEdit } from '@/routes/security';
 
     const items = [
         { label: 'Absensi', href: dashboard(), icon: Fingerprint },
         { label: 'Izin', href: izinIndex(), icon: CalendarOff },
         { label: 'Profil', href: profileEdit(), icon: UserRound },
-        { label: 'Keamanan', href: securityEdit(), icon: ShieldCheck },
+        {
+            label: 'Riwayat',
+            href: `${toUrl(dashboard())}#riwayat-absensi`,
+            icon: History,
+        },
     ];
 
     function isActive(href: string): boolean {
         const currentPath = page.url.split('?')[0];
+
+        if (href.includes('#')) {
+            return false;
+        }
 
         return currentPath === href || currentPath.startsWith(`${href}/`);
     }
