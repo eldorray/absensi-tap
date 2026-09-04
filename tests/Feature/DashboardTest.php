@@ -1,7 +1,5 @@
 <?php
 
-use App\Models\Absensi;
-use App\Models\User;
 use Illuminate\Support\Carbon;
 
 test('tamu diarahkan ke halaman login', function () {
@@ -49,18 +47,12 @@ test('status hari ini muncul setelah tap masuk', function () {
         );
 });
 
-test('riwayat hanya memuat 30 hari terakhir milik guru sendiri', function () {
-    Carbon::setTestNow('2026-09-07 07:00:00');
-
+test('dashboard absensi tidak memuat data riwayat', function () {
     [$guru] = guruSiapAbsen();
-
-    Absensi::factory()->for($guru)->create(['tanggal' => today()->subDays(5)]);
-    Absensi::factory()->for($guru)->create(['tanggal' => today()->subDays(40)]);
-    Absensi::factory()->for(User::factory())->create(['tanggal' => today()]);
 
     $this->actingAs($guru)
         ->get(route('dashboard'))
-        ->assertInertia(fn ($page) => $page->has('riwayat', 1));
+        ->assertInertia(fn ($page) => $page->missing('riwayat'));
 });
 
 test('uuid perangkat dari cookie diteruskan sebagai prop', function () {

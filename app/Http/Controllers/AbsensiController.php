@@ -17,7 +17,7 @@ use Inertia\Response;
 class AbsensiController extends Controller
 {
     /**
-     * Halaman tap milik guru: jadwal hari ini, status hari ini, riwayat 30 hari.
+     * Halaman tap milik guru: jadwal dan status hari ini.
      */
     public function index(Request $request): Response
     {
@@ -48,20 +48,6 @@ class AbsensiController extends Controller
             'namaLokasi' => Lokasi::query()->where('is_active', true)->value('nama'),
             'punyaPasskey' => $guru->hasPasskeysEnabled(),
             'perangkatUuidTersimpan' => $request->cookie('perangkat_uuid'),
-            'riwayat' => Absensi::query()
-                ->with(['masukAttempt', 'pulangAttempt'])
-                ->where('user_id', $guru->id)
-                ->whereDate('tanggal', '>=', today()->subDays(29))
-                ->orderByDesc('tanggal')
-                ->get()
-                ->map(fn (Absensi $absensi): array => [
-                    'tanggal' => $absensi->tanggal->toDateString(),
-                    'status' => $absensi->status?->value,
-                    'jam_masuk' => $absensi->masukAttempt?->created_at?->format('H:i'),
-                    'jam_pulang' => $absensi->pulangAttempt?->created_at?->format('H:i'),
-                    'pulang_cepat' => $absensi->pulang_cepat,
-                ])
-                ->all(),
         ]);
     }
 

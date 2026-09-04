@@ -38,28 +38,18 @@
         terverifikasi: boolean;
     };
 
-    type Riwayat = {
-        tanggal: string;
-        status: string | null;
-        jam_masuk: string | null;
-        jam_pulang: string | null;
-        pulang_cepat: boolean;
-    };
-
     let {
         jadwal,
         hariIni,
         namaLokasi,
         punyaPasskey,
         perangkatUuidTersimpan,
-        riwayat,
     }: {
         jadwal: Jadwal | null;
         hariIni: Hari | null;
         namaLokasi: string | null;
         punyaPasskey: boolean;
         perangkatUuidTersimpan: string | null;
-        riwayat: Riwayat[];
     } = $props();
 
     let deviceUuid = $state<string | null>(null);
@@ -70,11 +60,6 @@
         day: 'numeric',
         month: 'long',
         year: 'numeric',
-    });
-    const tanggalPendek = new Intl.DateTimeFormat('id-ID', {
-        weekday: 'short',
-        day: 'numeric',
-        month: 'short',
     });
 
     function waktuSekarang(): string {
@@ -121,14 +106,6 @@
         hadir: 'Hadir',
         terlambat: 'Terlambat',
     };
-
-    function labelRiwayat(baris: Riwayat): string {
-        const dasar = baris.status
-            ? (labelStatus[baris.status] ?? baris.status)
-            : '-';
-
-        return baris.pulang_cepat ? `${dasar} · pulang cepat` : dasar;
-    }
 </script>
 
 <AppHead title="Absensi" />
@@ -215,28 +192,4 @@
             disabled={deviceUuid === null}
         />
     {/if}
-
-    <section id="riwayat-absensi" class="g-tile g-tone-plain scroll-mt-20">
-        <h3>Riwayat 30 hari</h3>
-
-        {#if riwayat.length === 0}
-            <p>Belum ada riwayat absen.</p>
-        {:else}
-            <ul class="divide-y divide-border">
-                {#each riwayat as baris (baris.tanggal)}
-                    <li
-                        class="flex items-center justify-between gap-4 py-2.5 text-sm"
-                    >
-                        <span class="font-medium">
-                            {tanggalPendek.format(new Date(baris.tanggal))}
-                        </span>
-                        <span class="text-muted-foreground">
-                            {baris.jam_masuk ?? '-'} – {baris.jam_pulang ?? '-'}
-                        </span>
-                        <span class="font-medium">{labelRiwayat(baris)}</span>
-                    </li>
-                {/each}
-            </ul>
-        {/if}
-    </section>
 </div>

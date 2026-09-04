@@ -13,10 +13,7 @@ test('layout guru memakai navigasi bawah mobile sementara admin tetap memakai si
         ->toContain('Izin')
         ->toContain('Profil')
         ->toContain('Riwayat')
-        ->toContain('#riwayat-absensi')
+        ->toContain('@/routes/riwayat')
         ->not->toContain("label: 'Keamanan'")
         ->toContain('env(safe-area-inset-bottom)');
-
-    expect(file_get_contents(resource_path('js/pages/Dashboard.svelte')))
-        ->toContain('id="riwayat-absensi"');
 });

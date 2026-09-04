@@ -8,6 +8,7 @@
     import { dashboard } from '@/routes';
     import { index as izinIndex } from '@/routes/izin';
     import { edit as profileEdit } from '@/routes/profile';
+    import { index as riwayatIndex } from '@/routes/riwayat';
 
     const items = [
         { label: 'Absensi', href: dashboard(), icon: Fingerprint },
@@ -15,17 +16,13 @@
         { label: 'Profil', href: profileEdit(), icon: UserRound },
         {
             label: 'Riwayat',
-            href: `${toUrl(dashboard())}#riwayat-absensi`,
+            href: riwayatIndex(),
             icon: History,
         },
     ];
 
     function isActive(href: string): boolean {
         const currentPath = page.url.split('?')[0];
-
-        if (href.includes('#')) {
-            return false;
-        }
 
         return currentPath === href || currentPath.startsWith(`${href}/`);
     }
