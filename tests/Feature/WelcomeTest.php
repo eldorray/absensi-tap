@@ -25,6 +25,9 @@ test('welcome mengarahkan tamu ke login dan pengguna yang sudah masuk ke aplikas
         ->toContain('auth.user ? dashboard() : login()')
         ->toContain('Masuk untuk absen')
         ->toContain('Buka aplikasi')
+        ->toContain('Siap untuk tap masuk dan')
+        ->toContain('pulang')
+        ->toContain('Lokasi • Biometrik • Perangkat')
         // Pendaftaran mandiri dimatikan, jadi tidak boleh ada ajakan daftar.
         ->not->toContain('Daftar')
         ->not->toContain('register');
@@ -77,4 +80,26 @@ test('welcome tersusun untuk HP dan PWA terpasang', function () {
     expect(file_get_contents(resource_path('views/app.blade.php')))
         ->toContain('content="#2f6d21"')
         ->toContain('viewport-fit=cover');
+});
+
+test('welcome menawarkan instalasi pwa untuk android dan iphone', function () {
+    $halaman = file_get_contents(resource_path('js/pages/Welcome.svelte'));
+    $banner = file_get_contents(resource_path('js/components/InstallPrompt.svelte'));
+
+    expect($halaman)->toContain('<InstallPrompt />');
+
+    expect($banner)
+        ->toContain('beforeinstallprompt')
+        ->toContain('Pasang di Android')
+        ->toContain('Tambahkan di iPhone')
+        ->toContain('Tambahkan ke Layar Utama')
+        ->toContain('display-mode: standalone');
+});
+
+test('welcome menyediakan tombol pergantian mode di samping tombol masuk', function () {
+    $halaman = file_get_contents(resource_path('js/pages/Welcome.svelte'));
+
+    expect($halaman)
+        ->toContain('<ThemeToggle />')
+        ->toContain('class="header-actions"');
 });

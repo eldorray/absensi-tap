@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 test('profile page is displayed', function () {
     $user = User::factory()->create();
@@ -50,6 +52,41 @@ test('email verification status is unchanged when the email address is unchanged
         ->assertRedirect(route('profile.edit'));
 
     expect($user->refresh()->email_verified_at)->not->toBeNull();
+});
+
+test('profile photo can be uploaded and replaced', function () {
+    Storage::fake('public');
+    $user = User::factory()->create();
+
+    $this->actingAs($user)->patch(route('profile.update'), [
+        'name' => $user->name,
+        'email' => $user->email,
+        'avatar' => UploadedFile::fake()->image('guru.jpg', 600, 600),
+    ])->assertSessionHasNoErrors();
+
+    $avatarLama = $user->refresh()->avatar;
+    expect($avatarLama)->not->toBeNull();
+    Storage::disk('public')->assertExists($avatarLama);
+
+    $this->actingAs($user)->patch(route('profile.update'), [
+        'name' => $user->name,
+        'email' => $user->email,
+        'avatar' => UploadedFile::fake()->image('baru.png', 500, 500),
+    ])->assertSessionHasNoErrors();
+
+    expect($user->refresh()->avatar)->not->toBe($avatarLama);
+    Storage::disk('public')->assertMissing($avatarLama);
+});
+
+test('profile photo must be a valid image', function () {
+    Storage::fake('public');
+    $user = User::factory()->create();
+
+    $this->actingAs($user)->patch(route('profile.update'), [
+        'name' => $user->name,
+        'email' => $user->email,
+        'avatar' => UploadedFile::fake()->create('bukan-gambar.pdf', 100),
+    ])->assertSessionHasErrors('avatar');
 });
 
 test('user can delete their account', function () {

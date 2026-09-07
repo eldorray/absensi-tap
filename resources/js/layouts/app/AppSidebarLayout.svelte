@@ -7,6 +7,7 @@
     import AppSidebarHeader from '@/components/AppSidebarHeader.svelte';
     import GuruBottomNavigation from '@/components/GuruBottomNavigation.svelte';
     import GuruProfileSheet from '@/components/GuruProfileSheet.svelte';
+    import ThemeToggle from '@/components/ThemeToggle.svelte';
     import { Toaster } from '@/components/ui/sonner';
     import type { BreadcrumbItem } from '@/types';
 
@@ -61,7 +62,10 @@
                         {userName}
                     </p>
                 </div>
-                <GuruProfileSheet />
+                <div class="flex items-center gap-2">
+                    <ThemeToggle />
+                    <GuruProfileSheet />
+                </div>
             </div>
         </header>
 

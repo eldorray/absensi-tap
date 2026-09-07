@@ -6,6 +6,7 @@ test('avatar guru membuka modal bottom sheet profil', function () {
 
     expect($layout)
         ->toContain('<GuruProfileSheet />')
+        ->toContain('<ThemeToggle />')
         ->not->toContain('href={toUrl(profileEdit())}')
         ->and($profileSheet)
         ->toContain('<SheetContent')

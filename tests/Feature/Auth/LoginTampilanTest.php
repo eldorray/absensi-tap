@@ -10,11 +10,13 @@ test('halaman login tidak menawarkan passkey dan pendaftaran sendiri', function 
         ->toContain('data-test="login-button"')
         ->not->toContain('PasskeyVerify')
         ->not->toContain('Sign up')
-        ->not->toContain("from '@/routes'")
+        ->not->toContain('register')
         // Seluruh antarmuka Bahasa Indonesia.
         ->toContain("title: 'Masuk'")
         ->toContain('Lupa password?')
         ->toContain('Ingat saya di HP ini')
+        ->toContain('Akses khusus warga sekolah')
+        ->toContain('Kembali ke halaman depan')
         ->not->toContain('Remember me')
         ->not->toContain('Email address');
 
@@ -39,7 +41,8 @@ test('halaman login tidak menawarkan passkey dan pendaftaran sendiri', function 
         ->toContain('flex-wrap: wrap')
         ->not->toContain('overflow-x: auto')
         ->toContain('aplikasi?.logo_url')
-        ->toContain('aplikasi?.nama ?? page.props.name');
+        ->toContain('aplikasi?.nama ?? page.props.name')
+        ->toContain('<InstallPrompt />');
 });
 
 test('route pendaftaran sendiri tidak tersedia', function () {

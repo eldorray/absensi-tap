@@ -4,9 +4,12 @@
     import Fingerprint from 'lucide-svelte/icons/fingerprint';
     import MapPin from 'lucide-svelte/icons/map-pin';
     import Smartphone from 'lucide-svelte/icons/smartphone';
+    import Check from 'lucide-svelte/icons/check';
     import AppHead from '@/components/AppHead.svelte';
+    import InstallPrompt from '@/components/InstallPrompt.svelte';
+    import ThemeToggle from '@/components/ThemeToggle.svelte';
     import { toUrl } from '@/lib/utils';
-    import { dashboard, login } from '@/routes';
+    import { dashboard, home, login } from '@/routes';
 
     const auth = $derived(page.props.auth);
     const aplikasi = $derived(page.props.aplikasi);
@@ -49,62 +52,89 @@
 <AppHead title="Masuk" />
 
 <div class="halaman">
-    <header
-        class="safe-top mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-5 pt-5 pb-5 sm:px-8"
-    >
-        <div class="flex min-w-0 items-center gap-3">
+    <InstallPrompt />
+    <header class="safe-top site-header">
+        <Link href={toUrl(home())} class="brand-lockup" aria-label={nama}>
             {#if aplikasi?.logo_url}
-                <img
-                    src={aplikasi.logo_url}
-                    alt=""
-                    class="h-10 w-auto max-w-32 object-contain"
-                />
+                <img src={aplikasi.logo_url} alt={nama} class="brand-logo" />
             {:else}
-                <span
-                    class="grid size-10 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground"
-                >
+                <span class="brand-mark">
                     <Fingerprint class="size-5" aria-hidden="true" />
                 </span>
             {/if}
-            <span class="truncate text-[0.9375rem] font-semibold">{nama}</span>
-        </div>
-
-        <Link
-            href={toUrl(auth.user ? dashboard() : login())}
-            class="tautan-atas"
-        >
-            {auth.user ? 'Buka aplikasi' : 'Masuk'}
+            <span class="brand-copy">
+                <strong>{nama}</strong>
+                <small>Sistem Kehadiran</small>
+            </span>
         </Link>
+
+        <div class="header-actions">
+            <ThemeToggle />
+            <Link
+                href={toUrl(auth.user ? dashboard() : login())}
+                class="header-action"
+            >
+                <span>{auth.user ? 'Buka aplikasi' : 'Masuk'}</span>
+                <ArrowRight class="size-4" aria-hidden="true" />
+            </Link>
+        </div>
     </header>
 
     <main class="mx-auto w-full max-w-5xl px-5 pb-8 sm:px-8 sm:pb-16">
-        <section class="pt-6 pb-14 sm:pt-14 sm:pb-20">
-            <h1 class="g-display text-[clamp(2.25rem,7.5vw,4.25rem)]">
-                Absen dari halaman sekolah,<br class="hidden sm:block" /> bukan dari
-                mana saja.
-            </h1>
-            <p
-                class="ukuran-baca mt-5 text-[1.0625rem] leading-relaxed text-muted-foreground"
-            >
-                Kehadiran tercatat lewat tiga bukti sekaligus: kamu ada di dalam
-                radius sekolah, sidik jarimu yang menekan, dan HP-mu sendiri
-                yang terdaftar. Butuh sepuluh detik, dua kali sehari.
-            </p>
-
-            <div class="mt-9 flex flex-wrap items-center gap-x-5 gap-y-3">
-                <Link
-                    href={toUrl(auth.user ? dashboard() : login())}
-                    class="tombol-utama"
-                >
-                    <span class="denyut" aria-hidden="true"></span>
-                    <span class="relative flex items-center gap-2">
-                        {auth.user ? 'Buka aplikasi' : 'Masuk untuk absen'}
-                        <ArrowRight class="size-5" aria-hidden="true" />
-                    </span>
-                </Link>
-                <p class="text-sm text-muted-foreground">
-                    Belum punya akun? Akun dibuatkan TU sekolah.
+        <section class="hero pt-6 pb-14 sm:pt-14 sm:pb-20">
+            <div class="hero-copy">
+                <p class="eyebrow">
+                    <span class="status-dot"></span>Siap untuk tap masuk dan
+                    pulang
                 </p>
+                <h1 class="g-display mt-5 text-[clamp(2.5rem,7.5vw,4.75rem)]">
+                    Kehadiran yang<br class="hidden sm:block" /> benar-benar hadir.
+                </h1>
+                <p
+                    class="ukuran-baca mt-5 text-[1.0625rem] leading-relaxed text-muted-foreground"
+                >
+                    Absen langsung dari halaman sekolah. Lokasi, sidik jari, dan
+                    perangkatmu diperiksa dalam satu tap yang cepat.
+                </p>
+                <div class="mt-9 flex flex-wrap items-center gap-x-5 gap-y-3">
+                    <Link
+                        href={toUrl(auth.user ? dashboard() : login())}
+                        class="tombol-utama"
+                    >
+                        <span class="denyut" aria-hidden="true"></span>
+                        <span class="relative flex items-center gap-2">
+                            {auth.user ? 'Buka aplikasi' : 'Masuk untuk absen'}
+                            <ArrowRight class="size-5" aria-hidden="true" />
+                        </span>
+                    </Link>
+                    <p class="text-sm text-muted-foreground">
+                        Akun disiapkan oleh TU sekolah
+                    </p>
+                </div>
+            </div>
+
+            <div
+                class="visual-tap"
+                aria-label="Lokasi, biometrik, dan perangkat siap"
+            >
+                <div class="orbit orbit-luar"></div>
+                <div class="orbit orbit-dalam"></div>
+                <div class="tap-core">
+                    <span class="tap-check"
+                        ><Check class="size-7" strokeWidth={3} /></span
+                    >
+                    <strong>Siap absen</strong><span>Lokasi terdeteksi</span>
+                </div>
+                <span class="proof proof-lokasi"
+                    ><MapPin class="size-4" /> Lokasi</span
+                >
+                <span class="proof proof-bio"
+                    ><Fingerprint class="size-4" /> Biometrik</span
+                >
+                <span class="proof proof-hp"
+                    ><Smartphone class="size-4" /> Perangkat</span
+                >
+                <p class="visual-caption">Lokasi • Biometrik • Perangkat</p>
             </div>
         </section>
 
@@ -193,9 +223,226 @@
         color: var(--g-ink);
     }
 
+    .site-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        width: calc(100% - 2rem);
+        max-width: 64rem;
+        min-height: 4.75rem;
+        margin: 1rem auto 0;
+        padding: 0.7rem 0.75rem 0.7rem 1rem;
+        border: 1px solid color-mix(in srgb, var(--g-line) 78%, transparent);
+        border-radius: 1.35rem;
+        background: color-mix(in srgb, var(--g-bg) 88%, transparent);
+        box-shadow: 0 12px 36px -28px
+            color-mix(in srgb, var(--g-ink) 45%, transparent);
+        backdrop-filter: blur(14px);
+    }
+
+    .halaman :global(.brand-lockup) {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        min-width: 0;
+        color: inherit;
+        text-decoration: none;
+    }
+    .brand-logo {
+        width: 2.85rem;
+        height: 2.85rem;
+        flex-shrink: 0;
+        border-radius: 0.9rem;
+        object-fit: contain;
+    }
+    .brand-mark {
+        display: grid;
+        place-items: center;
+        width: 2.85rem;
+        height: 2.85rem;
+        flex-shrink: 0;
+        border-radius: 0.9rem;
+        background: var(--g-blue);
+        color: var(--g-on-blue);
+    }
+    .brand-copy {
+        display: grid;
+        min-width: 0;
+        line-height: 1.15;
+    }
+    .brand-copy strong {
+        overflow: hidden;
+        font-size: 0.9375rem;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .brand-copy small {
+        margin-top: 0.3rem;
+        color: var(--g-ink-2);
+        font: 600 0.625rem var(--font-mono);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+    .halaman :global(.header-action) {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.45rem;
+        min-height: 2.85rem;
+        flex-shrink: 0;
+        border-radius: 0.95rem;
+        background: var(--g-blue);
+        padding: 0.7rem 1rem;
+        color: var(--g-on-blue);
+        font-size: 0.875rem;
+        font-weight: 700;
+        text-decoration: none;
+        transition: transform 0.2s var(--g-emphasized);
+    }
+    .halaman :global(.header-action:hover) {
+        transform: translateY(-1px);
+    }
+
+    .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    @media (min-width: 640px) {
+        .site-header {
+            width: calc(100% - 4rem);
+            margin-top: 1.5rem;
+            padding-inline: 1.2rem 0.8rem;
+        }
+        .brand-copy strong {
+            font-size: 1rem;
+        }
+        .halaman :global(.header-action) {
+            padding-inline: 1.15rem;
+        }
+    }
+
     /* Ukuran baca dijaga di bawah 75ch supaya barisnya tidak melelahkan. */
     .ukuran-baca {
         max-width: 62ch;
+    }
+
+    .hero {
+        display: grid;
+        align-items: center;
+        gap: 3rem;
+    }
+    .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        width: fit-content;
+        border-radius: 999px;
+        background: var(--g-blue-c);
+        padding: 0.55rem 0.9rem;
+        color: var(--g-blue-ink);
+        font-size: 0.8125rem;
+        font-weight: 700;
+    }
+    .status-dot {
+        width: 0.55rem;
+        height: 0.55rem;
+        border-radius: 999px;
+        background: var(--g-blue);
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--g-blue) 14%, transparent);
+    }
+    .visual-tap {
+        position: relative;
+        display: grid;
+        place-items: center;
+        width: min(100%, 25rem);
+        aspect-ratio: 1;
+        margin-inline: auto;
+    }
+    .orbit {
+        position: absolute;
+        border: 1px solid color-mix(in srgb, var(--g-blue) 24%, transparent);
+        border-radius: 50%;
+    }
+    .orbit-luar {
+        inset: 4%;
+    }
+    .orbit-dalam {
+        inset: 18%;
+        background: color-mix(in srgb, var(--g-blue-c) 45%, transparent);
+    }
+    .tap-core {
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 9.75rem;
+        height: 9.75rem;
+        border-radius: 50%;
+        background: var(--g-blue);
+        color: var(--g-on-blue);
+        box-shadow: 0 20px 50px -20px
+            color-mix(in srgb, var(--g-blue) 70%, transparent);
+    }
+    .tap-core strong {
+        margin-top: 0.65rem;
+        font-size: 1.05rem;
+    }
+    .tap-core > span:last-child {
+        margin-top: 0.2rem;
+        color: var(--g-band-ink-2);
+        font-size: 0.75rem;
+    }
+    .tap-check {
+        display: grid;
+        place-items: center;
+        width: 3rem;
+        height: 3rem;
+        border-radius: 50%;
+        background: var(--g-band-field);
+    }
+    .proof {
+        position: absolute;
+        z-index: 3;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        border: 1px solid var(--g-line);
+        border-radius: 999px;
+        background: var(--g-bg);
+        padding: 0.6rem 0.8rem;
+        box-shadow: var(--g-shadow);
+        color: var(--g-blue-ink);
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+    .proof-lokasi {
+        top: 17%;
+        left: 2%;
+    }
+    .proof-bio {
+        top: 23%;
+        right: 0;
+    }
+    .proof-hp {
+        bottom: 18%;
+        right: 7%;
+    }
+    .visual-caption {
+        position: absolute;
+        bottom: 4%;
+        color: var(--g-ink-2);
+        font: 600 0.6875rem var(--font-mono);
+        letter-spacing: 0.04em;
+    }
+    @media (min-width: 800px) {
+        .hero {
+            grid-template-columns: minmax(0, 1.18fr) minmax(19rem, 0.82fr);
+            min-height: 34rem;
+        }
     }
 
     /*

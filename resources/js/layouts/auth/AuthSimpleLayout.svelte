@@ -5,6 +5,7 @@
     import Smartphone from 'lucide-svelte/icons/smartphone';
     import type { Snippet } from 'svelte';
     import AppLogoIcon from '@/components/AppLogoIcon.svelte';
+    import InstallPrompt from '@/components/InstallPrompt.svelte';
     import { toUrl } from '@/lib/utils';
     import { home } from '@/routes';
 
@@ -31,22 +32,40 @@
 </script>
 
 <div class="bingkai">
+    <InstallPrompt />
     <div class="panel">
         <aside class="pita">
-            <Link href={toUrl(home())} class="tautan-identitas">
-                {#if aplikasi?.logo_url}
-                    <img
-                        src={aplikasi.logo_url}
-                        alt=""
-                        class="h-11 w-auto max-w-36 object-contain"
-                    />
-                {:else}
-                    <span class="lencana">
-                        <AppLogoIcon class="size-5 fill-current" />
+            <div class="baris-identitas">
+                <Link href={toUrl(home())} class="tautan-identitas">
+                    {#if aplikasi?.logo_url}
+                        <img
+                            src={aplikasi.logo_url}
+                            alt=""
+                            class="logo-sekolah"
+                        />
+                    {:else}
+                        <span class="lencana"
+                            ><AppLogoIcon class="size-5 fill-current" /></span
+                        >
+                    {/if}
+                    <span class="salinan-identitas">
+                        <strong>{nama}</strong>
+                        <small>Portal Kehadiran</small>
                     </span>
-                {/if}
-                <span class="truncate font-semibold">{nama}</span>
-            </Link>
+                </Link>
+                <span class="aman"><Fingerprint class="size-4" /> Aman</span>
+            </div>
+
+            <div class="pesan-pita">
+                <p class="nomor">01 / MASUK</p>
+                <h2 class="g-display">
+                    Satu tap.<br />Tiga bukti.<br />Tercatat.
+                </h2>
+                <p>
+                    Absensi sekolah yang memeriksa kehadiran tanpa memperlambat
+                    pagi.
+                </p>
+            </div>
 
             <ul class="daftar-bukti">
                 {#each bukti as b (b.teks)}
@@ -137,13 +156,57 @@
         /* Anak flex bawaannya min-width: auto, jadi daftar bukti yang panjang
            melebarkan pita melewati lebar layar. */
         min-width: 0;
-        gap: 1rem;
+        gap: 1.25rem;
         /* Notch dan status bar: di PWA standalone tidak ada bilah peramban
            yang menahan konten turun. */
-        padding: max(1.5rem, calc(env(safe-area-inset-top) + 0.75rem)) 1.5rem
-            1.5rem;
+        padding: max(1.25rem, calc(env(safe-area-inset-top) + 0.75rem)) 1.25rem
+            2.75rem;
         background: var(--g-band);
         color: var(--g-band-ink);
+    }
+
+    .baris-identitas {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        min-width: 0;
+    }
+    .logo-sekolah {
+        width: 2.75rem;
+        height: 2.75rem;
+        flex-shrink: 0;
+        border-radius: 0.9rem;
+        object-fit: contain;
+    }
+    .salinan-identitas {
+        display: grid;
+        min-width: 0;
+        line-height: 1.1;
+    }
+    .salinan-identitas strong {
+        overflow: hidden;
+        font-size: 0.9375rem;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .salinan-identitas small {
+        margin-top: 0.35rem;
+        color: var(--g-band-ink-2);
+        font: 600 0.625rem var(--font-mono);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+    .aman {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        flex-shrink: 0;
+        border-radius: 999px;
+        background: var(--g-band-field);
+        padding: 0.5rem 0.7rem;
+        font-size: 0.6875rem;
+        font-weight: 700;
     }
 
     /* Kelas di komponen Link tidak terjangkau CSS terlingkup Svelte. */
@@ -168,8 +231,12 @@
         background: var(--g-band-field);
     }
 
+    .pesan-pita {
+        display: none;
+    }
+
     .daftar-bukti {
-        display: flex;
+        display: none;
         flex-wrap: wrap;
         gap: 0.5rem;
         margin: 0;
@@ -201,7 +268,41 @@
     }
 
     @media (min-width: 900px) {
+        .pita {
+            min-height: 40rem;
+            padding: 2.5rem;
+        }
+
+        .aman {
+            display: none;
+        }
+
+        .pesan-pita {
+            display: block;
+            margin-block: auto;
+            max-width: 24rem;
+        }
+
+        .pesan-pita .nomor {
+            color: var(--g-band-ink-2);
+            font: 700 0.7rem var(--font-mono);
+            letter-spacing: 0.12em;
+        }
+
+        .pesan-pita h2 {
+            margin-top: 1.25rem;
+            font-size: clamp(2.5rem, 4.5vw, 4rem);
+        }
+
+        .pesan-pita > p:last-child {
+            max-width: 30ch;
+            margin-top: 1.5rem;
+            color: var(--g-band-ink-2);
+            line-height: 1.65;
+        }
+
         .daftar-bukti {
+            display: flex;
             flex-direction: column;
             align-items: flex-start;
             gap: 0.875rem;
@@ -224,10 +325,11 @@
 
     .kartu {
         display: grid;
-        place-content: center;
+        align-content: start;
         justify-items: stretch;
-        padding: 2rem 1.5rem max(2rem, calc(env(safe-area-inset-bottom) + 1rem));
-        background: var(--card);
+        padding: 2.25rem 1.25rem
+            max(1.5rem, calc(env(safe-area-inset-bottom) + 1rem));
+        background: var(--g-bg);
         /* Lembar form naik menutup sudut pita, pola yang sama dengan bottom
            sheet di aplikasinya. */
         border-radius: 32px 32px 0 0;
@@ -245,7 +347,13 @@
     }
 
     .judul {
-        font-size: clamp(1.625rem, 3.5vw, 2rem);
+        font-size: clamp(2rem, 8vw, 2.35rem);
         margin: 0;
+    }
+
+    @media (min-width: 420px) and (max-width: 899px) {
+        .kartu {
+            padding-inline: max(1.5rem, calc((100vw - 26rem) / 2));
+        }
     }
 </style>

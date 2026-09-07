@@ -1,6 +1,7 @@
 <script lang="ts">
     import { Link, page, router, useForm } from '@inertiajs/svelte';
     import BadgeCheck from 'lucide-svelte/icons/badge-check';
+    import Camera from 'lucide-svelte/icons/camera';
     import ChevronLeft from 'lucide-svelte/icons/chevron-left';
     import ChevronRight from 'lucide-svelte/icons/chevron-right';
     import LogOut from 'lucide-svelte/icons/log-out';
@@ -33,7 +34,15 @@
     let open = $state(false);
     let panel = $state<Panel>('menu');
 
-    const profil = useForm({ name: '', email: '' });
+    const profil = useForm<{
+        name: string;
+        email: string;
+        avatar: File | null;
+    }>({ name: '', email: '', avatar: null });
+    let pratinjauAvatar = $state<string | null>(null);
+    const avatarUrl = $derived(
+        pratinjauAvatar ?? (user.avatar ? `/storage/${user.avatar}` : null),
+    );
 
     const judul: Record<Panel, string> = {
         menu: 'Profil saya',
@@ -45,6 +54,8 @@
         if (tujuan === 'profil') {
             profil.name = user.name;
             profil.email = user.email;
+            profil.avatar = null;
+            pratinjauAvatar = null;
             profil.clearErrors();
         }
 
@@ -60,6 +71,13 @@
     function keluar(): void {
         router.flushAll();
     }
+    function pilihAvatar(event: Event): void {
+        const file =
+            (event.currentTarget as HTMLInputElement).files?.[0] ?? null;
+        profil.avatar = file;
+        if (pratinjauAvatar) URL.revokeObjectURL(pratinjauAvatar);
+        pratinjauAvatar = file ? URL.createObjectURL(file) : null;
+    }
 </script>
 
 <Sheet bind:open>
@@ -72,7 +90,11 @@
                 aria-label="Buka profil"
                 class="relative grid size-11 place-items-center rounded-2xl bg-primary text-sm font-extrabold text-primary-foreground shadow-[0_6px_18px_rgba(20,83,45,0.24)] ring-1 ring-white/20 transition duration-200 active:scale-95"
             >
-                {user.name.charAt(0).toUpperCase()}
+                {#if user.avatar}<img
+                        src={`/storage/${user.avatar}`}
+                        alt=""
+                        class="size-full rounded-2xl object-cover"
+                    />{:else}{user.name.charAt(0).toUpperCase()}{/if}
                 <span
                     class="absolute -right-0.5 -bottom-0.5 size-3.5 rounded-full border-2 border-background bg-emerald-500"
                 ></span>
@@ -125,7 +147,13 @@
                         <div
                             class="grid size-16 shrink-0 place-items-center rounded-[1.35rem] bg-white/16 text-2xl font-extrabold ring-1 ring-white/25 backdrop-blur-sm"
                         >
-                            {user.name.charAt(0).toUpperCase()}
+                            {#if user.avatar}<img
+                                    src={`/storage/${user.avatar}`}
+                                    alt=""
+                                    class="size-full rounded-[1.35rem] object-cover"
+                                />{:else}{user.name
+                                    .charAt(0)
+                                    .toUpperCase()}{/if}
                         </div>
                         <div class="min-w-0 flex-1">
                             <p class="truncate text-lg font-bold">
@@ -263,11 +291,54 @@
                     onsubmit={(e) => {
                         e.preventDefault();
                         profil.submit(ProfileController.update(), {
+                            forceFormData: true,
                             preserveScroll: true,
                             onSuccess: () => (panel = 'menu'),
                         });
                     }}
                 >
+                    <div
+                        class="flex flex-col items-center gap-3 rounded-[1.5rem] bg-muted/60 p-4"
+                    >
+                        <div class="relative">
+                            <div
+                                class="grid size-24 place-items-center overflow-hidden rounded-[1.75rem] bg-primary text-3xl font-extrabold text-primary-foreground"
+                            >
+                                {#if avatarUrl}<img
+                                        src={avatarUrl}
+                                        alt="Pratinjau foto profil"
+                                        class="size-full object-cover"
+                                    />{:else}{user.name
+                                        .charAt(0)
+                                        .toUpperCase()}{/if}
+                            </div>
+                            <label
+                                for="profil-avatar"
+                                class="absolute -right-2 -bottom-2 grid size-11 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-lg ring-4 ring-background"
+                                aria-label="Ganti foto profil"
+                                ><Camera class="size-5" /></label
+                            >
+                        </div>
+                        <div class="text-center">
+                            <p class="text-sm font-bold">Foto profil</p>
+                            <p class="text-xs text-muted-foreground">
+                                JPG, PNG, atau WebP · maks. 2 MB
+                            </p>
+                        </div>
+                        <input
+                            id="profil-avatar"
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            class="sr-only"
+                            onchange={pilihAvatar}
+                        />
+                        {#if profil.errors.avatar}<p
+                                class="text-xs text-destructive"
+                            >
+                                {profil.errors.avatar}
+                            </p>{/if}
+                    </div>
+
                     <div class="grid gap-1.5">
                         <Label for="profil-nama">Nama lengkap</Label>
                         <Input
