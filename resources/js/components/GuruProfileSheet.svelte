@@ -88,12 +88,12 @@
                 onclick={props.onclick}
                 aria-expanded={props['aria-expanded']}
                 aria-label="Buka profil"
-                class="relative grid size-11 place-items-center rounded-2xl bg-primary text-sm font-extrabold text-primary-foreground shadow-[0_6px_18px_rgba(20,83,45,0.24)] ring-1 ring-white/20 transition duration-200 active:scale-95"
+                class="avatar-kotak avatar-kotak-header relative grid place-items-center rounded-2xl bg-primary text-sm font-extrabold text-primary-foreground shadow-[0_6px_18px_rgba(20,83,45,0.24)] ring-1 ring-white/20 transition duration-200 active:scale-95"
             >
                 {#if user.avatar}<img
                         src={`/storage/${user.avatar}`}
                         alt=""
-                        class="size-full rounded-2xl object-cover"
+                        class="foto-avatar rounded-2xl"
                     />{:else}{user.name.charAt(0).toUpperCase()}{/if}
                 <span
                     class="absolute -right-0.5 -bottom-0.5 size-3.5 rounded-full border-2 border-background bg-emerald-500"
@@ -145,12 +145,12 @@
 
                     <div class="relative flex items-center gap-4">
                         <div
-                            class="grid size-16 shrink-0 place-items-center rounded-[1.35rem] bg-white/16 text-2xl font-extrabold ring-1 ring-white/25 backdrop-blur-sm"
+                            class="avatar-kotak avatar-kotak-kartu grid shrink-0 place-items-center rounded-[1.35rem] bg-white/16 text-2xl font-extrabold ring-1 ring-white/25 backdrop-blur-sm"
                         >
                             {#if user.avatar}<img
                                     src={`/storage/${user.avatar}`}
                                     alt=""
-                                    class="size-full rounded-[1.35rem] object-cover"
+                                    class="foto-avatar rounded-[1.35rem]"
                                 />{:else}{user.name
                                     .charAt(0)
                                     .toUpperCase()}{/if}
@@ -302,12 +302,12 @@
                     >
                         <div class="relative">
                             <div
-                                class="grid size-24 place-items-center overflow-hidden rounded-[1.75rem] bg-primary text-3xl font-extrabold text-primary-foreground"
+                                class="avatar-kotak avatar-kotak-pratinjau grid place-items-center rounded-[1.75rem] bg-primary text-3xl font-extrabold text-primary-foreground"
                             >
                                 {#if avatarUrl}<img
                                         src={avatarUrl}
                                         alt="Pratinjau foto profil"
-                                        class="size-full object-cover"
+                                        class="foto-avatar"
                                     />{:else}{user.name
                                         .charAt(0)
                                         .toUpperCase()}{/if}
@@ -394,3 +394,52 @@
         ></div>
     </SheetContent>
 </Sheet>
+
+<style>
+    .avatar-kotak {
+        position: relative;
+        aspect-ratio: 1 / 1;
+        overflow: hidden;
+    }
+
+    .avatar-kotak-header {
+        width: 2.75rem;
+        min-width: 2.75rem;
+        max-width: 2.75rem;
+        height: 2.75rem;
+        min-height: 2.75rem;
+        max-height: 2.75rem;
+    }
+
+    .avatar-kotak-kartu {
+        width: 4rem;
+        min-width: 4rem;
+        max-width: 4rem;
+        height: 4rem;
+        min-height: 4rem;
+        max-height: 4rem;
+    }
+
+    .avatar-kotak-pratinjau {
+        width: 6rem;
+        min-width: 6rem;
+        max-width: 6rem;
+        height: 6rem;
+        min-height: 6rem;
+        max-height: 6rem;
+    }
+
+    .foto-avatar {
+        position: absolute;
+        inset: 0;
+        display: block;
+        width: 100%;
+        min-width: 100%;
+        max-width: 100%;
+        height: 100%;
+        min-height: 100%;
+        max-height: 100%;
+        object-fit: cover;
+        object-position: center;
+    }
+</style>
