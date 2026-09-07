@@ -73,7 +73,10 @@
             {
                 preserveScroll: true,
                 onError: (errors: Record<string, string>) => {
-                    pesanGalat = errors.tap ?? 'Absen gagal. Coba lagi.';
+                    pesanGalat =
+                        errors.rate_limit ??
+                        errors.tap ??
+                        'Absen gagal. Coba lagi.';
                 },
                 onFinish: () => {
                     sedangProses = false;

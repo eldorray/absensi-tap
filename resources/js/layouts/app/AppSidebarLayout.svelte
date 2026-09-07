@@ -28,7 +28,10 @@
 {#if isAdmin}
     <AppShell variant="sidebar">
         <AppSidebar />
-        <AppContent variant="sidebar" class="min-w-0 overflow-x-clip">
+        <AppContent
+            variant="sidebar"
+            class="admin-scroll min-w-0 overflow-x-clip"
+        >
             <AppSidebarHeader {breadcrumbs} />
             {#if tahunAjaran && !tahunAjaran.is_active}
                 <div

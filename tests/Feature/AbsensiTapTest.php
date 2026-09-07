@@ -313,7 +313,7 @@ test('koordinat di luar rentang bumi ditolak validasi', function () {
         ->assertSessionHasErrors('latitude');
 });
 
-test('tap kesebelas dalam satu menit dibatasi', function () {
+test('tap kesebelas dalam satu menit kembali dengan pesan ramah', function () {
     [$guru, $perangkat] = guruSiapAbsen();
 
     foreach (range(1, 10) as $ignored) {
@@ -321,8 +321,10 @@ test('tap kesebelas dalam satu menit dibatasi', function () {
     }
 
     $this->actingAs($guru)
+        ->from(route('dashboard'))
         ->post(route('absensi.store'), payloadTap($perangkat))
-        ->assertStatus(429);
+        ->assertRedirect(route('dashboard'))
+        ->assertSessionHasErrors('rate_limit');
 });
 
 test('guru yang punya passkey wajib verifikasi biometrik sebelum tap', function () {

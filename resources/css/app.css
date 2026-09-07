@@ -389,18 +389,14 @@
         width: 100%;
         min-height: 100%;
         overflow-x: hidden;
-        overscroll-behavior: none;
-        touch-action: pan-y;
+        overscroll-behavior-x: none;
     }
 
     body {
-        /* Matikan bounce dan pull-to-refresh iOS: keduanya terasa seperti bug
-           di app yang terpasang. */
         width: 100%;
         min-height: 100%;
         overflow-x: hidden;
-        overscroll-behavior: none;
-        touch-action: pan-y;
+        overscroll-behavior-x: none;
         -webkit-tap-highlight-color: transparent;
     }
 
@@ -408,6 +404,16 @@
         width: 100%;
         min-height: 100dvh;
         overflow-x: clip;
+    }
+
+    /* Admin memakai container scroll eksplisit. Gesture trackpad, mouse wheel,
+       dan sentuhan tetap native; hanya pergeseran horizontal yang dikunci. */
+    .admin-scroll {
+        height: 100dvh;
+        overflow-y: auto;
+        overscroll-behavior-y: auto;
+        touch-action: auto;
+        -webkit-overflow-scrolling: touch;
     }
 
     /*
