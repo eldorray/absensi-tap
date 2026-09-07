@@ -1,18 +1,24 @@
 <script lang="ts">
     import { Link, page } from '@inertiajs/svelte';
-    import BookOpen from 'lucide-svelte/icons/book-open';
+    import Building2 from 'lucide-svelte/icons/building-2';
+    import CalendarCheck from 'lucide-svelte/icons/calendar-check';
+    import CalendarClock from 'lucide-svelte/icons/calendar-clock';
     import CalendarOff from 'lucide-svelte/icons/calendar-off';
-    import Fingerprint from 'lucide-svelte/icons/fingerprint';
-    import FolderGit2 from 'lucide-svelte/icons/folder-git-2';
+    import ClipboardList from 'lucide-svelte/icons/clipboard-list';
+    import Database from 'lucide-svelte/icons/database';
+    import GraduationCap from 'lucide-svelte/icons/graduation-cap';
+    import LayoutDashboard from 'lucide-svelte/icons/layout-dashboard';
+    import Megaphone from 'lucide-svelte/icons/megaphone';
     import Palette from 'lucide-svelte/icons/palette';
     import Settings2 from 'lucide-svelte/icons/settings-2';
     import ShieldCheck from 'lucide-svelte/icons/shield-check';
     import Table2 from 'lucide-svelte/icons/table-2';
+    import UserCog from 'lucide-svelte/icons/user-cog';
     import UserRound from 'lucide-svelte/icons/user-round';
     import Users from 'lucide-svelte/icons/users';
     import type { Snippet } from 'svelte';
     import AppLogo from '@/components/AppLogo.svelte';
-    import NavFooter from '@/components/NavFooter.svelte';
+    import NavDropdown from '@/components/NavDropdown.svelte';
     import NavMain from '@/components/NavMain.svelte';
     import NavUser from '@/components/NavUser.svelte';
     import {
@@ -26,12 +32,19 @@
     } from '@/components/ui/sidebar';
     import { toUrl } from '@/lib/utils';
     import { dashboard } from '@/routes';
+    import { dashboard as adminDashboard } from '@/routes/admin';
     import { index as guruIndex } from '@/routes/admin/guru';
     import { index as adminIzinIndex } from '@/routes/admin/izin';
+    import { index as jadwalGuruIndex } from '@/routes/admin/jadwal-guru';
+    import { index as kantorIndex } from '@/routes/admin/kantor';
     import { edit as pengaturanEdit } from '@/routes/admin/pengaturan';
+    import { index as pengumumanIndex } from '@/routes/admin/pengumuman';
     import { index as rekapIndex } from '@/routes/admin/rekap';
+    import { index as rekapHarianIndex } from '@/routes/admin/rekap-harian';
+    import { index as roleIndex } from '@/routes/admin/role';
+    import { index as tahunAjaranIndex } from '@/routes/admin/tahun-ajaran';
+    import { index as userIndex } from '@/routes/admin/user';
     import { edit as appearanceEdit } from '@/routes/appearance';
-    import { index as izinIndex } from '@/routes/izin';
     import { edit as profileEdit } from '@/routes/profile';
     import { edit as securityEdit } from '@/routes/security';
     import type { NavItem } from '@/types';
@@ -44,16 +57,41 @@
 
     const isAdmin = $derived(page.props.auth.isAdmin === true);
 
-    const mainNavItems: NavItem[] = [
-        { title: 'Absensi', href: dashboard(), icon: Fingerprint },
-        { title: 'Izin', href: izinIndex(), icon: CalendarOff },
+    const adminNavItems: NavItem[] = [
+        { title: 'Jadwal guru', href: jadwalGuruIndex(), icon: CalendarClock },
+        { title: 'Pengumuman', href: pengumumanIndex(), icon: Megaphone },
+        { title: 'Pengaturan', href: pengaturanEdit(), icon: Settings2 },
     ];
 
-    const adminNavItems: NavItem[] = [
-        { title: 'Rekap', href: rekapIndex(), icon: Table2 },
+    /** Yang dibaca admin untuk memantau kehadiran, bukan untuk mengubah data. */
+    const laporanNavItems: NavItem[] = [
+        {
+            title: 'Rekap harian',
+            href: rekapHarianIndex(),
+            icon: CalendarCheck,
+        },
+        { title: 'Rekap bulanan', href: rekapIndex(), icon: Table2 },
         { title: 'Izin masuk', href: adminIzinIndex(), icon: CalendarOff },
+    ];
+
+    const dashboardNavItems: NavItem[] = [
+        { title: 'Dashboard', href: adminDashboard(), icon: LayoutDashboard },
+    ];
+
+    /**
+     * Data yang jarang disentuh tapi mengikat yang lain. Dikelompokkan supaya
+     * menu harian tidak tenggelam di antara sebelas entri.
+     */
+    const masterNavItems: NavItem[] = [
+        {
+            title: 'Tahun ajaran',
+            href: tahunAjaranIndex(),
+            icon: GraduationCap,
+        },
+        { title: 'Kantor', href: kantorIndex(), icon: Building2 },
         { title: 'Guru', href: guruIndex(), icon: Users },
-        { title: 'Pengaturan', href: pengaturanEdit(), icon: Settings2 },
+        { title: 'Kelola user', href: userIndex(), icon: UserCog },
+        { title: 'Kelola role', href: roleIndex(), icon: ShieldCheck },
     ];
 
     const settingsNavItems: NavItem[] = [
@@ -71,19 +109,6 @@
             title: 'Tampilan',
             href: appearanceEdit(),
             icon: Palette,
-        },
-    ];
-
-    const footerNavItems: NavItem[] = [
-        {
-            title: 'Repository',
-            href: 'https://github.com/laravel/svelte-starter-kit',
-            icon: FolderGit2,
-        },
-        {
-            title: 'Documentation',
-            href: 'https://laravel.com/docs/starter-kits#svelte',
-            icon: BookOpen,
         },
     ];
 </script>
@@ -108,15 +133,31 @@
     </SidebarHeader>
 
     <SidebarContent class="gap-4">
-        <NavMain items={mainNavItems} label="ABSENSI" />
+        <!--
+            Tanpa kelompok ABSENSI: sidebar ini hanya dirender untuk admin
+            (lihat AppSidebarLayout), dan tap absen milik guru ada di navigasi
+            bawah aplikasinya sendiri.
+        -->
         {#if isAdmin}
+            <NavMain items={dashboardNavItems} label="RINGKASAN" />
+            <NavDropdown
+                label="Master"
+                icon={Database}
+                items={masterNavItems}
+            />
+            <NavDropdown
+                label="Laporan Kehadiran"
+                icon={ClipboardList}
+                items={laporanNavItems}
+            />
             <NavMain items={adminNavItems} label="ADMIN" />
         {/if}
         <NavMain items={settingsNavItems} label="PENGATURAN" />
     </SidebarContent>
 
     <SidebarFooter>
-        <NavFooter items={footerNavItems} />
+        <!-- Tautan Repository dan Documentation bawaan starter kit dibuang:
+             itu dokumentasi Laravel, bukan aplikasi ini. -->
         <NavUser />
     </SidebarFooter>
 </Sidebar>

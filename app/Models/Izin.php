@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\StatusIzin;
 use App\Enums\TipeIzin;
+use App\Models\Concerns\BelongsToTahunAjaran;
 use Database\Factories\IzinFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -29,6 +30,8 @@ use Illuminate\Support\Carbon;
 #[Fillable(['user_id', 'tipe', 'tanggal_mulai', 'tanggal_selesai', 'alasan', 'lampiran_path'])]
 class Izin extends Model
 {
+    use BelongsToTahunAjaran;
+
     /** @use HasFactory<IzinFactory> */
     use HasFactory;
 

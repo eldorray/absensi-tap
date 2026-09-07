@@ -8,6 +8,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -28,6 +29,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property Carbon|null $two_factor_confirmed_at
  * @property string|null $remember_token
  * @property Role $role
+ * @property int|null $kantor_id
  * @property bool $is_active
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -53,6 +55,17 @@ class User extends Authenticatable implements PasskeyUser
             'role' => Role::class,
             'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * Unit sekolah tempat guru ini bertugas. Null berarti belum ditugaskan --
+     * absennya diukur ke seluruh lokasi aktif, seperti sebelum ada kantor.
+     *
+     * @return BelongsTo<Kantor, $this>
+     */
+    public function kantor(): BelongsTo
+    {
+        return $this->belongsTo(Kantor::class);
     }
 
     /** @return HasMany<Perangkat, $this> */

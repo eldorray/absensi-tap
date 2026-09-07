@@ -233,6 +233,23 @@
         caret-color: var(--g-blue);
     }
 
+    /*
+     * Tailwind v4 menghapus cursor: pointer bawaan untuk button, jadi seluruh
+     * tombol -- termasuk tombol ikon -- menampilkan panah seperti teks biasa.
+     * Dikembalikan di sini sekali, bukan lewat class di tiap tombol.
+     */
+    button:not(:disabled),
+    [role='button']:not([aria-disabled='true']),
+    label:has(> input[type='checkbox']),
+    summary {
+        cursor: pointer;
+    }
+
+    button:disabled,
+    [role='button'][aria-disabled='true'] {
+        cursor: not-allowed;
+    }
+
     ::selection {
         background: var(--g-blue-c);
         color: var(--g-blue-ink);
@@ -376,6 +393,20 @@
            di app yang terpasang. */
         overscroll-behavior-y: none;
         -webkit-tap-highlight-color: transparent;
+    }
+
+    /*
+     * Isian otomatis Chrome memaksa latar biru pucatnya sendiri, yang di
+     * halaman hijau ini terlihat seperti kotak nyasar. Warnanya dikembalikan
+     * lewat inset shadow karena background-color-nya tidak bisa ditimpa.
+     */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus {
+        -webkit-text-fill-color: var(--g-ink);
+        -webkit-box-shadow: 0 0 0 1000px var(--background) inset;
+        caret-color: var(--g-blue);
+        transition: background-color 5000s ease-in-out 0s;
     }
 
     /* iOS auto-zoom saat fokus ke input yang font-nya di bawah 16px. */

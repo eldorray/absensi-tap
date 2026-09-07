@@ -4,6 +4,14 @@
     export const layout = {
         breadcrumbs: [{ title: 'Absensi', href: dashboard() }],
     };
+
+    /**
+     * Uuid yang sudah dikirim ke server sepanjang tab ini hidup.
+     *
+     * Pendaftarannya membalas redirect ke dashboard, jadi tanpa penjaga ini
+     * halaman mount ulang, mengirim lagi, dan berputar tanpa henti.
+     */
+    let uuidTerkirim: string | null = null;
 </script>
 
 <script lang="ts">
@@ -11,10 +19,12 @@
     import CalendarClock from 'lucide-svelte/icons/calendar-clock';
     import CircleCheck from 'lucide-svelte/icons/circle-check';
     import MapPin from 'lucide-svelte/icons/map-pin';
+    import Megaphone from 'lucide-svelte/icons/megaphone';
     import ShieldAlert from 'lucide-svelte/icons/shield-alert';
     import { store as daftarkanPerangkat } from '@/actions/App/Http/Controllers/PerangkatController';
     import AppHead from '@/components/AppHead.svelte';
     import InstallPrompt from '@/components/InstallPrompt.svelte';
+    import JarakLokasi from '@/components/JarakLokasi.svelte';
     import TapButton from '@/components/TapButton.svelte';
     import { Badge } from '@/components/ui/badge';
     import {
@@ -27,6 +37,9 @@
         jam_masuk: string;
         jam_pulang: string;
         toleransi_menit: number;
+        buka_masuk: string;
+        tutup_masuk: string;
+        buka_pulang: string;
         is_hari_kerja: boolean;
     };
 
@@ -38,18 +51,32 @@
         terverifikasi: boolean;
     };
 
+    type Pengumuman = { id: number; judul: string; isi: string };
+
+    type Lokasi = {
+        id: number;
+        nama: string;
+        latitude: number;
+        longitude: number;
+        radius_meter: number;
+    };
+
     let {
         jadwal,
         hariIni,
-        namaLokasi,
+        pengumumans,
+        lokasis,
         punyaPasskey,
         perangkatUuidTersimpan,
+        statusPerangkat = null,
     }: {
         jadwal: Jadwal | null;
         hariIni: Hari | null;
-        namaLokasi: string | null;
+        pengumumans: Pengumuman[];
+        lokasis: Lokasi[];
         punyaPasskey: boolean;
         perangkatUuidTersimpan: string | null;
+        statusPerangkat?: 'pending' | 'active' | 'revoked' | null;
     } = $props();
 
     let deviceUuid = $state<string | null>(null);
@@ -79,21 +106,26 @@
     });
 
     $effect(() => {
-        const tersimpan = bacaDeviceUuid(perangkatUuidTersimpan);
+        const uuid = bacaDeviceUuid(perangkatUuidTersimpan) ?? buatDeviceUuid();
+        simpanDeviceUuid(uuid);
+        deviceUuid = uuid;
 
-        if (tersimpan) {
-            deviceUuid = tersimpan;
+        // Didaftarkan hanya kalau server belum mengenal uuid ini -- entah karena
+        // baru, atau karena barisnya hilang (dihapus admin, database di-reset).
+        // Tanpa cabang ini browser menyimpan uuid tak terdaftar selamanya dan
+        // setiap tap ditolak "HP ini belum terdaftar" tanpa jalan keluar.
+        const dikenalServer =
+            statusPerangkat !== null && perangkatUuidTersimpan === uuid;
 
+        if (dikenalServer || uuidTerkirim === uuid) {
             return;
         }
 
-        const baru = buatDeviceUuid();
-        simpanDeviceUuid(baru);
-        deviceUuid = baru;
+        uuidTerkirim = uuid;
 
         router.post(
             daftarkanPerangkat.url(),
-            { device_uuid: baru },
+            { device_uuid: uuid },
             { preserveScroll: true },
         );
     });
@@ -133,48 +165,88 @@
                 Masuk {jadwal.jam_masuk} · Pulang {jadwal.jam_pulang} · Toleransi
                 {jadwal.toleransi_menit} menit
             </p>
+            <p class="text-xs text-muted-foreground">
+                Absen masuk {jadwal.buka_masuk}–{jadwal.tutup_masuk} · absen pulang
+                buka {jadwal.buka_pulang}
+            </p>
         {:else}
             <p class="text-sm text-muted-foreground">
                 Hari ini bukan hari kerja.
             </p>
         {/if}
 
-        {#if namaLokasi}
+        {#if lokasis.length > 0}
             <p class="flex items-center gap-2 text-sm text-muted-foreground">
                 <MapPin class="size-4" aria-hidden="true" />
-                Absen hanya di sekitar {namaLokasi}
+                Absen hanya di sekitar {lokasis
+                    .map((lokasi) => lokasi.nama)
+                    .join(', ')}
             </p>
         {/if}
     </section>
 
-    <section class="g-tile {sudahMasuk ? 'g-tone-green' : 'g-tone-yellow'}">
-        <h3>Status hari ini</h3>
-
-        {#if hariIni}
+    <section
+        class="g-tile gap-2 {sudahMasuk ? 'g-tone-green' : 'g-tone-yellow'}"
+    >
+        <div class="flex flex-wrap items-center justify-between gap-2">
+            <h3 class="text-base">Status hari ini</h3>
             <div class="flex flex-wrap items-center gap-2">
-                <Badge variant="secondary">
-                    {hariIni.status
-                        ? (labelStatus[hariIni.status] ?? hariIni.status)
-                        : 'Tercatat'}
-                </Badge>
-                {#if hariIni.pulang_cepat}
-                    <Badge variant="outline">Pulang cepat</Badge>
-                {/if}
-                {#if !hariIni.terverifikasi}
-                    <Badge variant="outline" class="gap-1">
-                        <ShieldAlert class="size-3" aria-hidden="true" />
-                        Tanpa biometrik
+                {#if hariIni}
+                    <Badge variant="secondary">
+                        {hariIni.status
+                            ? (labelStatus[hariIni.status] ?? hariIni.status)
+                            : 'Tercatat'}
                     </Badge>
+                    {#if hariIni.pulang_cepat}
+                        <Badge variant="outline">Pulang cepat</Badge>
+                    {/if}
+                    {#if !hariIni.terverifikasi}
+                        <Badge variant="outline" class="gap-1">
+                            <ShieldAlert class="size-3" aria-hidden="true" />
+                            Tanpa biometrik
+                        </Badge>
+                    {/if}
+                {:else}
+                    <Badge variant="outline">Belum absen</Badge>
                 {/if}
             </div>
-            <p>
+        </div>
+
+        {#if hariIni}
+            <p class="text-sm">
                 Masuk {hariIni.jam_masuk ?? '-'} · Pulang {hariIni.jam_pulang ??
                     '-'}
             </p>
-        {:else}
-            <p>Belum ada absen hari ini.</p>
         {/if}
+
+        <div class="border-t border-foreground/10 pt-2">
+            <JarakLokasi {lokasis} />
+        </div>
     </section>
+
+    {#if statusPerangkat === 'pending'}
+        <section class="g-tile g-tone-yellow gap-2">
+            <div class="flex items-center gap-2">
+                <ShieldAlert class="size-4" aria-hidden="true" />
+                <h3 class="text-base">HP ini menunggu persetujuan</h3>
+            </div>
+            <p class="text-sm">
+                Permintaan ganti HP sudah masuk. Absen baru bisa dipakai setelah
+                TU menyetujui HP ini.
+            </p>
+        </section>
+    {:else if statusPerangkat === 'revoked'}
+        <section class="g-tile g-tone-red gap-2">
+            <div class="flex items-center gap-2">
+                <ShieldAlert class="size-4" aria-hidden="true" />
+                <h3 class="text-base">HP ini dicabut</h3>
+            </div>
+            <p class="text-sm">
+                HP ini tidak lagi diizinkan untuk absen. Hubungi TU kalau ini
+                memang HP kamu.
+            </p>
+        </section>
+    {/if}
 
     {#if selesai}
         <p
@@ -189,7 +261,27 @@
             label={sudahMasuk ? 'TAP PULANG' : 'TAP MASUK'}
             {punyaPasskey}
             {deviceUuid}
-            disabled={deviceUuid === null}
+            disabled={deviceUuid === null || statusPerangkat !== 'active'}
         />
+    {/if}
+
+    {#if pengumumans.length > 0}
+        <section class="g-tile g-tone-blue gap-3">
+            <div class="flex items-center gap-2">
+                <Megaphone class="size-4" aria-hidden="true" />
+                <h3 class="text-base">Informasi</h3>
+            </div>
+
+            <ul class="grid gap-3">
+                {#each pengumumans as pengumuman (pengumuman.id)}
+                    <li class="grid gap-1">
+                        <p class="text-sm font-bold">{pengumuman.judul}</p>
+                        <p class="text-sm whitespace-pre-line">
+                            {pengumuman.isi}
+                        </p>
+                    </li>
+                {/each}
+            </ul>
+        </section>
     {/if}
 </div>

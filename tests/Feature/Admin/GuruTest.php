@@ -44,3 +44,64 @@ test('guru tidak approve', function () {
     $p = Perangkat::factory()->for($g)->pending()->create();
     $this->actingAs($g)->patch(route('admin.perangkat.update', $p), ['status' => 'active'])->assertForbidden();
 });
+
+test('halaman guru memakai modal, tabel, filter cari, dan tombol next', function () {
+    $halaman = file_get_contents(resource_path('js/pages/admin/Guru.svelte'));
+
+    expect($halaman)
+        // Tambah guru dan impor pindah ke modal, halamannya tinggal daftar.
+        ->toContain('<Dialog bind:open={dialogTambah}>')
+        ->toContain('<Dialog bind:open={dialogImpor}>')
+        // Daftar guru berupa tabel dengan pencarian langsung di klien.
+        ->toContain('<table')
+        ->toContain('placeholder="Cari nama, NIP, email"')
+        // Pilihan jumlah baris, 0 berarti semua.
+        ->toContain('<option value={10}>')
+        ->toContain('<option value={15}>')
+        ->toContain('<option value={20}>')
+        ->toContain('<option value={0}>Semua</option>')
+        // Pagination hanya maju.
+        ->toContain('tampil += perHalaman')
+        ->not->toContain('Sebelumnya');
+});
+
+test('aksi akun di kelola guru memakai endpoint kelola user', function () {
+    $admin = User::factory()->admin()->create();
+    $guru = User::factory()->create(['name' => 'Sitti']);
+
+    // Ubah identitas.
+    $this->actingAs($admin)
+        ->from(route('admin.guru.index'))
+        ->patch(route('admin.user.update', $guru), ['name' => 'Siti Aminah'])
+        ->assertRedirect(route('admin.guru.index'));
+
+    expect($guru->refresh()->name)->toBe('Siti Aminah');
+
+    // Reset password, kembali ke halaman guru beserta passwordnya.
+    $this->actingAs($admin)
+        ->from(route('admin.guru.index'))
+        ->post(route('admin.user.reset-password', $guru))
+        ->assertRedirect(route('admin.guru.index'))
+        ->assertSessionHas('password_baru');
+
+    // Hapus akun.
+    $this->actingAs($admin)
+        ->from(route('admin.guru.index'))
+        ->delete(route('admin.user.destroy', $guru))
+        ->assertRedirect(route('admin.guru.index'));
+
+    expect(User::whereKey($guru->id)->exists())->toBeFalse();
+});
+
+test('halaman guru menerima password baru untuk ditampilkan sekali', function () {
+    $admin = User::factory()->admin()->create();
+    $guru = User::factory()->create();
+
+    $this->actingAs($admin)
+        ->from(route('admin.guru.index'))
+        ->post(route('admin.user.reset-password', $guru));
+
+    $this->actingAs($admin)
+        ->get(route('admin.guru.index'))
+        ->assertInertia(fn ($p) => $p->has('passwordBaru.password'));
+});

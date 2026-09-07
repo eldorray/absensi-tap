@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $this->call([
+            TahunAjaranSeeder::class,
             AdminSeeder::class,
             JadwalKerjaSeeder::class,
         ]);

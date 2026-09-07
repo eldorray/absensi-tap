@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\HasilTap;
 use App\Enums\TipeTap;
+use App\Models\Concerns\BelongsToTahunAjaran;
 use Database\Factories\AbsensiAttemptFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -32,6 +33,8 @@ use Illuminate\Support\Carbon;
 ])]
 class AbsensiAttempt extends Model
 {
+    use BelongsToTahunAjaran;
+
     /** @use HasFactory<AbsensiAttemptFactory> */
     use HasFactory;
 
@@ -61,5 +64,16 @@ class AbsensiAttempt extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Lokasi yang jaraknya diukur saat tap ini. Null kalau lokasinya sudah
+     * dihapus (nullOnDelete) -- koordinat dan jaraknya tetap tersimpan.
+     *
+     * @return BelongsTo<Lokasi, $this>
+     */
+    public function lokasi(): BelongsTo
+    {
+        return $this->belongsTo(Lokasi::class);
     }
 }

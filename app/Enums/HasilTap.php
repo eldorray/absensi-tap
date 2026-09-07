@@ -11,4 +11,5 @@ enum HasilTap: string
     case Duplikat = 'duplikat';
     case PasskeyInvalid = 'passkey_invalid';
     case BelumMasuk = 'belum_masuk';
+    case LuarJadwal = 'luar_jadwal';
 }

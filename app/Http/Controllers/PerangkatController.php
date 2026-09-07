@@ -21,14 +21,19 @@ class PerangkatController extends Controller
             $request->userAgent(),
         );
 
-        $aktif = $perangkat->status === StatusPerangkat::Active;
+        // Halaman absen mendaftarkan uuid-nya setiap kali dibuka supaya browser
+        // yang uuid-nya hilang di server bisa pulih sendiri. Karena itu toast
+        // hanya muncul saat barisnya betul-betul baru, bukan tiap kunjungan.
+        if ($perangkat->wasRecentlyCreated) {
+            $aktif = $perangkat->status === StatusPerangkat::Active;
 
-        Inertia::flash('toast', [
-            'type' => $aktif ? 'success' : 'info',
-            'message' => $aktif
-                ? 'HP ini berhasil diikat ke akunmu.'
-                : 'Permintaan ganti HP dikirim. Tunggu persetujuan TU.',
-        ]);
+            Inertia::flash('toast', [
+                'type' => $aktif ? 'success' : 'info',
+                'message' => $aktif
+                    ? 'HP ini berhasil diikat ke akunmu.'
+                    : 'Permintaan ganti HP dikirim. Tunggu persetujuan TU.',
+            ]);
+        }
 
         // Cookie ini cadangan localStorage, bukan lapisan keamanan: nilainya sama
         // persis. Gunanya supaya guru tidak terlihat sebagai perangkat baru ketika

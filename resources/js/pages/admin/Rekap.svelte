@@ -7,7 +7,9 @@
 <script lang="ts">
     import { router } from '@inertiajs/svelte';
     import Download from 'lucide-svelte/icons/download';
+    import Printer from 'lucide-svelte/icons/printer';
     import {
+        cetak,
         exportMethod,
         index,
     } from '@/actions/App/Http/Controllers/Admin/RekapController';
@@ -82,6 +84,24 @@
             query: Object.fromEntries(params),
         });
     }
+    /** Laporan siap cetak dibuka di tab baru supaya filternya tidak hilang. */
+    function cetakLaporan(): void {
+        const params = new URLSearchParams({
+            tahun: String(tahun),
+            bulan: String(bulan),
+        });
+
+        if (guruId) {
+            params.set('user_id', String(guruId));
+        }
+
+        window.open(
+            cetak.url({ query: Object.fromEntries(params) }),
+            '_blank',
+            'noopener',
+        );
+    }
+
     function judulAnomali(hari: Hari): string {
         return hari.anomali.length > 0
             ? `${hari.label} · ${hari.anomali.join(', ')}`
@@ -125,6 +145,10 @@
             <Button variant="outline" onclick={unduh}
                 ><Download class="size-4" aria-hidden="true" /> CSV</Button
             >
+            <Button variant="outline" onclick={cetakLaporan}>
+                <Printer class="size-4" aria-hidden="true" />
+                Laporan PDF
+            </Button>
         </div>
     </section>
     <section class="g-tile g-tone-plain">

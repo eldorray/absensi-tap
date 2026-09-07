@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTahunAjaran;
 use Database\Factories\HariLiburFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,6 +17,8 @@ use Illuminate\Support\Carbon;
 #[Fillable(['tanggal', 'nama'])]
 class HariLibur extends Model
 {
+    use BelongsToTahunAjaran;
+
     /** @use HasFactory<HariLiburFactory> */
     use HasFactory;
 

@@ -10,6 +10,7 @@ use App\Models\Absensi;
 use App\Models\AbsensiAttempt;
 use App\Models\JadwalKerja;
 use App\Models\Lokasi;
+use App\Models\PengaturanAbsensi;
 use App\Models\Perangkat;
 use App\Models\User;
 use App\Support\Jarak;
@@ -81,10 +82,16 @@ class CatatAbsensi
             );
         }
 
-        $lokasi = $this->lokasiTerdekat($latitude, $longitude);
+        $lokasi = $this->lokasiTerdekat($guru, $latitude, $longitude);
 
         if ($lokasi === null) {
-            $this->tolak($dasar, HasilTap::LuarRadius, 'Belum ada lokasi absen aktif. Hubungi TU.');
+            $this->tolak(
+                $dasar,
+                HasilTap::LuarRadius,
+                $guru->kantor_id === null
+                    ? 'Belum ada lokasi absen aktif. Hubungi TU.'
+                    : 'Kantor tugasmu belum punya lokasi absen aktif. Hubungi TU.',
+            );
         }
 
         $jarak = Jarak::meter($latitude, $longitude, $lokasi->latitude, $lokasi->longitude);
@@ -105,6 +112,8 @@ class CatatAbsensi
             $this->tolak($dasar, HasilTap::PasskeyInvalid, 'Verifikasi sidik jari dulu, lalu tap lagi.');
         }
 
+        $jadwal = JadwalKerja::hariUntukGuru((int) $guru->id, now()->dayOfWeek);
+
         $absensi = Absensi::query()->firstOrNew([
             'user_id' => $guru->id,
             // Carbon, bukan toDateString(): cast 'date' pada Absensi::tanggal
@@ -124,15 +133,17 @@ class CatatAbsensi
             $this->tolak($dasar, HasilTap::BelumMasuk, 'Belum ada absen masuk hari ini.');
         }
 
+        if (($diLuarJendela = $this->diLuarJendela($jadwal, $tipe)) !== null) {
+            $this->tolak($dasar, HasilTap::LuarJadwal, $diLuarJendela);
+        }
+
         try {
-            return DB::transaction(function () use ($guru, $tipe, $dasar, $passkeyTerverifikasi, $absensi, $kolom): Absensi {
+            return DB::transaction(function () use ($guru, $tipe, $dasar, $passkeyTerverifikasi, $absensi, $kolom, $jadwal): Absensi {
                 $attempt = AbsensiAttempt::create([
                     ...$dasar,
                     'terverifikasi' => $passkeyTerverifikasi,
                     'hasil' => HasilTap::Diterima,
                 ]);
-
-                $jadwal = JadwalKerja::query()->where('day_of_week', now()->dayOfWeek)->first();
 
                 $absensi->user_id = $guru->id;
                 // Carbon::today(), bukan today(): AppServiceProvider memasang
@@ -182,10 +193,10 @@ class CatatAbsensi
      * sekolah punya segelintir lokasi, jadi ini gratis. Kalau jumlahnya pernah
      * mencapai ratusan, pindahkan ke query dengan bounding box lintang/bujur.
      */
-    private function lokasiTerdekat(float $latitude, float $longitude): ?Lokasi
+    private function lokasiTerdekat(User $guru, float $latitude, float $longitude): ?Lokasi
     {
         return Lokasi::query()
-            ->where('is_active', true)
+            ->aktifUntukKantor($guru->kantor_id)
             ->get()
             ->sortBy(fn (Lokasi $lokasi): int => Jarak::meter(
                 $latitude,
@@ -196,6 +207,43 @@ class CatatAbsensi
             ->first();
     }
 
+    /**
+     * Alasan tap ini berada di luar jendela absen hari ini, atau null kalau
+     * jendelanya sedang terbuka.
+     *
+     * Jendela dihitung relatif terhadap jam jadwal: masuk dibuka
+     * buka_masuk_menit sebelum jam_masuk dan ditutup tutup_masuk_menit
+     * sesudahnya, pulang dibuka buka_pulang_menit sebelum jam_pulang. Hari tanpa
+     * jadwal tidak punya jendela, jadi tapnya diteruskan seperti sebelumnya.
+     */
+    private function diLuarJendela(?JadwalKerja $jadwal, TipeTap $tipe): ?string
+    {
+        if ($jadwal === null) {
+            return null;
+        }
+
+        $pengaturan = PengaturanAbsensi::current();
+
+        if ($tipe === TipeTap::Pulang) {
+            $buka = today()->setTimeFromTimeString($jadwal->jam_pulang)->subMinutes($pengaturan->buka_pulang_menit);
+
+            return now()->lessThan($buka)
+                ? 'Absen pulang baru dibuka pukul '.$buka->format('H:i').'.'
+                : null;
+        }
+
+        $buka = today()->setTimeFromTimeString($jadwal->jam_masuk)->subMinutes($pengaturan->buka_masuk_menit);
+        $tutup = today()->setTimeFromTimeString($jadwal->jam_masuk)->addMinutes($pengaturan->tutup_masuk_menit);
+
+        if (now()->lessThan($buka)) {
+            return 'Absen masuk baru dibuka pukul '.$buka->format('H:i').'.';
+        }
+
+        return now()->greaterThan($tutup)
+            ? 'Absen masuk sudah ditutup pukul '.$tutup->format('H:i').'.'
+            : null;
+    }
+
     private function statusMasuk(?JadwalKerja $jadwal): StatusAbsensi
     {
         if ($jadwal === null) {
@@ -204,7 +252,7 @@ class CatatAbsensi
 
         $batas = today()
             ->setTimeFromTimeString($jadwal->jam_masuk)
-            ->addMinutes($jadwal->toleransi_menit);
+            ->addMinutes(PengaturanAbsensi::current()->toleransi_menit);
 
         return now()->greaterThan($batas) ? StatusAbsensi::Terlambat : StatusAbsensi::Hadir;
     }

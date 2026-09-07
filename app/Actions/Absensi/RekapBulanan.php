@@ -4,6 +4,7 @@ namespace App\Actions\Absensi;
 
 use App\Enums\HasilTap;
 use App\Enums\Role;
+use App\Enums\StatusHari;
 use App\Enums\StatusIzin;
 use App\Models\Absensi;
 use App\Models\AbsensiAttempt;
@@ -11,6 +12,7 @@ use App\Models\HariLibur;
 use App\Models\Izin;
 use App\Models\JadwalKerja;
 use App\Models\User;
+use App\Support\AnomaliAbsensi;
 use App\Support\StatusHarian;
 use Carbon\CarbonPeriod;
 use Illuminate\Support\Carbon;
@@ -25,7 +27,13 @@ class RekapBulanan
      *         nama: string,
      *         nip: string|null,
      *         hari: list<array{tanggal: string, status: string, label: string, anomali: list<string>}>,
-     *         ringkasan: array<string, int>
+     *         ringkasan: array<string, int>,
+     *         hari_efektif: int,
+     *         kehadiran: int,
+     *         masuk: int,
+     *         pulang: int,
+     *         terlambat: int,
+     *         persentase: float
      *     }>
      * }
      */
@@ -39,7 +47,14 @@ class RekapBulanan
             $tanggals[] = $hari->toDateString();
         }
 
-        $jadwals = JadwalKerja::query()->get()->keyBy('day_of_week');
+        // Sekali ambil untuk seluruh bulan: jadwal default sekolah, lalu jadwal
+        // milik guru yang menimpanya per hari.
+        $semuaJadwal = JadwalKerja::query()->get();
+        $jadwalDefault = $semuaJadwal->whereNull('user_id')->keyBy('day_of_week');
+        $jadwalGuru = $semuaJadwal
+            ->whereNotNull('user_id')
+            ->groupBy('user_id')
+            ->map(fn ($baris) => $baris->keyBy('day_of_week'));
         $liburs = HariLibur::query()
             ->whereBetween('tanggal', [$mulai, $selesai])
             ->get()
@@ -62,11 +77,16 @@ class RekapBulanan
         foreach ($gurus as $guru) {
             $hari = [];
             $ringkasan = [];
+            $hariEfektif = 0;
+            $masuk = 0;
+            $pulang = 0;
 
             foreach ($tanggals as $tanggal) {
                 $kunci = $guru->id.'|'.$tanggal;
                 $absensi = $absensis->get($kunci);
-                $jadwal = $jadwals->get(Carbon::parse($tanggal)->dayOfWeek);
+                $dayOfWeek = Carbon::parse($tanggal)->dayOfWeek;
+                $jadwal = $jadwalGuru->get($guru->id)?->get($dayOfWeek)
+                    ?? $jadwalDefault->get($dayOfWeek);
                 $status = StatusHarian::resolve(
                     $jadwal === null ? true : $jadwal->is_hari_kerja,
                     $liburs->has($tanggal),
@@ -74,21 +94,7 @@ class RekapBulanan
                     $absensi?->status?->value,
                     Carbon::parse($tanggal)->isBefore(today()),
                 );
-                $anomali = [];
-                $attempt = $absensi?->masukAttempt;
-
-                if ($attempt !== null && ! $attempt->terverifikasi) {
-                    $anomali[] = 'tanpa_biometrik';
-                }
-                if ($attempt !== null && in_array($this->kunciKoordinat($attempt), $kembar, true)) {
-                    $anomali[] = 'koordinat_kembar';
-                }
-                if ($absensi !== null && $absensi->pulang_cepat) {
-                    $anomali[] = 'pulang_cepat';
-                }
-                if ($absensi !== null && $absensi->pulang_attempt_id === null) {
-                    $anomali[] = 'belum_tap_pulang';
-                }
+                $anomali = AnomaliAbsensi::untuk($absensi, $kembar);
 
                 $hari[] = [
                     'tanggal' => $tanggal,
@@ -97,7 +103,25 @@ class RekapBulanan
                     'anomali' => $anomali,
                 ];
                 $ringkasan[$status->value] = ($ringkasan[$status->value] ?? 0) + 1;
+
+                // Hari efektif = hari yang seharusnya dia masuk: bukan hari
+                // libur, bukan hari non-kerja menurut jadwalnya sendiri, dan
+                // bukan hari yang izinnya disetujui.
+                if (! in_array($status, [StatusHari::BukanHariKerja, StatusHari::Libur, StatusHari::Izin, StatusHari::Sakit, StatusHari::Cuti], true)) {
+                    $hariEfektif++;
+                }
+
+                if ($absensi?->masuk_attempt_id !== null) {
+                    $masuk++;
+                }
+
+                if ($absensi?->pulang_attempt_id !== null) {
+                    $pulang++;
+                }
             }
+
+            $terlambat = $ringkasan[StatusHari::Terlambat->value] ?? 0;
+            $kehadiran = ($ringkasan[StatusHari::Hadir->value] ?? 0) + $terlambat;
 
             $baris[] = [
                 'user_id' => $guru->id,
@@ -105,6 +129,15 @@ class RekapBulanan
                 'nip' => $guru->nip,
                 'hari' => $hari,
                 'ringkasan' => $ringkasan,
+                'hari_efektif' => $hariEfektif,
+                'kehadiran' => $kehadiran,
+                'masuk' => $masuk,
+                'pulang' => $pulang,
+                'terlambat' => $terlambat,
+                // Dibulatkan dua angka: dipakai apa adanya di laporan cetak.
+                'persentase' => $hariEfektif === 0
+                    ? 0.0
+                    : round($kehadiran / $hariEfektif * 100, 2),
             ];
         }
 
@@ -150,10 +183,5 @@ class RekapBulanan
             ->get()
             ->map(fn (AbsensiAttempt $baris): string => (string) $baris->getAttribute('tanggal').'|'.(float) $baris->latitude.'|'.(float) $baris->longitude)
             ->all());
-    }
-
-    private function kunciKoordinat(AbsensiAttempt $attempt): string
-    {
-        return $attempt->created_at?->toDateString().'|'.$attempt->latitude.'|'.$attempt->longitude;
     }
 }

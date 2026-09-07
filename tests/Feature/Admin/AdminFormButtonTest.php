@@ -1,9 +1,23 @@
 <?php
 
-test('semua tombol pengirim form admin bertipe submit', function () {
-    $guru = file_get_contents(resource_path('js/pages/admin/Guru.svelte'));
-    $pengaturan = file_get_contents(resource_path('js/pages/admin/Pengaturan.svelte'));
+test('setiap form admin punya satu tombol submit', function () {
+    $halaman = [
+        'admin/Guru.svelte',
+        'admin/Pengaturan.svelte',
+        'admin/JadwalGuru.svelte',
+        'admin/Pengumuman.svelte',
+        'admin/Kantor.svelte',
+        'admin/TahunAjaran.svelte',
+        'admin/User.svelte',
+        'admin/Dashboard.svelte',
+    ];
 
-    expect($guru)->toContain('<Button type="submit"')
-        ->and(substr_count($pengaturan, '<Button type="submit"'))->toBe(3);
+    foreach ($halaman as $berkas) {
+        $isi = file_get_contents(resource_path('js/pages/'.$berkas));
+
+        // Dicocokkan lewat atributnya saja: Prettier kerap memindahkan
+        // type="submit" ke baris berikutnya, jadi '<Button type=' tidak andal.
+        expect(substr_count($isi, 'type="submit"'))
+            ->toBe(substr_count($isi, '<form'), $berkas);
+    }
 });

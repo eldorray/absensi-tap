@@ -3,6 +3,7 @@
 use App\Models\HariLibur;
 use App\Models\JadwalKerja;
 use App\Models\Lokasi;
+use App\Models\PengaturanAbsensi;
 use Database\Seeders\JadwalKerjaSeeder;
 use Illuminate\Database\QueryException;
 
@@ -13,7 +14,8 @@ test('seeder mengisi tujuh hari dengan Minggu bukan hari kerja', function () {
         ->and(JadwalKerja::where('day_of_week', 0)->value('is_hari_kerja'))->toBeFalsy()
         ->and(JadwalKerja::where('day_of_week', 1)->value('is_hari_kerja'))->toBeTruthy()
         ->and(JadwalKerja::where('day_of_week', 1)->value('jam_masuk'))->toBe('07:00:00')
-        ->and(JadwalKerja::where('day_of_week', 1)->value('toleransi_menit'))->toBe(10);
+        ->and(JadwalKerja::whereNotNull('user_id')->count())->toBe(0)
+        ->and(PengaturanAbsensi::current()->toleransi_menit)->toBe(10);
 });
 
 test('seeder bisa dijalankan dua kali tanpa menduplikasi', function () {

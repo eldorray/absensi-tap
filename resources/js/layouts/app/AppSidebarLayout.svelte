@@ -19,6 +19,8 @@
     } = $props();
 
     const isAdmin = $derived(page.props.auth.isAdmin === true);
+    const tahunAjaran = $derived(page.props.tahunAjaran);
+    const namaAplikasi = $derived(page.props.aplikasi?.nama ?? 'Absensi Guru');
     const userName = $derived(page.props.auth.user.name);
 </script>
 
@@ -27,6 +29,15 @@
         <AppSidebar />
         <AppContent variant="sidebar" class="min-w-0 overflow-x-clip">
             <AppSidebarHeader {breadcrumbs} />
+            {#if tahunAjaran && !tahunAjaran.is_active}
+                <div
+                    class="mx-4 mt-4 rounded-2xl bg-[var(--g-yellow-c)] px-4 py-3 text-sm text-[var(--g-yellow-ink)] sm:mx-6"
+                >
+                    Sedang melihat data tahun ajaran <b>{tahunAjaran.nama}</b>,
+                    bukan tahun yang aktif. Angka di halaman ini milik tahun
+                    tersebut.
+                </div>
+            {/if}
             {@render children?.()}
         </AppContent>
         <Toaster />
@@ -44,7 +55,7 @@
                     <p
                         class="text-xs font-semibold tracking-[0.14em] text-primary uppercase"
                     >
-                        Absensi Guru
+                        {namaAplikasi}
                     </p>
                     <p class="max-w-56 truncate text-sm font-semibold">
                         {userName}

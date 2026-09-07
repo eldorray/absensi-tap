@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\StatusAbsensi;
+use App\Models\Concerns\BelongsToTahunAjaran;
 use Database\Factories\AbsensiFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -25,6 +26,8 @@ use Illuminate\Support\Carbon;
 #[Fillable(['user_id', 'tanggal', 'masuk_attempt_id', 'pulang_attempt_id', 'status', 'pulang_cepat'])]
 class Absensi extends Model
 {
+    use BelongsToTahunAjaran;
+
     /** @use HasFactory<AbsensiFactory> */
     use HasFactory;
 

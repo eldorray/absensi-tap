@@ -18,10 +18,10 @@ class JadwalKerjaFactory extends Factory
     public function definition(): array
     {
         return [
+            'user_id' => null,
             'day_of_week' => fake()->unique()->numberBetween(0, 6),
             'jam_masuk' => '07:00:00',
             'jam_pulang' => '14:00:00',
-            'toleransi_menit' => 10,
             'is_hari_kerja' => true,
         ];
     }

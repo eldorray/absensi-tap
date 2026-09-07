@@ -7,13 +7,18 @@
         <meta name="mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="default">
-        <meta name="apple-mobile-web-app-title" content="Absensi">
-        <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-        <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)">
+        <meta name="apple-mobile-web-app-title" content="{{ $namaAplikasi }}">
+        <meta name="theme-color" content="#2f6d21" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#1f4a1c" media="(prefers-color-scheme: dark)">
 
-        <link rel="icon" href="/favicon.ico" sizes="any">
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+        @if ($faviconAplikasi)
+            <link rel="icon" href="{{ $faviconAplikasi }}">
+            <link rel="apple-touch-icon" href="{{ $faviconAplikasi }}">
+        @else
+            <link rel="icon" href="/favicon.ico" sizes="any">
+            <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+            <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+        @endif
         <link rel="manifest" href="/manifest.webmanifest">
 
         <script>
@@ -26,7 +31,7 @@
 
         @vite(['resources/css/app.css', 'resources/js/app.ts'])
         <x-inertia::head>
-            <title>{{ config('app.name', 'Laravel') }}</title>
+            <title>{{ $namaAplikasi }}</title>
         </x-inertia::head>
     </head>
     <body class="font-sans antialiased">

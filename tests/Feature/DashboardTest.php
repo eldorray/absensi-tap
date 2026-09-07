@@ -20,7 +20,9 @@ test('guru melihat halaman tap dengan jadwal hari ini', function () {
             ->where('jadwal.jam_pulang', '14:00')
             ->where('jadwal.is_hari_kerja', true)
             ->where('hariIni', null)
-            ->where('namaLokasi', 'Gerbang Utama')
+            ->where('lokasis.0.nama', 'Gerbang Utama')
+            ->has('lokasis.0.latitude')
+            ->has('lokasis.0.radius_meter')
             ->where('punyaPasskey', false)
         );
 });

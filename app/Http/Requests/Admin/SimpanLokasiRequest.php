@@ -11,6 +11,7 @@ class SimpanLokasiRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'kantor_id' => ['nullable', 'integer', 'exists:kantors,id'],
             'nama' => ['required', 'string', 'max:100'],
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],

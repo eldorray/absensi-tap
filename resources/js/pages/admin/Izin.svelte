@@ -6,11 +6,13 @@
 
 <script lang="ts">
     import { router } from '@inertiajs/svelte';
+    import Check from 'lucide-svelte/icons/check';
+    import X from 'lucide-svelte/icons/x';
     import { update } from '@/actions/App/Http/Controllers/Admin/IzinController';
     import { lampiran } from '@/actions/App/Http/Controllers/IzinController';
     import AppHead from '@/components/AppHead.svelte';
+    import TombolIkon from '@/components/TombolIkon.svelte';
     import { Badge } from '@/components/ui/badge';
-    import { Button } from '@/components/ui/button';
 
     type IzinBaris = {
         id: number;
@@ -86,20 +88,19 @@
                                 bind:value={catatan[izin.id]}
                                 class="h-10 rounded-md border border-input bg-background px-3 text-base"
                             />
-                            <div class="flex gap-2">
-                                <Button
-                                    size="sm"
+                            <div class="flex gap-1">
+                                <TombolIkon
+                                    ikon={Check}
+                                    nada="hijau"
+                                    label={`Setujui izin ${izin.guru}`}
                                     onclick={() => review(izin.id, 'disetujui')}
-                                >
-                                    Setujui
-                                </Button>
-                                <Button
-                                    size="sm"
-                                    variant="outline"
+                                />
+                                <TombolIkon
+                                    ikon={X}
+                                    nada="merah"
+                                    label={`Tolak izin ${izin.guru}`}
                                     onclick={() => review(izin.id, 'ditolak')}
-                                >
-                                    Tolak
-                                </Button>
+                                />
                             </div>
                         {:else if izin.catatan_review}
                             <p class="text-sm text-muted-foreground">

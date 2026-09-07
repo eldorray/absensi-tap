@@ -40,7 +40,10 @@ class ProfileController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Profile updated.')]);
 
-        return to_route('profile.edit');
+        // Kembali ke halaman asal: formnya dipakai di halaman setelan dan di
+        // bottom sheet profil guru, yang tidak boleh melempar guru keluar dari
+        // halaman absen.
+        return back();
     }
 
     /**

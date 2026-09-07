@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Admin;
 use App\Actions\Absensi\RekapBulanan;
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
+use App\Models\PengaturanAplikasi;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -24,6 +26,32 @@ class RekapController extends Controller
                 ->orderBy('name')
                 ->get(['id', 'name']),
             'rekap' => $rekapBulanan($tahun, $bulan, $userId),
+        ]);
+    }
+
+    /**
+     * Laporan bulanan siap cetak.
+     *
+     * Dirender sebagai HTML, bukan berkas PDF dari server: aplikasi ini belum
+     * memuat pustaka PDF apa pun, dan "Simpan sebagai PDF" di peramban
+     * menghasilkan berkas yang sama tanpa menambah dependensi.
+     */
+    public function cetak(Request $request, RekapBulanan $rekapBulanan): View
+    {
+        [$tahun, $bulan, $userId] = $this->filter($request);
+        $rekap = $rekapBulanan($tahun, $bulan, $userId);
+
+        $namaBulan = [
+            1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+            'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+        ];
+
+        return view('admin.rekap-cetak', [
+            'aplikasi' => PengaturanAplikasi::current(),
+            'periode' => $namaBulan[$bulan].' '.$tahun,
+            'dicetak' => now()->translatedFormat('d F Y H:i'),
+            'baris' => $rekap['baris'],
+            'totalHariEfektif' => collect($rekap['baris'])->max('hari_efektif') ?? 0,
         ]);
     }
 

@@ -2,6 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\PengaturanAplikasi;
+use App\Models\TahunAjaran;
+use App\Support\TahunAjaranTerpilih;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -37,14 +40,42 @@ class HandleInertiaRequests extends Middleware
     {
         return [
             ...parent::share($request),
-            'name' => config('app.name'),
+            // Nama dan logo diambil dari pengaturan, bukan config: sekolah
+            // mengubahnya sendiri dari layar tanpa menyentuh .env.
+            'name' => fn (): string => PengaturanAplikasi::current()->nama,
+            'aplikasi' => fn (): array => [
+                'nama' => PengaturanAplikasi::current()->nama,
+                'logo_url' => PengaturanAplikasi::current()->logoUrl(),
+            ],
             'auth' => [
                 'user' => $request->user(),
                 // This flag only controls menu visibility. Authorization remains
                 // enforced by the `admin` gate on the route group.
                 'isAdmin' => (bool) $request->user()?->can('admin'),
             ],
+            // Penanda tahun ajaran: is_active false berarti admin sedang
+            // menengok tahun lain, dan setiap angka di layar bukan tahun aktif.
+            'tahunAjaran' => fn (): ?array => $this->tahunAjaran(),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+        ];
+    }
+
+    /**
+     * @return array{nama: string, is_active: bool}|null
+     */
+    private function tahunAjaran(): ?array
+    {
+        $id = app(TahunAjaranTerpilih::class)->id();
+
+        if ($id === null) {
+            return null;
+        }
+
+        $tahun = TahunAjaran::query()->whereKey($id)->first();
+
+        return $tahun === null ? null : [
+            'nama' => $tahun->nama,
+            'is_active' => $tahun->is_active,
         ];
     }
 }

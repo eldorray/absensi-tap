@@ -34,6 +34,16 @@
 
     const close = () => setOpen(false);
 
+    // An ancestor with transform/filter/backdrop-filter becomes the containing
+    // block for `position: fixed`, so the overlay must live on <body>.
+    function portal(node: HTMLElement) {
+        document.body.appendChild(node);
+
+        return {
+            destroy: () => node.remove(),
+        };
+    }
+
     const panelTransition = () => {
         const axis =
             side === 'left'
@@ -49,7 +59,7 @@
 </script>
 
 {#if open()}
-    <div class="fixed inset-0 z-50">
+    <div class="fixed inset-0 z-50" use:portal>
         <button
             type="button"
             class="fixed inset-0 border-0 bg-black/50"

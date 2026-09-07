@@ -18,16 +18,17 @@
         nama_hari: string;
         jam_masuk: string;
         jam_pulang: string;
-        toleransi_menit: number;
         is_hari_kerja: boolean;
     };
 
     let {
         jadwals,
         hariIni,
+        toleransiMenit,
     }: {
         jadwals: Jadwal[];
         hariIni: number;
+        toleransiMenit: number;
     } = $props();
 </script>
 
@@ -104,7 +105,7 @@
                         </div>
                     </div>
                     <p class="text-xs text-muted-foreground">
-                        Toleransi keterlambatan {jadwal.toleransi_menit} menit
+                        Toleransi keterlambatan {toleransiMenit} menit
                     </p>
                 {/if}
             </article>

@@ -20,6 +20,14 @@ declare module '@inertiajs/core' {
     export interface InertiaConfig {
         sharedPageProps: {
             name: string;
+            aplikasi?: {
+                nama: string;
+                logo_url: string | null;
+            };
+            tahunAjaran?: {
+                nama: string;
+                is_active: boolean;
+            } | null;
             auth: Auth;
             sidebarOpen: boolean;
             [key: string]: unknown;

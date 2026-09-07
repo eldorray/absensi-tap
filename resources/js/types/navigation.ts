@@ -1,7 +1,7 @@
 import type { LinkComponentBaseProps } from '@inertiajs/core';
 import type { Component, SvelteComponent } from 'svelte';
 
-type NavIcon =
+export type NavIcon =
     | Component<{ class?: string }>
     | (new (...args: any[]) => SvelteComponent<{ class?: string }>);
 

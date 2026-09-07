@@ -7,6 +7,7 @@ use App\Enums\HasilTap;
 use App\Enums\StatusAbsensi;
 use App\Models\Absensi;
 use App\Models\AbsensiAttempt;
+use App\Models\JadwalKerja;
 use App\Models\Perangkat;
 use App\Models\User;
 use Illuminate\Support\Carbon;
@@ -193,13 +194,115 @@ test('tap pulang sebelum jam pulang ditandai pulang cepat', function () {
 
     $this->actingAs($guru)->post(route('absensi.store'), payloadTap($perangkat));
 
-    Carbon::setTestNow('2026-09-07 12:00:00');
+    // 13:45: sesudah jendela pulang dibuka (13:30), sebelum jam pulang (14:00).
+    Carbon::setTestNow('2026-09-07 13:45:00');
     $this->actingAs($guru)->post(route('absensi.store'), payloadTap($perangkat, 'pulang'));
 
     $absensi = Absensi::where('user_id', $guru->id)->firstOrFail();
 
     expect($absensi->pulang_cepat)->toBeTrue()
         ->and($absensi->pulang_attempt_id)->not->toBeNull();
+});
+
+test('tap masuk sebelum jendela absen dibuka ditolak', function () {
+    // Jendela masuk dibuka 06:00 (jam_masuk 07:00 dikurangi 60 menit).
+    Carbon::setTestNow('2026-09-07 05:59:00');
+
+    [$guru, $perangkat] = guruSiapAbsen();
+
+    $this->actingAs($guru)
+        ->post(route('absensi.store'), payloadTap($perangkat))
+        ->assertSessionHasErrors('tap');
+
+    expect(Absensi::count())->toBe(0)
+        ->and(AbsensiAttempt::where('hasil', HasilTap::LuarJadwal)->count())->toBe(1);
+});
+
+test('tap masuk setelah jendela absen ditutup ditolak', function () {
+    // Jendela masuk ditutup 09:00 (jam_masuk 07:00 ditambah 120 menit).
+    Carbon::setTestNow('2026-09-07 09:01:00');
+
+    [$guru, $perangkat] = guruSiapAbsen();
+
+    $this->actingAs($guru)
+        ->post(route('absensi.store'), payloadTap($perangkat))
+        ->assertSessionHasErrors('tap');
+
+    expect(Absensi::count())->toBe(0)
+        ->and(AbsensiAttempt::where('hasil', HasilTap::LuarJadwal)->count())->toBe(1);
+});
+
+test('tap tepat saat jendela masuk dibuka diterima', function () {
+    Carbon::setTestNow('2026-09-07 06:00:00');
+
+    [$guru, $perangkat] = guruSiapAbsen();
+
+    $this->actingAs($guru)
+        ->post(route('absensi.store'), payloadTap($perangkat))
+        ->assertSessionHasNoErrors();
+
+    expect(Absensi::where('user_id', $guru->id)->value('status'))->toBe(StatusAbsensi::Hadir);
+});
+
+test('tap pulang sebelum jendela pulang dibuka ditolak', function () {
+    [$guru, $perangkat] = guruSiapAbsen();
+
+    $this->actingAs($guru)->post(route('absensi.store'), payloadTap($perangkat));
+
+    // Jendela pulang dibuka 13:30 (jam_pulang 14:00 dikurangi 30 menit).
+    Carbon::setTestNow('2026-09-07 13:29:00');
+
+    $this->actingAs($guru)
+        ->post(route('absensi.store'), payloadTap($perangkat, 'pulang'))
+        ->assertSessionHasErrors('tap');
+
+    expect(Absensi::where('user_id', $guru->id)->value('pulang_attempt_id'))->toBeNull()
+        ->and(AbsensiAttempt::where('hasil', HasilTap::LuarJadwal)->count())->toBe(1);
+});
+
+test('jadwal khusus guru menggeser jendela absennya', function () {
+    // Jadwal sendiri 09:00-16:00: jendela masuk baru buka 08:00.
+    [$guru, $perangkat] = guruSiapAbsen();
+    JadwalKerja::create([
+        'user_id' => $guru->id,
+        'day_of_week' => 1,
+        'jam_masuk' => '09:00:00',
+        'jam_pulang' => '16:00:00',
+        'is_hari_kerja' => true,
+    ]);
+
+    $this->actingAs($guru)
+        ->post(route('absensi.store'), payloadTap($perangkat))
+        ->assertSessionHasErrors('tap');
+
+    Carbon::setTestNow('2026-09-07 09:05:00');
+
+    $this->actingAs($guru)
+        ->post(route('absensi.store'), payloadTap($perangkat))
+        ->assertSessionHasNoErrors();
+
+    expect(Absensi::where('user_id', $guru->id)->value('status'))->toBe(StatusAbsensi::Hadir);
+});
+
+test('guru lain tetap memakai jadwal default saat satu guru punya jadwal sendiri', function () {
+    [$guru, $perangkat] = guruSiapAbsen();
+    JadwalKerja::create([
+        'user_id' => $guru->id,
+        'day_of_week' => 1,
+        'jam_masuk' => '09:00:00',
+        'jam_pulang' => '16:00:00',
+        'is_hari_kerja' => true,
+    ]);
+
+    $lain = User::factory()->create();
+    $perangkatLain = Perangkat::factory()->for($lain)->create();
+
+    // 07:00 masih di dalam jendela default (06:00-09:00).
+    $this->actingAs($lain)
+        ->post(route('absensi.store'), payloadTap($perangkatLain))
+        ->assertSessionHasNoErrors();
+
+    expect(Absensi::where('user_id', $lain->id)->value('status'))->toBe(StatusAbsensi::Hadir);
 });
 
 test('koordinat di luar rentang bumi ditolak validasi', function () {

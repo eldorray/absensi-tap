@@ -2204,7 +2204,7 @@ test('tap setelah jam masuk plus toleransi berstatus terlambat', function () {
 
     $this->actingAs($guru)->post(route('absensi.store'), payloadTap($perangkat));
 
-    expect(Absensi::where('user_id', $guru->id)->value('status'))->toBe(StatusAbsensi::Terlambat->value);
+    expect(Absensi::where('user_id', $guru->id)->value('status'))->toBe(StatusAbsensi::Terlambat);
 });
 
 test('tap tepat di batas toleransi masih hadir', function () {
@@ -2214,7 +2214,7 @@ test('tap tepat di batas toleransi masih hadir', function () {
 
     $this->actingAs($guru)->post(route('absensi.store'), payloadTap($perangkat));
 
-    expect(Absensi::where('user_id', $guru->id)->value('status'))->toBe(StatusAbsensi::Hadir->value);
+    expect(Absensi::where('user_id', $guru->id)->value('status'))->toBe(StatusAbsensi::Hadir);
 });
 
 test('tap pulang sebelum jam pulang ditandai pulang cepat', function () {
@@ -3792,9 +3792,9 @@ Dalam group `['auth', 'verified']` di `routes/web.php`:
     function kirim(event: SubmitEvent): void {
         event.preventDefault();
 
-        $form.post(ajukanIzin.url(), {
+        form.post(ajukanIzin.url(), {
             forceFormData: true,
-            onSuccess: () => $form.reset(),
+            onSuccess: () => form.reset(),
         });
     }
 </script>
@@ -3810,26 +3810,26 @@ Dalam group `['auth', 'verified']` di `routes/web.php`:
                 <Label for="tipe">Jenis</Label>
                 <select
                     id="tipe"
-                    bind:value={$form.tipe}
+                    bind:value={form.tipe}
                     class="h-10 rounded-md border border-input bg-background px-3 text-base"
                 >
                     <option value="izin">Izin</option>
                     <option value="sakit">Sakit</option>
                     <option value="cuti">Cuti</option>
                 </select>
-                <InputError message={$form.errors.tipe} />
+                <InputError message={form.errors.tipe} />
             </div>
 
             <div class="grid gap-4 sm:grid-cols-2">
                 <div class="grid gap-2">
                     <Label for="mulai">Tanggal mulai</Label>
-                    <Input id="mulai" type="date" bind:value={$form.tanggal_mulai} />
-                    <InputError message={$form.errors.tanggal_mulai} />
+                    <Input id="mulai" type="date" bind:value={form.tanggal_mulai} />
+                    <InputError message={form.errors.tanggal_mulai} />
                 </div>
                 <div class="grid gap-2">
                     <Label for="selesai">Tanggal selesai</Label>
-                    <Input id="selesai" type="date" bind:value={$form.tanggal_selesai} />
-                    <InputError message={$form.errors.tanggal_selesai} />
+                    <Input id="selesai" type="date" bind:value={form.tanggal_selesai} />
+                    <InputError message={form.errors.tanggal_selesai} />
                 </div>
             </div>
 
@@ -3838,10 +3838,10 @@ Dalam group `['auth', 'verified']` di `routes/web.php`:
                 <textarea
                     id="alasan"
                     rows="3"
-                    bind:value={$form.alasan}
+                    bind:value={form.alasan}
                     class="rounded-md border border-input bg-background p-3 text-base"
                 ></textarea>
-                <InputError message={$form.errors.alasan} />
+                <InputError message={form.errors.alasan} />
             </div>
 
             <div class="grid gap-2">
@@ -3851,14 +3851,14 @@ Dalam group `['auth', 'verified']` di `routes/web.php`:
                     type="file"
                     accept="application/pdf,image/jpeg,image/png"
                     onchange={(event) => {
-                        $form.lampiran = event.currentTarget.files?.[0] ?? null;
+                        form.lampiran = event.currentTarget.files?.[0] ?? null;
                     }}
                     class="text-sm"
                 />
-                <InputError message={$form.errors.lampiran} />
+                <InputError message={form.errors.lampiran} />
             </div>
 
-            <Button type="submit" disabled={$form.processing}>Kirim pengajuan</Button>
+            <Button type="submit" disabled={form.processing}>Kirim pengajuan</Button>
         </form>
     </section>
 
@@ -4603,8 +4603,8 @@ Dalam group admin:
     /** Isi koordinat dari GPS perangkat admin -- dipakai saat berdiri di gerbang. */
     function pakaiLokasiSaya(): void {
         navigator.geolocation.getCurrentPosition((posisi) => {
-            $formLokasi.latitude = posisi.coords.latitude.toFixed(7);
-            $formLokasi.longitude = posisi.coords.longitude.toFixed(7);
+            formLokasi.latitude = posisi.coords.latitude.toFixed(7);
+            formLokasi.longitude = posisi.coords.longitude.toFixed(7);
         });
     }
 </script>
@@ -4630,34 +4630,34 @@ Dalam group admin:
             class="grid gap-3 sm:grid-cols-2"
             onsubmit={(event) => {
                 event.preventDefault();
-                $formLokasi.post('/admin/lokasi', { onSuccess: () => $formLokasi.reset() });
+                formLokasi.post('/admin/lokasi', { onSuccess: () => formLokasi.reset() });
             }}
         >
             <div class="grid gap-2 sm:col-span-2">
                 <Label for="nama">Nama lokasi</Label>
-                <Input id="nama" bind:value={$formLokasi.nama} />
-                <InputError message={$formLokasi.errors.nama} />
+                <Input id="nama" bind:value={formLokasi.nama} />
+                <InputError message={formLokasi.errors.nama} />
             </div>
             <div class="grid gap-2">
                 <Label for="lat">Latitude</Label>
-                <Input id="lat" bind:value={$formLokasi.latitude} />
-                <InputError message={$formLokasi.errors.latitude} />
+                <Input id="lat" bind:value={formLokasi.latitude} />
+                <InputError message={formLokasi.errors.latitude} />
             </div>
             <div class="grid gap-2">
                 <Label for="lng">Longitude</Label>
-                <Input id="lng" bind:value={$formLokasi.longitude} />
-                <InputError message={$formLokasi.errors.longitude} />
+                <Input id="lng" bind:value={formLokasi.longitude} />
+                <InputError message={formLokasi.errors.longitude} />
             </div>
             <div class="grid gap-2">
                 <Label for="radius">Radius (meter)</Label>
-                <Input id="radius" type="number" bind:value={$formLokasi.radius_meter} />
-                <InputError message={$formLokasi.errors.radius_meter} />
+                <Input id="radius" type="number" bind:value={formLokasi.radius_meter} />
+                <InputError message={formLokasi.errors.radius_meter} />
             </div>
             <div class="flex items-end gap-2">
                 <Button type="button" variant="outline" onclick={pakaiLokasiSaya}>
                     Pakai lokasi saya
                 </Button>
-                <Button type="submit" disabled={$formLokasi.processing}>Tambah</Button>
+                <Button type="submit" disabled={formLokasi.processing}>Tambah</Button>
             </div>
         </form>
     </section>
@@ -4669,23 +4669,23 @@ Dalam group admin:
             class="grid gap-3"
             onsubmit={(event) => {
                 event.preventDefault();
-                $formJadwal.put('/admin/jadwal');
+                formJadwal.put('/admin/jadwal');
             }}
         >
-            {#each $formJadwal.jadwals as jadwal, index (jadwal.day_of_week)}
+            {#each formJadwal.jadwals as jadwal, index (jadwal.day_of_week)}
                 <div class="grid grid-cols-2 items-end gap-2 sm:grid-cols-5">
                     <span class="text-sm font-medium">{namaHari[jadwal.day_of_week]}</span>
-                    <Input type="time" bind:value={$formJadwal.jadwals[index].jam_masuk} />
-                    <Input type="time" bind:value={$formJadwal.jadwals[index].jam_pulang} />
-                    <Input type="number" bind:value={$formJadwal.jadwals[index].toleransi_menit} />
+                    <Input type="time" bind:value={formJadwal.jadwals[index].jam_masuk} />
+                    <Input type="time" bind:value={formJadwal.jadwals[index].jam_pulang} />
+                    <Input type="number" bind:value={formJadwal.jadwals[index].toleransi_menit} />
                     <label class="flex items-center gap-2 text-sm">
-                        <input type="checkbox" bind:checked={$formJadwal.jadwals[index].is_hari_kerja} />
+                        <input type="checkbox" bind:checked={formJadwal.jadwals[index].is_hari_kerja} />
                         Hari kerja
                     </label>
                 </div>
             {/each}
 
-            <Button type="submit" disabled={$formJadwal.processing}>Simpan jadwal</Button>
+            <Button type="submit" disabled={formJadwal.processing}>Simpan jadwal</Button>
         </form>
     </section>
 
@@ -4711,21 +4711,21 @@ Dalam group admin:
             class="grid gap-3 sm:grid-cols-3"
             onsubmit={(event) => {
                 event.preventDefault();
-                $formLibur.post('/admin/hari-libur', { onSuccess: () => $formLibur.reset() });
+                formLibur.post('/admin/hari-libur', { onSuccess: () => formLibur.reset() });
             }}
         >
             <div class="grid gap-2">
                 <Label for="tanggal">Tanggal</Label>
-                <Input id="tanggal" type="date" bind:value={$formLibur.tanggal} />
-                <InputError message={$formLibur.errors.tanggal} />
+                <Input id="tanggal" type="date" bind:value={formLibur.tanggal} />
+                <InputError message={formLibur.errors.tanggal} />
             </div>
             <div class="grid gap-2">
                 <Label for="namaLibur">Keterangan</Label>
-                <Input id="namaLibur" bind:value={$formLibur.nama} />
-                <InputError message={$formLibur.errors.nama} />
+                <Input id="namaLibur" bind:value={formLibur.nama} />
+                <InputError message={formLibur.errors.nama} />
             </div>
             <div class="flex items-end">
-                <Button type="submit" disabled={$formLibur.processing}>Tambah</Button>
+                <Button type="submit" disabled={formLibur.processing}>Tambah</Button>
             </div>
         </form>
     </section>
@@ -5104,31 +5104,31 @@ Dalam group admin:
             class="grid gap-3 sm:grid-cols-2"
             onsubmit={(event) => {
                 event.preventDefault();
-                $form.post('/admin/guru', { onSuccess: () => $form.reset() });
+                form.post('/admin/guru', { onSuccess: () => form.reset() });
             }}
         >
             <div class="grid gap-2">
                 <Label for="name">Nama</Label>
-                <Input id="name" bind:value={$form.name} />
-                <InputError message={$form.errors.name} />
+                <Input id="name" bind:value={form.name} />
+                <InputError message={form.errors.name} />
             </div>
             <div class="grid gap-2">
                 <Label for="nip">NIP (opsional)</Label>
-                <Input id="nip" bind:value={$form.nip} />
-                <InputError message={$form.errors.nip} />
+                <Input id="nip" bind:value={form.nip} />
+                <InputError message={form.errors.nip} />
             </div>
             <div class="grid gap-2">
                 <Label for="email">Email</Label>
-                <Input id="email" type="email" bind:value={$form.email} />
-                <InputError message={$form.errors.email} />
+                <Input id="email" type="email" bind:value={form.email} />
+                <InputError message={form.errors.email} />
             </div>
             <div class="grid gap-2">
                 <Label for="password">Password awal</Label>
-                <Input id="password" type="password" bind:value={$form.password} />
-                <InputError message={$form.errors.password} />
+                <Input id="password" type="password" bind:value={form.password} />
+                <InputError message={form.errors.password} />
             </div>
             <div class="sm:col-span-2">
-                <Button type="submit" disabled={$form.processing}>Buat akun</Button>
+                <Button type="submit" disabled={form.processing}>Buat akun</Button>
             </div>
         </form>
     </section>

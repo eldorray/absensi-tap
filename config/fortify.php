@@ -161,7 +161,11 @@ return [
     */
 
     'features' => [
-        Features::registration(),
+        // Pendaftaran sendiri dimatikan: akun guru dibuat admin lewat
+        // /admin/guru (manual atau impor CSV). Menyalakannya kembali berarti
+        // mengaktifkan baris ini, mengembalikan Fortify::registerView, dan
+        // membuat ulang halaman auth/Register.
+        // Features::registration(),
         Features::resetPasswords(),
         Features::emailVerification(),
         Features::twoFactorAuthentication([

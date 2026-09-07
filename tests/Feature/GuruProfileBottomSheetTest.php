@@ -12,7 +12,6 @@ test('avatar guru membuka modal bottom sheet profil', function () {
         ->toContain('side="bottom"')
         ->toContain('aria-label="Buka profil"')
         ->toContain('Edit profil')
-        ->toContain('Keamanan akun')
         ->toContain('Tampilan')
         ->toContain('Akun terverifikasi')
         ->toContain('Pengaturan akun')
@@ -23,6 +22,21 @@ test('avatar guru membuka modal bottom sheet profil', function () {
         ->not->toContain('-translate-x-1/2')
         ->not->toContain('max-h-[92svh]')
         ->toContain('Keluar');
+
+    // Keamanan akun disembunyikan dari guru: menunya hanya dirender untuk admin.
+    expect($profileSheet)
+        ->toContain('{#if isAdmin}')
+        ->toContain('Keamanan akun');
+
+    // Edit profil dan Tampilan dibuka sebagai panel di dalam sheet yang sama,
+    // bukan pindah halaman.
+    expect($profileSheet)
+        ->toContain("bukaPanel('profil')")
+        ->toContain("bukaPanel('tampilan')")
+        ->toContain('<AppearanceTabs />')
+        ->toContain('ProfileController.update()')
+        ->not->toContain('profileEdit()')
+        ->not->toContain('appearanceEdit()');
 
     expect(file_get_contents(resource_path('js/components/ui/sheet/SheetContent.svelte')))
         ->not->toContain("'fixed relative flex");
