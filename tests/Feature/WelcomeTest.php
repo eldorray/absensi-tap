@@ -79,7 +79,16 @@ test('welcome tersusun untuk HP dan PWA terpasang', function () {
 
     expect(file_get_contents(resource_path('views/app.blade.php')))
         ->toContain('content="#2f6d21"')
-        ->toContain('viewport-fit=cover');
+        ->toContain('viewport-fit=cover')
+        ->toContain('maximum-scale=1.0')
+        ->toContain('user-scalable=no')
+        ->toContain('/pwa-apple-touch.png');
+
+    $css = file_get_contents(resource_path('css/app.css'));
+
+    expect($css)
+        ->toContain('overscroll-behavior: none')
+        ->toContain('touch-action: pan-y');
 });
 
 test('welcome menawarkan instalasi pwa untuk android dan iphone', function () {

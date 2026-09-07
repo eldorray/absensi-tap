@@ -386,13 +386,28 @@
 @layer base {
     html {
         -webkit-text-size-adjust: 100%;
+        width: 100%;
+        min-height: 100%;
+        overflow-x: hidden;
+        overscroll-behavior: none;
+        touch-action: pan-y;
     }
 
     body {
         /* Matikan bounce dan pull-to-refresh iOS: keduanya terasa seperti bug
            di app yang terpasang. */
-        overscroll-behavior-y: none;
+        width: 100%;
+        min-height: 100%;
+        overflow-x: hidden;
+        overscroll-behavior: none;
+        touch-action: pan-y;
         -webkit-tap-highlight-color: transparent;
+    }
+
+    #app {
+        width: 100%;
+        min-height: 100dvh;
+        overflow-x: clip;
     }
 
     /*
