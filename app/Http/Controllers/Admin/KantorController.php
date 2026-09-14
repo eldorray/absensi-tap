@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SimpanKantorRequest;
 use App\Models\Kantor;
 use App\Models\Lokasi;
+use App\Models\Siswa;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -63,9 +64,23 @@ class KantorController extends Controller
     /**
      * Hapus kantor. Guru dan lokasinya tidak ikut terhapus, hanya lepas
      * penugasan (nullOnDelete) supaya absen tetap jalan.
+     *
+     * Siswa lain ceritanya: kalau kantor ini masih punya siswa, menghapusnya
+     * berarti membuang buku induk beserta seluruh riwayat kehadirannya, jadi
+     * permintaannya ditolak dengan kalimat -- bukan dibiarkan jadi galat
+     * foreign key.
      */
     public function destroy(Kantor $kantor): RedirectResponse
     {
+        if (Siswa::query()->where('kantor_id', $kantor->id)->exists()) {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => 'Kantor masih punya siswa. Pindahkan atau nonaktifkan siswanya dulu.',
+            ]);
+
+            return to_route('admin.kantor.index');
+        }
+
         $kantor->delete();
         Inertia::flash('toast', [
             'type' => 'success',
