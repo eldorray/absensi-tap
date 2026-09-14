@@ -14,6 +14,7 @@ export type Auth = {
     user: User;
     role: 'guru' | 'admin' | 'orang_tua' | null;
     isAdmin: boolean;
+    punyaKelas?: boolean;
 };
 
 export type Passkey = {

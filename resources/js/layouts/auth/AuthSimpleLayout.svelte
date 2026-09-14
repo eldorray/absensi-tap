@@ -5,6 +5,7 @@
     import Smartphone from 'lucide-svelte/icons/smartphone';
     import type { Snippet } from 'svelte';
     import AppLogoIcon from '@/components/AppLogoIcon.svelte';
+    import AppVersion from '@/components/AppVersion.svelte';
     import InstallPrompt from '@/components/InstallPrompt.svelte';
     import { toUrl } from '@/lib/utils';
     import { home } from '@/routes';
@@ -93,6 +94,8 @@
                 <div class="mt-8">
                     {@render children?.()}
                 </div>
+
+                <AppVersion class="mt-10" />
             </div>
         </main>
     </div>

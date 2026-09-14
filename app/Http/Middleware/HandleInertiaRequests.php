@@ -44,6 +44,7 @@ class HandleInertiaRequests extends Middleware
             // Nama dan logo diambil dari pengaturan, bukan config: sekolah
             // mengubahnya sendiri dari layar tanpa menyentuh .env.
             'name' => fn (): string => PengaturanAplikasi::current()->nama,
+            'versi' => config('app.version'),
             'aplikasi' => fn (): array => [
                 'nama' => PengaturanAplikasi::current()->nama,
                 'logo_url' => PengaturanAplikasi::current()->logoUrl(),
