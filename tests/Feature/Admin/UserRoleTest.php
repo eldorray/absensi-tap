@@ -23,7 +23,7 @@ test('admin melihat seluruh akun beserta role dan kantornya', function () {
         ->assertInertia(fn ($p) => $p->component('admin/User')
             ->has('users', 2)
             ->has('kantors', 1)
-            ->has('roles', 2)
+            ->has('roles', 3)
             ->where('users.0.name', 'Bu Ani')
             ->where('users.0.kantor', 'MI Syekh Yusuf'));
 });
@@ -101,7 +101,7 @@ test('halaman kelola role menampilkan akses dan pemegangnya', function () {
         ->get(route('admin.role.index'))
         ->assertOk()
         ->assertInertia(fn ($p) => $p->component('admin/Role')
-            ->has('roles', 2)
+            ->has('roles', 3)
             ->where('roles.0.value', 'guru')
             ->has('roles.0.akses')
             ->has('roles.0.pemegang'));
