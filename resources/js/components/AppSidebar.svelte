@@ -18,6 +18,7 @@
     import Users from 'lucide-svelte/icons/users';
     import type { Snippet } from 'svelte';
     import AppLogo from '@/components/AppLogo.svelte';
+    import AppVersion from '@/components/AppVersion.svelte';
     import NavDropdown from '@/components/NavDropdown.svelte';
     import NavMain from '@/components/NavMain.svelte';
     import NavUser from '@/components/NavUser.svelte';
@@ -159,6 +160,7 @@
         <!-- Tautan Repository dan Documentation bawaan starter kit dibuang:
              itu dokumentasi Laravel, bukan aplikasi ini. -->
         <NavUser />
+        <AppVersion />
     </SidebarFooter>
 </Sidebar>
 {@render children?.()}

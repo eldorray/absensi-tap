@@ -10,6 +10,7 @@
     import UserRound from 'lucide-svelte/icons/user-round';
     import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
     import AppearanceTabs from '@/components/AppearanceTabs.svelte';
+    import AppVersion from '@/components/AppVersion.svelte';
     import { Button } from '@/components/ui/button';
     import { Input } from '@/components/ui/input';
     import { Label } from '@/components/ui/label';
@@ -285,6 +286,8 @@
                 >
                     Absensi Guru · Data akun tersimpan dengan aman
                 </p>
+
+                <AppVersion class="mt-1" />
             {:else if panel === 'profil'}
                 <form
                     class="grid gap-4"

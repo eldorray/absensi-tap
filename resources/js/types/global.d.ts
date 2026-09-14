@@ -20,6 +20,7 @@ declare module '@inertiajs/core' {
     export interface InertiaConfig {
         sharedPageProps: {
             name: string;
+            versi: string;
             aplikasi?: {
                 nama: string;
                 logo_url: string | null;

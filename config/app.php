@@ -17,6 +17,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Application Version
+    |--------------------------------------------------------------------------
+    |
+    | Versi aplikasi yang ditampilkan di layar. Dinaikkan manual saat rilis,
+    | dan bisa ditimpa lewat .env ketika pipeline deploy punya nomor sendiri.
+    |
+    */
+
+    'version' => env('APP_VERSION', '1.0.0'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------
     |
