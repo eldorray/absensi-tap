@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Kelas/rombel milik satu tahun ajaran.
@@ -46,6 +47,14 @@ class Kelas extends Model
     public function waliKelas(): BelongsTo
     {
         return $this->belongsTo(User::class, 'wali_kelas_id');
+    }
+
+    /**
+     * @return HasMany<AnggotaKelas, $this>
+     */
+    public function anggotas(): HasMany
+    {
+        return $this->hasMany(AnggotaKelas::class);
     }
 
     /**
