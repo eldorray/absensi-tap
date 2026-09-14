@@ -2,7 +2,9 @@
 
 use App\Models\Lokasi;
 use App\Models\Perangkat;
+use App\Models\TahunAjaran;
 use App\Models\User;
+use App\Support\TahunAjaranTerpilih;
 use Database\Seeders\JadwalKerjaSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Passkeys\Passkey;
@@ -65,6 +67,35 @@ function guruSiapAbsen(): array
         Perangkat::factory()->for($guru)->create(),
         Lokasi::factory()->create(),
     ];
+}
+
+/**
+ * Tahun ajaran yang benar-benar satu-satunya yang aktif.
+ *
+ * Jangan memakai TahunAjaran::factory()->create(['is_active' => true]) untuk
+ * ini. Migrasi tambah_tahun_ajaran_id_ke_data_absensi sudah menanam satu tahun
+ * aktif saat migrate berjalan, jadi factory hanya menambah baris aktif KEDUA --
+ * dan yang dipakai aplikasi tetap yang pertama, bukan yang baru dibuat test.
+ * Testnya tetap hijau selama cuma menghitung baris, lalu menyesatkan begitu ada
+ * yang membandingkan id.
+ *
+ * aktifkan() mematikan sisanya dalam satu transaksi, dan memo TahunAjaranTerpilih
+ * dilupakan supaya global scope memakai tahun yang baru, bukan yang terlanjur
+ * diingat di awal request.
+ */
+function tahunAjaranAktif(string $nama = '2026/2027'): TahunAjaran
+{
+    $mulai = (int) strtok($nama, '/');
+
+    $tahun = TahunAjaran::query()->updateOrCreate(
+        ['nama' => $nama],
+        ['tanggal_mulai' => $mulai.'-07-01', 'tanggal_selesai' => ($mulai + 1).'-06-30'],
+    );
+
+    $tahun->aktifkan();
+    app(TahunAjaranTerpilih::class)->lupakan();
+
+    return $tahun;
 }
 
 /**
