@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -45,6 +46,12 @@ class Siswa extends Model
     /**
      * @return array<string, string>
      */
+    /** @return HasMany<AnggotaKelas, $this> */
+    public function keanggotaanKelas(): HasMany
+    {
+        return $this->hasMany(AnggotaKelas::class);
+    }
+
     protected function casts(): array
     {
         return [

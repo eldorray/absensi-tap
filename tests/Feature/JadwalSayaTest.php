@@ -33,7 +33,7 @@ test('avatar header menuju profil dan navbar bawah memakai jadwal saya', functio
     expect($layout)
         ->toContain('<GuruProfileSheet />')
         ->and($navigation)
-        ->toContain("label: 'Jadwal Saya'")
+        ->toContain("label: 'Jadwal'")
         ->toContain('@/routes/jadwal')
         ->not->toContain("label: 'Profil'");
 });

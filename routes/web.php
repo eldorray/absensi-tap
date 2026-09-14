@@ -2,20 +2,24 @@
 
 use App\Http\Controllers\AbsensiController;
 use App\Http\Controllers\AbsensiPasskeyController;
+use App\Http\Controllers\AbsensiSiswaController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\GuruController;
 use App\Http\Controllers\Admin\IzinController as AdminIzinController;
 use App\Http\Controllers\Admin\JadwalGuruController;
 use App\Http\Controllers\Admin\KantorController;
+use App\Http\Controllers\Admin\KelasController;
 use App\Http\Controllers\Admin\PengaturanController;
 use App\Http\Controllers\Admin\PengumumanController;
 use App\Http\Controllers\Admin\RekapController;
 use App\Http\Controllers\Admin\RekapHarianController;
 use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\SiswaController;
 use App\Http\Controllers\Admin\TahunAjaranController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\IzinController;
 use App\Http\Controllers\JadwalSayaController;
+use App\Http\Controllers\KelasSayaController;
 use App\Http\Controllers\PerangkatController;
 use App\Http\Controllers\RiwayatAbsensiController;
 use Illuminate\Support\Facades\Route;
@@ -25,6 +29,11 @@ Route::inertia('/', 'Welcome')->name('home');
 Route::middleware(['auth', 'verified', 'can:pegawai'])->group(function () {
     Route::get('dashboard', [AbsensiController::class, 'index'])->name('dashboard');
     Route::get('jadwal', [JadwalSayaController::class, 'index'])->name('jadwal.index');
+    Route::get('kelas-saya', [KelasSayaController::class, 'index'])->name('kelas-saya.index');
+    Route::get('absensi-siswa', [AbsensiSiswaController::class, 'index'])->name('absensi-siswa.index');
+    Route::get('absensi-siswa/{kelas}', [AbsensiSiswaController::class, 'show'])->name('absensi-siswa.show');
+    Route::put('absensi-siswa/{kelas}/draft', [AbsensiSiswaController::class, 'draft'])->name('absensi-siswa.draft');
+    Route::put('absensi-siswa/{kelas}/finalisasi', [AbsensiSiswaController::class, 'finalisasi'])->name('absensi-siswa.finalisasi');
     Route::get('riwayat', [RiwayatAbsensiController::class, 'index'])->name('riwayat.index');
 
     Route::post('absensi', [AbsensiController::class, 'store'])
@@ -91,6 +100,14 @@ Route::middleware(['auth', 'verified', 'can:admin'])
         Route::post('pengumuman', [PengumumanController::class, 'store'])->name('pengumuman.store');
         Route::put('pengumuman/{pengumuman}', [PengumumanController::class, 'update'])->name('pengumuman.update');
         Route::delete('pengumuman/{pengumuman}', [PengumumanController::class, 'destroy'])->name('pengumuman.destroy');
+        Route::resource('siswa', SiswaController::class)->only(['index', 'store', 'update', 'destroy']);
+        Route::get('siswa/template', [SiswaController::class, 'template'])->name('siswa.template');
+        Route::post('siswa/impor', [SiswaController::class, 'impor'])->name('siswa.impor');
+        Route::resource('kelas', KelasController::class)->parameters(['kelas' => 'kelas'])->only(['index', 'store', 'update', 'destroy']);
+        Route::post('kelas/{kelas}/anggota', [KelasController::class, 'tempatkan'])->name('kelas.anggota.store');
+        Route::delete('kelas/{kelas}/anggota/{anggota}', [KelasController::class, 'keluarkan'])->name('kelas.anggota.destroy');
+        Route::post('kelas/{kelas}/pengganti', [KelasController::class, 'tugaskanPengganti'])->name('kelas.pengganti.store');
+        Route::delete('kelas/{kelas}/pengganti/{pengganti}', [KelasController::class, 'cabutPengganti'])->name('kelas.pengganti.destroy');
         Route::get('guru', [GuruController::class, 'index'])->name('guru.index');
         Route::post('guru', [GuruController::class, 'store'])->name('guru.store');
         Route::get('guru/template', [GuruController::class, 'template'])->name('guru.template');

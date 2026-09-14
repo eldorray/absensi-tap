@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Kelas;
 use App\Models\PengaturanAplikasi;
 use App\Models\TahunAjaran;
 use App\Support\TahunAjaranTerpilih;
@@ -55,6 +56,8 @@ class HandleInertiaRequests extends Middleware
                 // This flag only controls menu visibility. Authorization remains
                 // enforced by the `admin` gate on the route group.
                 'isAdmin' => (bool) $request->user()?->can('admin'),
+                'punyaKelas' => fn (): bool => $request->user() !== null
+                    && Kelas::query()->diampuOleh($request->user())->where('is_active', true)->exists(),
             ],
             // Penanda tahun ajaran: is_active false berarti admin sedang
             // menengok tahun lain, dan setiap angka di layar bukan tahun aktif.

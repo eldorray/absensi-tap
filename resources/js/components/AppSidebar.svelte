@@ -1,5 +1,6 @@
 <script lang="ts">
     import { Link, page } from '@inertiajs/svelte';
+    import BookUser from 'lucide-svelte/icons/book-user';
     import Building2 from 'lucide-svelte/icons/building-2';
     import CalendarCheck from 'lucide-svelte/icons/calendar-check';
     import CalendarClock from 'lucide-svelte/icons/calendar-clock';
@@ -10,6 +11,7 @@
     import LayoutDashboard from 'lucide-svelte/icons/layout-dashboard';
     import Megaphone from 'lucide-svelte/icons/megaphone';
     import Palette from 'lucide-svelte/icons/palette';
+    import School from 'lucide-svelte/icons/school';
     import Settings2 from 'lucide-svelte/icons/settings-2';
     import ShieldCheck from 'lucide-svelte/icons/shield-check';
     import Table2 from 'lucide-svelte/icons/table-2';
@@ -37,11 +39,13 @@
     import { index as adminIzinIndex } from '@/routes/admin/izin';
     import { index as jadwalGuruIndex } from '@/routes/admin/jadwal-guru';
     import { index as kantorIndex } from '@/routes/admin/kantor';
+    import { index as kelasIndex } from '@/routes/admin/kelas';
     import { edit as pengaturanEdit } from '@/routes/admin/pengaturan';
     import { index as pengumumanIndex } from '@/routes/admin/pengumuman';
     import { index as rekapIndex } from '@/routes/admin/rekap';
     import { index as rekapHarianIndex } from '@/routes/admin/rekap-harian';
     import { index as roleIndex } from '@/routes/admin/role';
+    import { index as siswaIndex } from '@/routes/admin/siswa';
     import { index as tahunAjaranIndex } from '@/routes/admin/tahun-ajaran';
     import { index as userIndex } from '@/routes/admin/user';
     import { edit as appearanceEdit } from '@/routes/appearance';
@@ -92,6 +96,11 @@
         { title: 'Guru', href: guruIndex(), icon: Users },
         { title: 'Kelola user', href: userIndex(), icon: UserCog },
         { title: 'Kelola role', href: roleIndex(), icon: ShieldCheck },
+    ];
+
+    const kesiswaanNavItems: NavItem[] = [
+        { title: 'Siswa', href: siswaIndex(), icon: BookUser },
+        { title: 'Kelas', href: kelasIndex(), icon: School },
     ];
 
     const settingsNavItems: NavItem[] = [
@@ -151,6 +160,11 @@
                 items={laporanNavItems}
             />
             <NavMain items={adminNavItems} label="ADMIN" />
+            <NavDropdown
+                label="Kesiswaan"
+                icon={School}
+                items={kesiswaanNavItems}
+            />
         {/if}
         <NavMain items={settingsNavItems} label="PENGATURAN" />
     </SidebarContent>
