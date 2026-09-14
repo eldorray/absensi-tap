@@ -36,6 +36,13 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::define('admin', fn (User $user): bool => $user->role === Role::Admin && $user->is_active);
 
+        // Wilayah kerja pegawai sekolah: tap absen, jadwal, riwayat, izin.
+        // Admin ikut lolos karena admin di sekolah ini juga tap absen sendiri.
+        // Gate ini sengaja tidak memeriksa is_active supaya guru yang sedang
+        // dinonaktifkan tidak berubah perilakunya diam-diam oleh perubahan ini;
+        // pemeriksaan is_active saat login adalah keputusan terpisah.
+        Gate::define('pegawai', fn (User $user): bool => in_array($user->role, [Role::Guru, Role::Admin], true));
+
         // Nama dan favicon dipakai di <head> root template, yang dirender di
         // luar Inertia. Ditunda lewat closure supaya tabelnya tidak disentuh
         // saat migrasi belum jalan.

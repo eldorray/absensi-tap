@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'Welcome')->name('home');
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified', 'can:pegawai'])->group(function () {
     Route::get('dashboard', [AbsensiController::class, 'index'])->name('dashboard');
     Route::get('jadwal', [JadwalSayaController::class, 'index'])->name('jadwal.index');
     Route::get('riwayat', [RiwayatAbsensiController::class, 'index'])->name('riwayat.index');

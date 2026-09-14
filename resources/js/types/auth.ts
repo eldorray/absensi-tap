@@ -12,6 +12,7 @@ export type User = {
 
 export type Auth = {
     user: User;
+    role: 'guru' | 'admin' | 'orang_tua' | null;
     isAdmin: boolean;
 };
 

@@ -49,6 +49,9 @@ class HandleInertiaRequests extends Middleware
             ],
             'auth' => [
                 'user' => $request->user(),
+                // Role dipakai frontend untuk memilih shell; keputusan izin
+                // tetap di gate/policy backend.
+                'role' => $request->user()?->role->value,
                 // This flag only controls menu visibility. Authorization remains
                 // enforced by the `admin` gate on the route group.
                 'isAdmin' => (bool) $request->user()?->can('admin'),
