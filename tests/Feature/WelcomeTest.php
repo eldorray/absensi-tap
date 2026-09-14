@@ -86,9 +86,12 @@ test('welcome tersusun untuk HP dan PWA terpasang', function () {
 
     $css = file_get_contents(resource_path('css/app.css'));
 
+    // Geser horizontal dikunci supaya PWA tidak bisa ditarik ke samping.
+    // Sumbu vertikal sengaja dibiarkan bebas: admin harus tetap bisa scroll
+    // halaman panjangnya di dalam container .admin-scroll.
     expect($css)
-        ->toContain('overscroll-behavior: none')
-        ->toContain('touch-action: pan-y');
+        ->toContain('overscroll-behavior-x: none')
+        ->toContain('overscroll-behavior-y: auto');
 });
 
 test('welcome menawarkan instalasi pwa untuk android dan iphone', function () {

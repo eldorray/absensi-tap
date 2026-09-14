@@ -68,10 +68,17 @@ test('users are rate limited', function () {
 
     RateLimiter::increment(md5('login'.implode('|', [$user->email, '127.0.0.1'])), amount: 5);
 
-    $response = $this->post(route('login.store'), [
+    $response = $this->from(route('login'))->post(route('login.store'), [
         'email' => $user->email,
         'password' => 'wrong-password',
     ]);
 
-    $response->assertTooManyRequests();
+    // Batasnya tetap ditegakkan, tapi pemakainya dikembalikan ke form dengan
+    // kalimat yang menyebut berapa detik lagi -- bukan halaman 429 telanjang.
+    // Lihat penangan TooManyRequestsHttpException di bootstrap/app.php.
+    $response->assertRedirect(route('login'))
+        ->assertSessionHasErrors('rate_limit')
+        ->assertSessionHas('retry_after');
+
+    $this->assertGuest();
 });

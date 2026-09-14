@@ -37,3 +37,6 @@ yarn-error.log
 /CODEX.md
 /AGENTS.md
 /docs/superpowers/
+
+# Scratch orkestrasi agent (ledger, brief, review package) — bukan bagian aplikasi.
+/.superpowers/
