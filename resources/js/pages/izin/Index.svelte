@@ -35,7 +35,10 @@
         lampiran: null as File | null,
     });
 
-    const warnaStatus: Record<string, 'default' | 'secondary' | 'outline' | 'destructive'> = {
+    const warnaStatus: Record<
+        string,
+        'default' | 'secondary' | 'outline' | 'destructive'
+    > = {
         pending: 'secondary',
         disetujui: 'default',
         ditolak: 'destructive',
@@ -53,7 +56,9 @@
 
 <AppHead title="Izin" />
 
-<div class="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-5 safe-bottom sm:px-6">
+<div
+    class="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-5 safe-bottom sm:px-6"
+>
     <section class="g-tile g-tone-plain">
         <h3>Ajukan izin</h3>
 
@@ -75,12 +80,20 @@
             <div class="grid gap-4 sm:grid-cols-2">
                 <div class="grid gap-2">
                     <Label for="mulai">Tanggal mulai</Label>
-                    <Input id="mulai" type="date" bind:value={form.tanggal_mulai} />
+                    <Input
+                        id="mulai"
+                        type="date"
+                        bind:value={form.tanggal_mulai}
+                    />
                     <InputError message={form.errors.tanggal_mulai} />
                 </div>
                 <div class="grid gap-2">
                     <Label for="selesai">Tanggal selesai</Label>
-                    <Input id="selesai" type="date" bind:value={form.tanggal_selesai} />
+                    <Input
+                        id="selesai"
+                        type="date"
+                        bind:value={form.tanggal_selesai}
+                    />
                     <InputError message={form.errors.tanggal_selesai} />
                 </div>
             </div>
@@ -97,7 +110,9 @@
             </div>
 
             <div class="grid gap-2">
-                <Label for="lampiran">Lampiran (opsional, PDF/JPG/PNG, maks 2 MB)</Label>
+                <Label for="lampiran"
+                    >Lampiran (opsional, PDF/JPG/PNG, maks 2 MB)</Label
+                >
                 <input
                     id="lampiran"
                     type="file"
@@ -110,7 +125,9 @@
                 <InputError message={form.errors.lampiran} />
             </div>
 
-            <Button type="submit" disabled={form.processing}>Kirim pengajuan</Button>
+            <Button type="submit" disabled={form.processing}
+                >Kirim pengajuan</Button
+            >
         </form>
     </section>
 
@@ -124,8 +141,13 @@
                 {#each izins as izin (izin.id)}
                     <li class="grid gap-1 py-3">
                         <div class="flex items-center justify-between gap-3">
-                            <span class="font-medium capitalize">{izin.tipe}</span>
-                            <Badge variant={warnaStatus[izin.status] ?? 'secondary'}>
+                            <span class="font-medium capitalize"
+                                >{izin.tipe}</span
+                            >
+                            <Badge
+                                variant={warnaStatus[izin.status] ??
+                                    'secondary'}
+                            >
                                 {izin.status}
                             </Badge>
                         </div>
