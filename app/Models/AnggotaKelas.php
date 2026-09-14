@@ -19,7 +19,11 @@ use Illuminate\Support\Carbon;
  * @property int $siswa_id
  * @property Carbon $tanggal_mulai
  * @property Carbon|null $tanggal_selesai
- * @property bool $is_active
+ * @property bool $is_active Kolom turunan, ditulis ulang oleh
+ *                           App\Actions\Kesiswaan\TempatkanSiswa setiap kali cakupan tanggal
+ *                           berubah. Jangan pernah menulis query cakupan yang bercabang dari
+ *                           kolom ini -- pakai tanggal_mulai/tanggal_selesai, seperti
+ *                           scopeBerlakuPada() di bawah.
  */
 #[Fillable(['kelas_id', 'siswa_id', 'tanggal_mulai', 'tanggal_selesai', 'is_active'])]
 class AnggotaKelas extends Model
@@ -36,15 +40,31 @@ class AnggotaKelas extends Model
      * itu, bukan dari daftar kelas hari ini. Kalau tidak, mengoreksi absensi
      * bulan lalu akan memakai susunan kelas yang sudah berubah.
      *
+     * Sengaja where() biasa dengan tanggal sebagai string, bukan whereDate():
+     * tanggal_mulai/tanggal_selesai sudah kolom DATE, dan whereDate() di atas
+     * kolom yang sudah DATE membungkus kolomnya sendiri sehingga index
+     * (tanggal_mulai, tanggal_selesai) di migration tidak bisa dipakai --
+     * padahal scope inilah query yang paling sering jalan (tiap sesi absen).
+     *
+     * Nilai pembandingnya diformat awal hari ("Y-m-d H:i:s"), bukan cuma
+     * "Y-m-d": Eloquent selalu menulis kolom bertipe date lewat format
+     * penuh koneksinya (lihat fromDateTime()), jadi yang tersimpan bisa
+     * berupa "2026-07-15 00:00:00", bukan "2026-07-15" polos. Query mentah
+     * di sini tidak lewat cast model, jadi harus dicocokkan ke bentuk yang
+     * benar-benar tersimpan itu, atau perbandingan tanggal di batasnya
+     * sendiri (tepat tanggal_mulai/tanggal_selesai) meleset.
+     *
      * @param  Builder<AnggotaKelas>  $query
      * @return Builder<AnggotaKelas>
      */
     public function scopeBerlakuPada(Builder $query, CarbonInterface $tanggal): Builder
     {
-        return $query->whereDate('tanggal_mulai', '<=', $tanggal)
-            ->where(function (Builder $q) use ($tanggal): void {
+        $batas = $tanggal->copy()->startOfDay()->toDateTimeString();
+
+        return $query->where('tanggal_mulai', '<=', $batas)
+            ->where(function (Builder $q) use ($batas): void {
                 $q->whereNull('tanggal_selesai')
-                    ->orWhereDate('tanggal_selesai', '>=', $tanggal);
+                    ->orWhere('tanggal_selesai', '>=', $batas);
             });
     }
 
