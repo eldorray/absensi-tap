@@ -66,6 +66,7 @@
                 <th class="angka">Absen masuk</th>
                 <th class="angka">Absen pulang</th>
                 <th class="angka">Terlambat</th>
+                <th class="angka">Menit terlambat</th>
                 <th class="angka">% Kehadiran</th>
             </tr>
         </thead>
@@ -80,10 +81,11 @@
                     <td class="angka">{{ $b['masuk'] }}</td>
                     <td class="angka">{{ $b['pulang'] }}</td>
                     <td class="angka">{{ $b['terlambat'] }}</td>
+                    <td class="angka">{{ $b['menit_terlambat'] }} menit</td>
                     <td class="angka">{{ number_format($b['persentase'], 2, ',', '.') }}%</td>
                 </tr>
             @empty
-                <tr><td colspan="9">Belum ada akun guru pada tahun ajaran ini.</td></tr>
+                <tr><td colspan="10">Belum ada akun guru pada tahun ajaran ini.</td></tr>
             @endforelse
         </tbody>
         @if (count($baris) > 0)
@@ -95,6 +97,7 @@
                     <td class="angka">{{ collect($baris)->sum('masuk') }}</td>
                     <td class="angka">{{ collect($baris)->sum('pulang') }}</td>
                     <td class="angka">{{ collect($baris)->sum('terlambat') }}</td>
+                    <td class="angka">{{ collect($baris)->sum('menit_terlambat') }} menit</td>
                     <td class="angka">
                         {{ $totalHariEfektif > 0 && count($baris) > 0
                             ? number_format(collect($baris)->sum('kehadiran') / ($totalHariEfektif * count($baris)) * 100, 2, ',', '.')
