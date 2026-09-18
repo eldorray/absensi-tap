@@ -5,10 +5,12 @@ import SettingsLayout from '@/layouts/settings/Layout.svelte';
 import { initializeFlashToast } from '@/lib/flash-toast';
 import { initializeTheme } from '@/lib/theme.svelte';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
-
 createInertiaApp({
-    title: (title) => (title ? `${title} - ${appName}` : appName),
+    title: (title, page) => {
+        const appName = String(page.props.name);
+
+        return title ? `${title} - ${appName}` : appName;
+    },
     layout: (name) => {
         switch (true) {
             case name === 'Welcome':
