@@ -20,7 +20,7 @@ class LoginResponse implements LoginResponseContract, TwoFactorLoginResponseCont
 
         $tujuan = $request->user()?->role === Role::Admin
             ? route('admin.dashboard', absolute: false)
-            : route('dashboard', absolute: false);
+            : route('aplikasi', absolute: false);
 
         return redirect()->intended($tujuan);
     }
