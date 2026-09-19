@@ -1,1 +1,0 @@
-import{$ as e,Ft as t,H as n,I as r,It as i,V as a,Wt as o,ft as s,i as c,rt as l,ut as u,w as d,xt as f}from"./wayfinder-BfwSI2ZN.js";function p(p,m){i(m,!0);let h=c(m,`title`,3,``),g=`Laravel`,_=f(()=>h()?`${h()} - ${g}`:g);d(`6lre40`,t=>{var i=n(),c=s(i);r(c,()=>m.children??o),l(()=>{u.title=e(_)??``}),a(t,i)}),t()}export{p as t};

@@ -61,6 +61,16 @@ test('tamu tidak bisa mendaftarkan perangkat', function () {
         ->assertRedirect(route('login'));
 });
 
+test('admin tidak didaftarkan sebagai perangkat guru', function () {
+    $admin = User::factory()->admin()->create();
+
+    $this->actingAs($admin)
+        ->post(route('perangkat.store'), ['device_uuid' => (string) Str::uuid()])
+        ->assertForbidden();
+
+    expect(Perangkat::where('user_id', $admin->id)->count())->toBe(0);
+});
+
 test('label diturunkan dari user agent', function () {
     expect(DaftarkanPerangkat::label('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0)'))->toBe('iPhone')
         ->and(DaftarkanPerangkat::label('Mozilla/5.0 (Linux; Android 14)'))->toBe('Android')

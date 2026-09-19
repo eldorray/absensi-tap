@@ -33,6 +33,7 @@ class RekapBulanan
      *         masuk: int,
      *         pulang: int,
      *         terlambat: int,
+     *         menit_terlambat: int,
      *         persentase: float
      *     }>
      * }
@@ -80,6 +81,7 @@ class RekapBulanan
             $hariEfektif = 0;
             $masuk = 0;
             $pulang = 0;
+            $menitTerlambat = 0;
 
             foreach ($tanggals as $tanggal) {
                 $kunci = $guru->id.'|'.$tanggal;
@@ -118,6 +120,11 @@ class RekapBulanan
                 if ($absensi?->pulang_attempt_id !== null) {
                     $pulang++;
                 }
+
+                if ($status === StatusHari::Terlambat && $absensi?->masukAttempt?->created_at !== null && $jadwal !== null) {
+                    $jamMasuk = Carbon::parse($tanggal.' '.$jadwal->jam_masuk);
+                    $menitTerlambat += (int) $jamMasuk->diffInMinutes($absensi->masukAttempt->created_at);
+                }
             }
 
             $terlambat = $ringkasan[StatusHari::Terlambat->value] ?? 0;
@@ -134,6 +141,7 @@ class RekapBulanan
                 'masuk' => $masuk,
                 'pulang' => $pulang,
                 'terlambat' => $terlambat,
+                'menit_terlambat' => $menitTerlambat,
                 // Dibulatkan dua angka: dipakai apa adanya di laporan cetak.
                 'persentase' => $hariEfektif === 0
                     ? 0.0

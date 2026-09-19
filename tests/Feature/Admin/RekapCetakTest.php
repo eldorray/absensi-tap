@@ -52,6 +52,8 @@ test('laporan memuat komposisi hari efektif sampai persentase kehadiran', functi
         ->assertSee('Absen masuk')
         ->assertSee('Absen pulang')
         ->assertSee('Terlambat')
+        ->assertSee('Menit terlambat')
+        ->assertSee('30 menit')
         ->assertSee('% Kehadiran')
         ->assertSee($guru->name);
 });
@@ -99,6 +101,7 @@ test('persentase kehadiran dihitung dari hari efektif', function () {
 
     expect($baris['kehadiran'])->toBe(1)
         ->and($baris['terlambat'])->toBe(1)
+        ->and($baris['menit_terlambat'])->toBe(30)
         ->and($baris['masuk'])->toBe(1)
         ->and($baris['pulang'])->toBe(0)
         ->and($baris['persentase'])->toBe(round(1 / $baris['hari_efektif'] * 100, 2));
