@@ -7,7 +7,7 @@
     import Search from 'lucide-svelte/icons/search';
     import AppHead from '@/components/AppHead.svelte';
     import { toUrl } from '@/lib/utils';
-    import { draft, finalisasi } from '@/routes/absensi-siswa';
+    import { bukaFinalisasi, draft, finalisasi } from '@/routes/absensi-siswa';
     type Status = 'hadir' | 'sakit' | 'izin' | 'alpa' | 'terlambat';
     type Siswa = {
         id: number;
@@ -31,13 +31,20 @@
         };
         tanggal: string;
         siswa: Siswa[];
-        sesi: { status: string; catatan: string | null; read_only: boolean };
+        sesi: {
+            status: string;
+            catatan: string | null;
+            read_only: boolean;
+            dapat_dibuka: boolean;
+        };
     } = $props();
     let siswa = $state(awal.map((item) => ({ ...item })));
+    const lampau = tanggal !== new Date().toLocaleDateString('sv-SE');
     let cari = $state('');
     let filter = $state('semua');
     let dipilih = $state<Siswa | null>(null);
     let konfirmasi = $state(false);
+    let konfirmasiBuka = $state(false);
     let processing = $state(false);
     const pilihan: { value: Status; label: string }[] = [
         { value: 'hadir', label: 'Hadir' },
@@ -74,6 +81,18 @@
                     jam_datang: x.jam_datang,
                 })),
         };
+    }
+    function buka() {
+        processing = true;
+        router.put(
+            toUrl(bukaFinalisasi(kelas.id)),
+            {},
+            {
+                preserveScroll: true,
+                onFinish: () => (processing = false),
+                onSuccess: () => (konfirmasiBuka = false),
+            },
+        );
     }
     function simpan(final = false) {
         processing = true;
@@ -164,11 +183,22 @@
                 >
             </div>{/each}
     </div>
-    {#if sesi.read_only}<p
-            class="rounded-2xl bg-muted p-3 text-center font-bold"
-        >
-            Absensi sudah final dan hanya dapat dilihat.
-        </p>{:else}<div class="grid grid-cols-2 gap-2">
+    {#if sesi.read_only}<div class="grid gap-2">
+            <p class="rounded-2xl bg-muted p-3 text-center font-bold">
+                {lampau
+                    ? 'Absensi hari lampau hanya dapat dilihat.'
+                    : 'Absensi sudah final dan hanya dapat dilihat.'}
+            </p>
+            {#if sesi.dapat_dibuka}
+                <button
+                    type="button"
+                    disabled={processing}
+                    onclick={() => (konfirmasiBuka = true)}
+                    class="min-h-12 rounded-2xl border font-bold"
+                    >Batalkan finalisasi</button
+                >
+            {/if}
+        </div>{:else}<div class="grid grid-cols-2 gap-2">
             <button
                 type="submit"
                 disabled={processing}
@@ -253,6 +283,39 @@
                 onclick={() => simpan(true)}
                 class="min-h-12 rounded-2xl bg-primary font-bold text-primary-foreground"
                 >Ya, finalisasi</button
+            >
+        </div>
+    </section>{/if}
+{#if konfirmasiBuka}<button
+        type="button"
+        class="fixed inset-0 z-40 bg-black/30"
+        onclick={() => (konfirmasiBuka = false)}
+        aria-label="Batal membuka finalisasi"
+    ></button>
+    <section
+        role="dialog"
+        aria-modal="true"
+        class="fixed inset-x-4 top-1/2 z-50 mx-auto max-w-md -translate-y-1/2 rounded-3xl bg-background p-5 shadow-xl"
+    >
+        <h2 class="text-xl font-bold">Batalkan finalisasi?</h2>
+        <p class="my-2 text-sm text-muted-foreground">
+            {kelas.nama} · {tanggal}
+        </p>
+        <p class="rounded-2xl bg-muted p-3 text-sm font-semibold">
+            Absensi kembali jadi draft dan bisa diperbaiki. Nama Anda dan waktu
+            pembatalan dicatat. Hanya berlaku untuk absensi hari ini.
+        </p>
+        <div class="mt-4 grid grid-cols-2 gap-2">
+            <button
+                type="button"
+                onclick={() => (konfirmasiBuka = false)}
+                class="min-h-12 rounded-2xl border font-bold">Batal</button
+            ><button
+                type="submit"
+                disabled={processing}
+                onclick={buka}
+                class="min-h-12 rounded-2xl bg-primary font-bold text-primary-foreground"
+                >Ya, buka kembali</button
             >
         </div>
     </section>{/if}

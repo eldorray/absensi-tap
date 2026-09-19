@@ -11,7 +11,8 @@ test('menu master dikelompokkan sebagai dropdown di sidebar', function () {
         ->toContain("title: 'Tahun ajaran'")
         ->toContain("title: 'Kantor'")
         ->toContain("title: 'Guru'")
-        ->toContain("title: 'Kelola user'")
+        ->toContain("title: 'Akun staf'")
+        ->toContain("title: 'Orang tua'")
         ->toContain("title: 'Kelola role'");
 
     // Kelompoknya bisa dibuka-tutup dan terbuka sendiri saat isinya aktif.
@@ -34,7 +35,7 @@ test('menu master dikelompokkan sebagai dropdown di sidebar', function () {
     expect($adminBlok)
         ->toContain("title: 'Rekap harian'")
         ->toContain("title: 'Izin masuk'")
-        ->not->toContain("title: 'Kelola user'");
+        ->not->toContain("title: 'Akun staf'");
 });
 
 test('sidebar admin tidak memuat menu absen dan izin milik guru', function () {
@@ -63,10 +64,12 @@ test('rekap dan izin dikelompokkan dalam dropdown Laporan Kehadiran', function (
         ->toContain("title: 'Rekap bulanan'")
         ->toContain("title: 'Izin masuk'");
 
-    // Urutan sidebar: Dashboard, Master, lalu Laporan Kehadiran.
+    // Urutan sidebar: Dashboard, Master, Kesiswaan, lalu Laporan Kehadiran.
     expect(strpos($sidebar, 'label="RINGKASAN"'))
         ->toBeLessThan(strpos($sidebar, 'label="Master"'));
     expect(strpos($sidebar, 'label="Master"'))
+        ->toBeLessThan(strpos($sidebar, 'label="Kesiswaan"'));
+    expect(strpos($sidebar, 'label="Kesiswaan"'))
         ->toBeLessThan(strpos($sidebar, 'label="Laporan Kehadiran"'));
 
     // Ketiganya keluar dari kelompok ADMIN.

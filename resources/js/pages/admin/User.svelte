@@ -1,7 +1,7 @@
 <script module lang="ts">
     import { index } from '@/routes/admin/user';
     export const layout = {
-        breadcrumbs: [{ title: 'Kelola user', href: index() }],
+        breadcrumbs: [{ title: 'Akun staf', href: index() }],
     };
 </script>
 
@@ -163,16 +163,16 @@
     }
 </script>
 
-<AppHead title="Kelola user" />
+<AppHead title="Akun staf" />
 
 <div class="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-5 sm:px-6">
     <section class="g-tile g-tone-plain gap-3">
         <div class="flex flex-wrap items-end justify-between gap-3">
             <div>
-                <h3>Kelola user</h3>
+                <h3>Akun staf</h3>
                 <p class="text-muted-foreground">
-                    {users.length} akun. Role menentukan menu yang bisa dibuka, kantor
-                    menentukan lokasi absen yang berlaku.
+                    {users.length} akun admin dan guru. Akun orang tua dikelola dari
+                    menu terpisah.
                 </p>
             </div>
             <Button onclick={() => (dialogTambah = true)}>

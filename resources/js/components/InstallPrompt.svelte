@@ -50,11 +50,17 @@
     }
 
     async function pasangAndroid(): Promise<void> {
-        if (!promptAndroid) return;
+        if (!promptAndroid) {
+            return;
+        }
+
         await promptAndroid.prompt();
         const pilihan = await promptAndroid.userChoice;
         promptAndroid = null;
-        if (pilihan.outcome === 'accepted') terpasang = true;
+
+        if (pilihan.outcome === 'accepted') {
+            terpasang = true;
+        }
     }
 </script>
 

@@ -31,6 +31,13 @@
     // Keamanan akun hanya untuk admin: guru mengurus perangkat dan biometriknya
     // lewat alur absensi, bukan lewat halaman setelan.
     const isAdmin = $derived(page.props.auth.isAdmin === true);
+    const roleLabel = $derived(
+        page.props.auth.role === 'orang_tua'
+            ? 'Orang Tua'
+            : isAdmin
+              ? 'Admin'
+              : 'Guru',
+    );
 
     let open = $state(false);
     let panel = $state<Panel>('menu');
@@ -76,7 +83,11 @@
         const file =
             (event.currentTarget as HTMLInputElement).files?.[0] ?? null;
         profil.avatar = file;
-        if (pratinjauAvatar) URL.revokeObjectURL(pratinjauAvatar);
+
+        if (pratinjauAvatar) {
+            URL.revokeObjectURL(pratinjauAvatar);
+        }
+
         pratinjauAvatar = file ? URL.createObjectURL(file) : null;
     }
 </script>
@@ -183,7 +194,7 @@
                     </p>
                     <span
                         class="rounded-full bg-primary/10 px-2.5 py-1 text-[0.625rem] font-bold tracking-wide text-primary uppercase"
-                        >{isAdmin ? 'Admin' : 'Guru'}</span
+                        >{roleLabel}</span
                     >
                 </div>
 
@@ -284,7 +295,7 @@
                 <p
                     class="mt-4 text-center text-[0.6875rem] text-muted-foreground"
                 >
-                    Absensi Guru · Data akun tersimpan dengan aman
+                    {roleLabel} · Data akun tersimpan dengan aman
                 </p>
 
                 <AppVersion class="mt-1" />

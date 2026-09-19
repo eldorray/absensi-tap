@@ -18,10 +18,10 @@
     import { Input } from '@/components/ui/input';
     import { Label } from '@/components/ui/label';
     import { Spinner } from '@/components/ui/spinner';
+    import { toUrl } from '@/lib/utils';
+    import { home } from '@/routes';
     import { store } from '@/routes/login';
     import { request } from '@/routes/password';
-    import { home } from '@/routes';
-    import { toUrl } from '@/lib/utils';
 
     let {
         status = '',

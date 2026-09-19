@@ -10,6 +10,7 @@
     import Pencil from 'lucide-svelte/icons/pencil';
     import Search from 'lucide-svelte/icons/search';
     import Trash2 from 'lucide-svelte/icons/trash-2';
+    import UsersRound from 'lucide-svelte/icons/users-round';
     import AppHead from '@/components/AppHead.svelte';
     import KonfirmasiDialog from '@/components/KonfirmasiDialog.svelte';
     import type { Konfirmasi } from '@/components/KonfirmasiDialog.svelte';
@@ -31,7 +32,9 @@
         store as siswaStore,
         update as siswaUpdate,
     } from '@/routes/admin/siswa';
+    import { update as orangTuaUpdate } from '@/routes/admin/siswa/orang-tua';
 
+    type OrangTua = { id: number; name: string; email: string };
     type S = {
         id: number;
         kantor_id: number;
@@ -43,6 +46,7 @@
         jenis_kelamin_label: string;
         tanggal_lahir: string | null;
         is_active: boolean;
+        orang_tuas: OrangTua[];
     };
     type Halaman<T> = {
         data: T[];
@@ -58,6 +62,7 @@
         jenisKelamins,
         filter,
         hasilImpor,
+        orangTuas,
     }: {
         siswas: Halaman<S>;
         kelases: { id: number; nama: string; kantor_id: number }[];
@@ -69,16 +74,20 @@
             dilewati: number;
             galat: string[];
         } | null;
+        orangTuas: OrangTua[];
     } = $props();
 
     let dialogTambah = $state(false);
     let dialogImpor = $state(false);
     let dialogUbah = $state(false);
+    let dialogOrangTua = $state(false);
     let cari = $state(filter.cari);
     let unitFilter = $state(filter.kantor_id ?? 0);
     const impor = useForm({ kantor_id: 0, berkas: null as File | null });
     let diubah = $state<number | null>(null);
     let konfirmasi = $state<Konfirmasi | null>(null);
+    let siswaOrangTua = $state<S | null>(null);
+    const tautanOrangTua = useForm({ user_ids: [] as number[] });
 
     const kosong = {
         kantor_id: kantors[0]?.id ?? 0,
@@ -133,6 +142,19 @@
                     preserveScroll: true,
                 }),
         };
+    }
+
+    function kelolaOrangTua(s: S): void {
+        siswaOrangTua = s;
+        tautanOrangTua.user_ids = s.orang_tuas.map((orangTua) => orangTua.id);
+        tautanOrangTua.clearErrors();
+        dialogOrangTua = true;
+    }
+
+    function ubahPilihanOrangTua(id: number, terpilih: boolean): void {
+        tautanOrangTua.user_ids = terpilih
+            ? [...tautanOrangTua.user_ids, id]
+            : tautanOrangTua.user_ids.filter((userId) => userId !== id);
     }
 </script>
 
@@ -200,9 +222,9 @@
                             class="px-4 py-3">NIS / NISN</th
                         ><th class="px-4 py-3">Unit</th><th class="px-4 py-3"
                             >Jenis kelamin</th
-                        ><th class="px-4 py-3">Status</th><th
-                            class="px-4 py-3 text-right">Aksi</th
-                        ></tr
+                        ><th class="px-4 py-3">Orang tua</th><th
+                            class="px-4 py-3">Status</th
+                        ><th class="px-4 py-3 text-right">Aksi</th></tr
                     ></thead
                 >
                 <tbody
@@ -217,12 +239,29 @@
                             ><td class="px-4 py-3">{s.kantor ?? '—'}</td><td
                                 class="px-4 py-3">{s.jenis_kelamin_label}</td
                             ><td class="px-4 py-3"
+                                >{#if s.orang_tuas.length > 0}<div
+                                        class="flex max-w-48 flex-wrap gap-1"
+                                    >
+                                        {#each s.orang_tuas as orangTua (orangTua.id)}<Badge
+                                                variant="outline"
+                                                >{orangTua.name}</Badge
+                                            >{/each}
+                                    </div>{:else}<span
+                                        class="text-xs text-muted-foreground"
+                                        >Belum ditautkan</span
+                                    >{/if}</td
+                            ><td class="px-4 py-3"
                                 ><Badge variant="secondary"
                                     >{s.is_active ? 'Aktif' : 'Nonaktif'}</Badge
                                 ></td
                             ><td class="px-4 py-3"
                                 ><div class="flex justify-end gap-1">
                                     <TombolIkon
+                                        ikon={UsersRound}
+                                        nada="hijau"
+                                        label={`Kelola orang tua ${s.nama}`}
+                                        onclick={() => kelolaOrangTua(s)}
+                                    /><TombolIkon
                                         ikon={Pencil}
                                         nada="biru"
                                         label={`Ubah data ${s.nama}`}
@@ -238,7 +277,7 @@
                         >
                     {:else}<tr
                             ><td
-                                colspan="6"
+                                colspan="7"
                                 class="px-4 py-10 text-center text-muted-foreground"
                                 >Belum ada siswa yang cocok. Tambahkan siswa
                                 atau impor CSV.</td
@@ -543,3 +582,80 @@
         {/if}</DialogContent
     ></Dialog
 >
+
+<Dialog bind:open={dialogOrangTua}>
+    <DialogContent class="max-h-[85dvh] max-w-lg overflow-y-auto">
+        <DialogTitle>Kelola orang tua</DialogTitle>
+        {#if siswaOrangTua}
+            <p class="text-sm text-muted-foreground">
+                Pilih akun yang boleh melihat kehadiran <b
+                    >{siswaOrangTua.nama}</b
+                >.
+            </p>
+            <form
+                class="mt-4 grid gap-3"
+                onsubmit={(event) => {
+                    event.preventDefault();
+                    tautanOrangTua.submit(orangTuaUpdate(siswaOrangTua!.id), {
+                        preserveScroll: true,
+                        onSuccess: () => {
+                            dialogOrangTua = false;
+                            siswaOrangTua = null;
+                        },
+                    });
+                }}
+            >
+                {#if orangTuas.length > 0}
+                    <div class="grid gap-2">
+                        {#each orangTuas as orangTua (orangTua.id)}
+                            <label
+                                class="flex min-h-14 cursor-pointer items-center gap-3 rounded-2xl border border-border bg-background px-3 py-2 hover:bg-muted/60"
+                            >
+                                <Checkbox
+                                    checked={tautanOrangTua.user_ids.includes(
+                                        orangTua.id,
+                                    )}
+                                    onclick={() =>
+                                        ubahPilihanOrangTua(
+                                            orangTua.id,
+                                            !tautanOrangTua.user_ids.includes(
+                                                orangTua.id,
+                                            ),
+                                        )}
+                                />
+                                <span class="min-w-0 flex-1"
+                                    ><span class="block truncate font-bold"
+                                        >{orangTua.name}</span
+                                    ><span
+                                        class="block truncate text-xs text-muted-foreground"
+                                        >{orangTua.email}</span
+                                    ></span
+                                >
+                            </label>
+                        {/each}
+                    </div>
+                {:else}
+                    <div
+                        class="rounded-2xl bg-muted p-4 text-sm text-muted-foreground"
+                    >
+                        Belum ada akun Orang Tua aktif. Buat akun dari menu <b
+                            >Orang tua</b
+                        >.
+                    </div>
+                {/if}
+                {#each Object.values(tautanOrangTua.errors) as error, i (i)}<p
+                        class="text-sm text-destructive"
+                        role="alert"
+                    >
+                        {error}
+                    </p>{/each}
+                <Button
+                    type="submit"
+                    class="min-h-12"
+                    disabled={tautanOrangTua.processing}
+                    >Simpan akses orang tua</Button
+                >
+            </form>
+        {/if}
+    </DialogContent>
+</Dialog>

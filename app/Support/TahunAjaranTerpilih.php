@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Enums\Role;
 use App\Models\TahunAjaran;
 
 /**
@@ -27,7 +28,9 @@ class TahunAjaranTerpilih
             return $this->id;
         }
 
-        $dipilih = session('tahun_ajaran_id');
+        $dipilih = auth()->user()?->role === Role::Admin
+            ? session('tahun_ajaran_id')
+            : null;
 
         if ($dipilih !== null) {
             $ada = TahunAjaran::query()->whereKey($dipilih)->value('id');

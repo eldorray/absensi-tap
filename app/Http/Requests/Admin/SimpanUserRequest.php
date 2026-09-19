@@ -18,7 +18,7 @@ class SimpanUserRequest extends FormRequest
             'nip' => ['nullable', 'string', 'max:30'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', Password::default()],
-            'role' => ['required', Rule::enum(Role::class)],
+            'role' => ['required', Rule::in([Role::Guru->value, Role::Admin->value])],
             'kantor_id' => ['nullable', 'integer', 'exists:kantors,id'],
         ];
     }

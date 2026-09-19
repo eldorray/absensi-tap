@@ -238,7 +238,7 @@
 
         {#if tanpaKantor.length > 0 || lokasiBersama.length > 0}
             <p class="text-xs text-muted-foreground">
-                {tanpaKantor.length} guru belum ditugaskan (atur di menu Kelola user)
+                {tanpaKantor.length} guru belum ditugaskan (atur di menu Akun staf)
                 · {lokasiBersama.length} lokasi dipakai semua kantor (atur di Pengaturan).
             </p>
         {/if}

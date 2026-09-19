@@ -42,6 +42,7 @@ class AppServiceProvider extends ServiceProvider
         // dinonaktifkan tidak berubah perilakunya diam-diam oleh perubahan ini;
         // pemeriksaan is_active saat login adalah keputusan terpisah.
         Gate::define('pegawai', fn (User $user): bool => in_array($user->role, [Role::Guru, Role::Admin], true));
+        Gate::define('orang-tua', fn (User $user): bool => $user->role === Role::OrangTua && $user->is_active);
 
         // Nama dan favicon dipakai di <head> root template, yang dirender di
         // luar Inertia. Ditunda lewat closure supaya tabelnya tidak disentuh

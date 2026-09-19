@@ -22,7 +22,7 @@ test('welcome mengarahkan tamu ke login dan pengguna yang sudah masuk ke aplikas
 
     // Satu tombol yang sama berganti tujuan, bukan dua tombol berbeda.
     expect($halaman)
-        ->toContain('auth.user ? dashboard() : login()')
+        ->toContain('auth.user ? bukaAplikasi() : login()')
         ->toContain('Masuk untuk absen')
         ->toContain('Buka aplikasi')
         ->toContain('Siap untuk tap masuk dan')

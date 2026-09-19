@@ -13,7 +13,7 @@ test('guru tidak boleh membuka kelola user maupun kelola role', function () {
     $this->actingAs($guru)->get(route('admin.role.index'))->assertForbidden();
 });
 
-test('admin melihat seluruh akun beserta role dan kantornya', function () {
+test('admin melihat akun staf beserta role dan kantornya', function () {
     $kantor = Kantor::factory()->create(['nama' => 'MI Syekh Yusuf']);
     User::factory()->create(['name' => 'Bu Ani', 'kantor_id' => $kantor->id]);
 
@@ -23,7 +23,7 @@ test('admin melihat seluruh akun beserta role dan kantornya', function () {
         ->assertInertia(fn ($p) => $p->component('admin/User')
             ->has('users', 2)
             ->has('kantors', 1)
-            ->has('roles', 3)
+            ->has('roles', 2)
             ->where('users.0.name', 'Bu Ani')
             ->where('users.0.kantor', 'MI Syekh Yusuf'));
 });

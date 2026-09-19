@@ -18,6 +18,7 @@
     import UserCog from 'lucide-svelte/icons/user-cog';
     import UserRound from 'lucide-svelte/icons/user-round';
     import Users from 'lucide-svelte/icons/users';
+    import UsersRound from 'lucide-svelte/icons/users-round';
     import type { Snippet } from 'svelte';
     import AppLogo from '@/components/AppLogo.svelte';
     import AppVersion from '@/components/AppVersion.svelte';
@@ -41,6 +42,7 @@
     import { index as jadwalGuruIndex } from '@/routes/admin/jadwal-guru';
     import { index as kantorIndex } from '@/routes/admin/kantor';
     import { index as kelasIndex } from '@/routes/admin/kelas';
+    import { index as orangTuaIndex } from '@/routes/admin/orang-tua';
     import { edit as pengaturanEdit } from '@/routes/admin/pengaturan';
     import { index as pengumumanIndex } from '@/routes/admin/pengumuman';
     import { index as rekapIndex } from '@/routes/admin/rekap';
@@ -95,7 +97,8 @@
         },
         { title: 'Kantor', href: kantorIndex(), icon: Building2 },
         { title: 'Guru', href: guruIndex(), icon: Users },
-        { title: 'Kelola user', href: userIndex(), icon: UserCog },
+        { title: 'Akun staf', href: userIndex(), icon: UserCog },
+        { title: 'Orang tua', href: orangTuaIndex(), icon: UsersRound },
         { title: 'Kelola role', href: roleIndex(), icon: ShieldCheck },
     ];
 
@@ -156,16 +159,16 @@
                 items={masterNavItems}
             />
             <NavDropdown
+                label="Kesiswaan"
+                icon={School}
+                items={kesiswaanNavItems}
+            />
+            <NavDropdown
                 label="Laporan Kehadiran"
                 icon={ClipboardList}
                 items={laporanNavItems}
             />
             <NavMain items={adminNavItems} label="ADMIN" />
-            <NavDropdown
-                label="Kesiswaan"
-                icon={School}
-                items={kesiswaanNavItems}
-            />
         {/if}
         <NavMain items={settingsNavItems} label="PENGATURAN" />
     </SidebarContent>

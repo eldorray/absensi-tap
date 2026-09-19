@@ -60,6 +60,15 @@ class UserFactory extends Factory
         ]);
     }
 
+    public function orangTua(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'role' => Role::OrangTua,
+            'nip' => null,
+            'kantor_id' => null,
+        ]);
+    }
+
     /**
      * Indicate that the model has two-factor authentication configured.
      */

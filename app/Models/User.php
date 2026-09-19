@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -73,5 +74,11 @@ class User extends Authenticatable implements PasskeyUser
     public function perangkats(): HasMany
     {
         return $this->hasMany(Perangkat::class);
+    }
+
+    /** @return BelongsToMany<Siswa, $this> */
+    public function siswas(): BelongsToMany
+    {
+        return $this->belongsToMany(Siswa::class, 'orang_tua_siswa')->withTimestamps();
     }
 }

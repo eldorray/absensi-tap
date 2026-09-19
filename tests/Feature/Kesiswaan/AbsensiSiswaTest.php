@@ -12,6 +12,7 @@ use App\Models\Siswa;
 use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 beforeEach(function () {
@@ -166,4 +167,130 @@ test('constraint database mencegah sesi dan detail ganda', function () {
     expect(fn () => DB::table('sesi_absensi_siswas')->insert([
         'tahun_ajaran_id' => $kelas->tahun_ajaran_id, 'kelas_id' => $kelas->id, 'tanggal' => $sesi->getRawOriginal('tanggal'), 'status' => 'draft', 'created_at' => now(), 'updated_at' => now(),
     ]))->toThrow(QueryException::class);
+});
+
+test('guru dapat menengok absensi final hari sebelumnya lewat filter tanggal', function () {
+    $guru = User::factory()->create();
+    [$kelas, $siswas] = kelasAbsensi($guru);
+    $kemarin = Carbon::parse('2026-09-13');
+    $sesi = SesiAbsensiSiswa::create(['kelas_id' => $kelas->id, 'tanggal' => $kemarin, 'status' => StatusSesiAbsensiSiswa::Final, 'dibuat_oleh' => $guru->id, 'finalisasi_oleh' => $guru->id, 'finalisasi_pada' => $kemarin]);
+    $sesi->absensis()->create(['siswa_id' => $siswas[0]->id, 'status' => StatusKehadiranSiswa::Sakit, 'dicatat_oleh' => $guru->id]);
+
+    $this->actingAs($guru)->get(route('absensi-siswa.index', ['tanggal' => '2026-09-13']))
+        ->assertOk()->assertInertia(fn ($page) => $page
+        ->where('tanggal', '2026-09-13')
+        ->where('kelas.0.status', StatusSesiAbsensiSiswa::Final->value));
+
+    $this->actingAs($guru)->get(route('absensi-siswa.show', ['kelas' => $kelas, 'tanggal' => '2026-09-13']))
+        ->assertOk()->assertInertia(fn ($page) => $page
+        ->where('tanggal', '2026-09-13')
+        ->where('sesi.status', StatusSesiAbsensiSiswa::Final->value)
+        ->where('sesi.read_only', true)
+        // Daftar diurutkan menurut nama, jadi siswa yang sakit dicari, bukan ditebak indeksnya.
+        ->where('siswa', fn (Collection $siswa) => $siswa->firstWhere('id', $siswas[0]->id)['status'] === StatusKehadiranSiswa::Sakit->value));
+});
+
+test('hari lampau yang masih draft tetap hanya dapat dibaca dan hari depan ditolak', function () {
+    $guru = User::factory()->create();
+    [$kelas] = kelasAbsensi($guru);
+    SesiAbsensiSiswa::create(['kelas_id' => $kelas->id, 'tanggal' => Carbon::parse('2026-09-13'), 'status' => StatusSesiAbsensiSiswa::Draft, 'dibuat_oleh' => $guru->id]);
+
+    $this->actingAs($guru)->get(route('absensi-siswa.show', ['kelas' => $kelas, 'tanggal' => '2026-09-13']))
+        ->assertOk()->assertInertia(fn ($page) => $page->where('sesi.read_only', true));
+
+    $this->actingAs($guru)->get(route('absensi-siswa.index', ['tanggal' => '2026-09-15']))
+        ->assertSessionHasErrors('tanggal');
+
+    // Penyuntingan tetap terkunci di hari ini, apa pun tanggal yang dikirim.
+    $this->actingAs($guru)->put(route('absensi-siswa.draft', $kelas), ['tanggal' => '2026-09-13', 'absensis' => []])
+        ->assertSessionHasErrors('tanggal');
+});
+
+test('guru dapat mencetak absensi harian dan periode bebas', function () {
+    $guru = User::factory()->create(['name' => 'Bu Rina']);
+    [$kelas, $siswas] = kelasAbsensi($guru);
+    foreach (['2026-09-11', '2026-09-13'] as $hari) {
+        $sesi = SesiAbsensiSiswa::create(['kelas_id' => $kelas->id, 'tanggal' => Carbon::parse($hari), 'status' => StatusSesiAbsensiSiswa::Final, 'dibuat_oleh' => $guru->id]);
+        $sesi->absensis()->create(['siswa_id' => $siswas[0]->id, 'status' => StatusKehadiranSiswa::Alpa, 'dicatat_oleh' => $guru->id]);
+    }
+
+    $this->actingAs($guru)->get(route('absensi-siswa.cetak', ['dari' => '2026-09-13', 'sampai' => '2026-09-13']))
+        ->assertOk()
+        ->assertViewIs('absensi-siswa.cetak')
+        ->assertViewHas('harian', true)
+        ->assertViewHas('sesis', fn (array $sesis) => count($sesis) === 1)
+        ->assertSee('Bu Rina')
+        ->assertSee($siswas[0]->nama);
+
+    // Periode dibaca sebagai rekap: satu baris per siswa, berisi hitungan per status.
+    $this->actingAs($guru)->get(route('absensi-siswa.cetak', ['dari' => '2026-09-01', 'sampai' => '2026-09-14']))
+        ->assertOk()
+        ->assertViewHas('harian', false)
+        ->assertViewHas('rekap', function (array $rekap) use ($siswas) {
+            $baris = collect($rekap[0]['siswa'])->firstWhere('nis', $siswas[0]->nis);
+
+            return count($rekap) === 1
+                && $rekap[0]['hari'] === 2
+                && $baris['hitung'][StatusKehadiranSiswa::Alpa->value] === 2
+                && $baris['total'] === 2;
+        })
+        ->assertSee($siswas[0]->nama)
+        ->assertSee('hari absensi tercatat');
+
+    $this->actingAs($guru)->get(route('absensi-siswa.cetak', ['dari' => '2026-09-14', 'sampai' => '2026-09-13']))
+        ->assertSessionHasErrors('sampai');
+});
+
+test('cetak tidak membocorkan hari di luar masa tugas guru pengganti', function () {
+    $wali = User::factory()->create();
+    $pengganti = User::factory()->create();
+    [$kelas, $siswas] = kelasAbsensi($wali);
+    GuruKelas::factory()->create(['kelas_id' => $kelas->id, 'user_id' => $pengganti->id, 'tanggal_mulai' => '2026-09-13', 'tanggal_selesai' => '2026-09-13']);
+    foreach (['2026-09-12', '2026-09-13'] as $hari) {
+        $sesi = SesiAbsensiSiswa::create(['kelas_id' => $kelas->id, 'tanggal' => Carbon::parse($hari), 'status' => StatusSesiAbsensiSiswa::Final, 'dibuat_oleh' => $wali->id]);
+        $sesi->absensis()->create(['siswa_id' => $siswas[0]->id, 'status' => StatusKehadiranSiswa::Hadir, 'dicatat_oleh' => $wali->id]);
+    }
+
+    $this->actingAs($pengganti)->get(route('absensi-siswa.cetak', ['dari' => '2026-09-01', 'sampai' => '2026-09-14']))
+        ->assertOk()
+        // Hanya 13 September yang masuk masa tugasnya; 12 September milik wali kelas.
+        ->assertViewHas('sesis', fn (array $sesis) => count($sesis) === 1 && str_contains($sesis[0]['tanggal'], '13 September'));
+
+    $this->actingAs($wali)->get(route('absensi-siswa.cetak', ['dari' => '2026-09-01', 'sampai' => '2026-09-14']))
+        ->assertOk()
+        ->assertViewHas('sesis', fn (array $sesis) => count($sesis) === 2);
+});
+
+test('guru dapat membatalkan finalisasi hari ini dan pembatalannya tercatat', function () {
+    $guru = User::factory()->create();
+    [$kelas, $siswas] = kelasAbsensi($guru);
+    $this->actingAs($guru)->put(route('absensi-siswa.finalisasi', $kelas), ['tanggal' => '2026-09-14', 'absensis' => [['siswa_id' => $siswas[0]->id, 'status' => StatusKehadiranSiswa::Alpa->value]]]);
+    expect(SesiAbsensiSiswa::first()->status)->toBe(StatusSesiAbsensiSiswa::Final);
+
+    $this->actingAs($guru)->put(route('absensi-siswa.buka-finalisasi', $kelas))
+        ->assertRedirect(route('absensi-siswa.show', $kelas));
+
+    $sesi = SesiAbsensiSiswa::first();
+    expect($sesi->status)->toBe(StatusSesiAbsensiSiswa::Draft)
+        ->and($sesi->dibuka_oleh)->toBe($guru->id)
+        ->and($sesi->dibuka_pada)->not->toBeNull();
+
+    // Statusnya kembali dapat disunting, dan pilihan lama tetap terbaca.
+    $this->actingAs($guru)->get(route('absensi-siswa.show', $kelas))
+        ->assertInertia(fn ($page) => $page->where('sesi.read_only', false)->where('sesi.dapat_dibuka', false));
+});
+
+test('guru tidak dapat membuka finalisasi kelas orang lain maupun hari lampau', function () {
+    $guru = User::factory()->create();
+    $lain = User::factory()->create();
+    [$kelas, $siswas] = kelasAbsensi($guru);
+    $this->actingAs($guru)->put(route('absensi-siswa.finalisasi', $kelas), ['tanggal' => '2026-09-14', 'absensis' => []]);
+
+    $this->actingAs($lain)->put(route('absensi-siswa.buka-finalisasi', $kelas))->assertForbidden();
+    expect(SesiAbsensiSiswa::first()->status)->toBe(StatusSesiAbsensiSiswa::Final);
+
+    // Besok, sesi hari ini sudah jadi hari lampau: pintunya tertutup untuk guru.
+    Carbon::setTestNow('2026-09-15 08:00:00');
+    $this->actingAs($guru)->put(route('absensi-siswa.buka-finalisasi', $kelas))->assertForbidden();
+    expect(SesiAbsensiSiswa::first()->status)->toBe(StatusSesiAbsensiSiswa::Final);
 });

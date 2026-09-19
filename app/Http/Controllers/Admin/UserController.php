@@ -16,7 +16,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * Kelola seluruh akun: guru maupun admin, beserta role dan kantornya.
+ * Kelola akun staf: guru maupun admin, beserta role dan kantornya.
  *
  * Halaman /admin/guru tetap ada untuk hal yang khas guru (perangkat, impor
  * Excel). Di sini yang diurus keanggotaannya: siapa, perannya apa, di kantor
@@ -28,6 +28,7 @@ class UserController extends Controller
     {
         return Inertia::render('admin/User', [
             'users' => User::query()
+                ->whereIn('role', [Role::Guru, Role::Admin])
                 ->with('kantor:id,nama')
                 ->orderBy('name')
                 ->get(['id', 'name', 'nip', 'email', 'role', 'kantor_id', 'is_active'])
@@ -47,7 +48,7 @@ class UserController extends Controller
             'roles' => array_map(fn (Role $role): array => [
                 'value' => $role->value,
                 'label' => $role->label(),
-            ], Role::cases()),
+            ], [Role::Guru, Role::Admin]),
         ]);
     }
 
@@ -81,11 +82,13 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user): RedirectResponse
     {
+        $this->pastikanAkunStaf($user);
+
         $data = $request->validate([
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'nip' => ['sometimes', 'nullable', 'string', 'max:30'],
             'email' => ['sometimes', 'required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
-            'role' => ['sometimes', Rule::enum(Role::class)],
+            'role' => ['sometimes', Rule::in([Role::Guru->value, Role::Admin->value])],
             'kantor_id' => ['sometimes', 'nullable', 'integer', 'exists:kantors,id'],
             'is_active' => ['sometimes', 'boolean'],
         ]);
@@ -123,6 +126,8 @@ class UserController extends Controller
      */
     public function resetPassword(User $user): RedirectResponse
     {
+        $this->pastikanAkunStaf($user);
+
         $password = Str::password(12, symbols: false);
 
         $user->forceFill(['password' => $password])->save();
@@ -149,6 +154,8 @@ class UserController extends Controller
      */
     public function destroy(Request $request, User $user): RedirectResponse
     {
+        $this->pastikanAkunStaf($user);
+
         if ($request->user()->is($user)) {
             throw ValidationException::withMessages([
                 'user' => 'Akun sendiri tidak bisa dihapus.',
@@ -197,5 +204,10 @@ class UserController extends Controller
                 'role' => 'Ini admin aktif terakhir. Tunjuk admin lain dulu sebelum mencabutnya.',
             ]);
         }
+    }
+
+    private function pastikanAkunStaf(User $user): void
+    {
+        abort_unless(in_array($user->role, [Role::Guru, Role::Admin], true), 404);
     }
 }

@@ -8,11 +8,13 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
- * Siswa. Tidak punya akun: yang login adalah orang tuanya (fase berikutnya).
+ * Siswa tidak mempunyai akun sendiri. Orang tua yang ditautkan admin masuk
+ * dengan akunnya masing-masing dan hanya membaca hasil yang dipublikasikan.
  *
  * Siswa nonaktif tidak dihapus. Kehadirannya tahun lalu tetap harus bisa
  * dibuka dan dicetak setelah dia lulus atau pindah.
@@ -50,6 +52,18 @@ class Siswa extends Model
     public function keanggotaanKelas(): HasMany
     {
         return $this->hasMany(AnggotaKelas::class);
+    }
+
+    /** @return BelongsToMany<User, $this> */
+    public function orangTuas(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'orang_tua_siswa')->withTimestamps();
+    }
+
+    /** @return HasMany<AbsensiSiswa, $this> */
+    public function absensis(): HasMany
+    {
+        return $this->hasMany(AbsensiSiswa::class);
     }
 
     protected function casts(): array

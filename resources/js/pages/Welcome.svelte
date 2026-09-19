@@ -1,15 +1,15 @@
 <script lang="ts">
     import { Link, page } from '@inertiajs/svelte';
     import ArrowRight from 'lucide-svelte/icons/arrow-right';
+    import Check from 'lucide-svelte/icons/check';
     import Fingerprint from 'lucide-svelte/icons/fingerprint';
     import MapPin from 'lucide-svelte/icons/map-pin';
     import Smartphone from 'lucide-svelte/icons/smartphone';
-    import Check from 'lucide-svelte/icons/check';
     import AppHead from '@/components/AppHead.svelte';
     import InstallPrompt from '@/components/InstallPrompt.svelte';
     import ThemeToggle from '@/components/ThemeToggle.svelte';
     import { toUrl } from '@/lib/utils';
-    import { dashboard, home, login } from '@/routes';
+    import { aplikasi as bukaAplikasi, home, login } from '@/routes';
 
     const auth = $derived(page.props.auth);
     const aplikasi = $derived(page.props.aplikasi);
@@ -71,7 +71,7 @@
         <div class="header-actions">
             <ThemeToggle />
             <Link
-                href={toUrl(auth.user ? dashboard() : login())}
+                href={toUrl(auth.user ? bukaAplikasi() : login())}
                 class="header-action"
             >
                 <span>{auth.user ? 'Buka aplikasi' : 'Masuk'}</span>
@@ -98,7 +98,7 @@
                 </p>
                 <div class="mt-9 flex flex-wrap items-center gap-x-5 gap-y-3">
                     <Link
-                        href={toUrl(auth.user ? dashboard() : login())}
+                        href={toUrl(auth.user ? bukaAplikasi() : login())}
                         class="tombol-utama"
                     >
                         <span class="denyut" aria-hidden="true"></span>

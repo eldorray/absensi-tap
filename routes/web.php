@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\Role;
 use App\Http\Controllers\AbsensiController;
 use App\Http\Controllers\AbsensiPasskeyController;
 use App\Http\Controllers\AbsensiSiswaController;
@@ -9,6 +10,7 @@ use App\Http\Controllers\Admin\IzinController as AdminIzinController;
 use App\Http\Controllers\Admin\JadwalGuruController;
 use App\Http\Controllers\Admin\KantorController;
 use App\Http\Controllers\Admin\KelasController;
+use App\Http\Controllers\Admin\OrangTuaController;
 use App\Http\Controllers\Admin\PengaturanController;
 use App\Http\Controllers\Admin\PengumumanController;
 use App\Http\Controllers\Admin\RekapController;
@@ -20,20 +22,38 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\IzinController;
 use App\Http\Controllers\JadwalSayaController;
 use App\Http\Controllers\KelasSayaController;
+use App\Http\Controllers\OrangTua\DashboardController as OrangTuaDashboardController;
 use App\Http\Controllers\PerangkatController;
 use App\Http\Controllers\RiwayatAbsensiController;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'Welcome')->name('home');
+Route::get('aplikasi', function () {
+    return match (request()->user()->role) {
+        Role::Admin => to_route('admin.dashboard'),
+        Role::OrangTua => to_route('orang-tua.dashboard'),
+        default => to_route('dashboard'),
+    };
+})->middleware(['auth', 'verified'])->name('aplikasi');
+
+Route::middleware(['auth', 'verified', 'can:orang-tua'])
+    ->prefix('orang-tua')
+    ->name('orang-tua.')
+    ->group(function () {
+        Route::get('/', OrangTuaDashboardController::class)->name('dashboard');
+    });
 
 Route::middleware(['auth', 'verified', 'can:pegawai'])->group(function () {
     Route::get('dashboard', [AbsensiController::class, 'index'])->name('dashboard');
     Route::get('jadwal', [JadwalSayaController::class, 'index'])->name('jadwal.index');
     Route::get('kelas-saya', [KelasSayaController::class, 'index'])->name('kelas-saya.index');
     Route::get('absensi-siswa', [AbsensiSiswaController::class, 'index'])->name('absensi-siswa.index');
+    // Harus di atas absensi-siswa/{kelas}, atau 'cetak' terbaca sebagai id kelas.
+    Route::get('absensi-siswa/cetak', [AbsensiSiswaController::class, 'cetak'])->name('absensi-siswa.cetak');
     Route::get('absensi-siswa/{kelas}', [AbsensiSiswaController::class, 'show'])->name('absensi-siswa.show');
     Route::put('absensi-siswa/{kelas}/draft', [AbsensiSiswaController::class, 'draft'])->name('absensi-siswa.draft');
     Route::put('absensi-siswa/{kelas}/finalisasi', [AbsensiSiswaController::class, 'finalisasi'])->name('absensi-siswa.finalisasi');
+    Route::put('absensi-siswa/{kelas}/buka-finalisasi', [AbsensiSiswaController::class, 'bukaFinalisasi'])->name('absensi-siswa.buka-finalisasi');
     Route::get('riwayat', [RiwayatAbsensiController::class, 'index'])->name('riwayat.index');
 
     Route::post('absensi', [AbsensiController::class, 'store'])
@@ -86,6 +106,11 @@ Route::middleware(['auth', 'verified', 'can:admin'])
         Route::patch('user/{user}', [UserController::class, 'update'])->name('user.update');
         Route::post('user/{user}/reset-password', [UserController::class, 'resetPassword'])->name('user.reset-password');
         Route::delete('user/{user}', [UserController::class, 'destroy'])->name('user.destroy');
+        Route::get('orang-tua', [OrangTuaController::class, 'index'])->name('orang-tua.index');
+        Route::post('orang-tua', [OrangTuaController::class, 'store'])->name('orang-tua.store');
+        Route::patch('orang-tua/{orangTua}', [OrangTuaController::class, 'update'])->name('orang-tua.update');
+        Route::post('orang-tua/{orangTua}/reset-password', [OrangTuaController::class, 'resetPassword'])->name('orang-tua.reset-password');
+        Route::delete('orang-tua/{orangTua}', [OrangTuaController::class, 'destroy'])->name('orang-tua.destroy');
         Route::get('role', [RoleController::class, 'index'])->name('role.index');
         Route::get('kantor', [KantorController::class, 'index'])->name('kantor.index');
         Route::post('kantor', [KantorController::class, 'store'])->name('kantor.store');
@@ -103,6 +128,7 @@ Route::middleware(['auth', 'verified', 'can:admin'])
         Route::resource('siswa', SiswaController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::get('siswa/template', [SiswaController::class, 'template'])->name('siswa.template');
         Route::post('siswa/impor', [SiswaController::class, 'impor'])->name('siswa.impor');
+        Route::put('siswa/{siswa}/orang-tua', [SiswaController::class, 'sinkronkanOrangTua'])->name('siswa.orang-tua.update');
         Route::resource('kelas', KelasController::class)->parameters(['kelas' => 'kelas'])->only(['index', 'store', 'update', 'destroy']);
         Route::post('kelas/{kelas}/anggota', [KelasController::class, 'tempatkan'])->name('kelas.anggota.store');
         Route::delete('kelas/{kelas}/anggota/{anggota}', [KelasController::class, 'keluarkan'])->name('kelas.anggota.destroy');

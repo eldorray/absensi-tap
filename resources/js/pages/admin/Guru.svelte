@@ -712,7 +712,7 @@
             {@const g = diubah}
             <DialogTitle class="text-xl font-bold">Ubah {g.name}</DialogTitle>
             <p class="mt-1 mb-4 text-sm text-muted-foreground">
-                Role dan kantor diatur di menu Kelola user.
+                Role dan kantor diatur di menu Akun staf.
             </p>
 
             <form

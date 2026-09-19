@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\StatusSesiAbsensiSiswa;
 use App\Models\Concerns\BelongsToTahunAjaran;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -19,10 +20,12 @@ use Illuminate\Support\Carbon;
  * @property int|null $dibuat_oleh
  * @property int|null $finalisasi_oleh
  * @property Carbon|null $finalisasi_pada
+ * @property int|null $dibuka_oleh
+ * @property Carbon|null $dibuka_pada
  * @property string|null $catatan
  * @property-read Collection<int, AbsensiSiswa> $absensis
  */
-#[Fillable(['kelas_id', 'tanggal', 'status', 'dibuat_oleh', 'finalisasi_oleh', 'finalisasi_pada', 'catatan'])]
+#[Fillable(['kelas_id', 'tanggal', 'status', 'dibuat_oleh', 'finalisasi_oleh', 'finalisasi_pada', 'dibuka_oleh', 'dibuka_pada', 'catatan'])]
 class SesiAbsensiSiswa extends Model
 {
     use BelongsToTahunAjaran;
@@ -39,8 +42,17 @@ class SesiAbsensiSiswa extends Model
         return $this->hasMany(AbsensiSiswa::class);
     }
 
+    /** @param Builder<SesiAbsensiSiswa> $query */
+    public function scopeTerpublikasi(Builder $query): Builder
+    {
+        return $query->whereIn('status', [
+            StatusSesiAbsensiSiswa::Final,
+            StatusSesiAbsensiSiswa::Dikoreksi,
+        ]);
+    }
+
     protected function casts(): array
     {
-        return ['tanggal' => 'date', 'finalisasi_pada' => 'datetime', 'status' => StatusSesiAbsensiSiswa::class];
+        return ['tanggal' => 'date', 'finalisasi_pada' => 'datetime', 'dibuka_pada' => 'datetime', 'status' => StatusSesiAbsensiSiswa::class];
     }
 }

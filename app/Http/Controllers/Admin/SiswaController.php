@@ -5,13 +5,16 @@ namespace App\Http\Controllers\Admin;
 use App\Actions\Kesiswaan\ImporSiswa;
 use App\Actions\Kesiswaan\TempatkanSiswa;
 use App\Enums\JenisKelamin;
+use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ImporSiswaRequest;
 use App\Http\Requests\Admin\SimpanSiswaRequest;
+use App\Http\Requests\Admin\SinkronkanOrangTuaSiswaRequest;
 use App\Models\AnggotaKelas;
 use App\Models\Kantor;
 use App\Models\Kelas;
 use App\Models\Siswa;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -37,7 +40,7 @@ class SiswaController extends Controller
         return Inertia::render('admin/Siswa', [
             'hasilImpor' => session('impor_siswa'),
             'siswas' => Siswa::query()
-                ->with('kantor:id,nama')
+                ->with(['kantor:id,nama', 'orangTuas:id,name,email'])
                 ->when($cari !== '', fn ($query) => $query->where(
                     fn ($q) => $q->where('nama', 'like', '%'.$cari.'%')->orWhere('nis', 'like', $cari.'%')
                 ))
@@ -56,9 +59,19 @@ class SiswaController extends Controller
                     'jenis_kelamin_label' => $siswa->jenis_kelamin->label(),
                     'tanggal_lahir' => $siswa->tanggal_lahir?->toDateString(),
                     'is_active' => $siswa->is_active,
+                    'orang_tuas' => $siswa->orangTuas->map(fn (User $orangTua): array => [
+                        'id' => $orangTua->id,
+                        'name' => $orangTua->name,
+                        'email' => $orangTua->email,
+                    ])->values(),
                 ]),
             'kelases' => Kelas::query()->where('is_active', true)->orderBy('nama')->get(['id', 'nama', 'kantor_id']),
             'kantors' => Kantor::query()->orderBy('nama')->get(['id', 'nama']),
+            'orangTuas' => User::query()
+                ->where('role', Role::OrangTua)
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get(['id', 'name', 'email']),
             'jenisKelamins' => array_map(
                 fn (JenisKelamin $jk): array => ['value' => $jk->value, 'label' => $jk->label()],
                 JenisKelamin::cases(),
@@ -94,6 +107,17 @@ class SiswaController extends Controller
         }
         $siswa->update($request->validated());
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Data siswa diperbarui.']);
+
+        return to_route('admin.siswa.index');
+    }
+
+    public function sinkronkanOrangTua(SinkronkanOrangTuaSiswaRequest $request, Siswa $siswa): RedirectResponse
+    {
+        /** @var list<int> $userIds */
+        $userIds = $request->validated('user_ids');
+        $siswa->orangTuas()->sync($userIds);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Akses orang tua diperbarui.']);
 
         return to_route('admin.siswa.index');
     }

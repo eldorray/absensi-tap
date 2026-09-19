@@ -7,6 +7,7 @@
     import AppSidebarHeader from '@/components/AppSidebarHeader.svelte';
     import GuruBottomNavigation from '@/components/GuruBottomNavigation.svelte';
     import GuruProfileSheet from '@/components/GuruProfileSheet.svelte';
+    import OrangTuaBottomNavigation from '@/components/OrangTuaBottomNavigation.svelte';
     import ThemeToggle from '@/components/ThemeToggle.svelte';
     import { Toaster } from '@/components/ui/sonner';
     import type { BreadcrumbItem } from '@/types';
@@ -20,6 +21,7 @@
     } = $props();
 
     const isAdmin = $derived(page.props.auth.isAdmin === true);
+    const isOrangTua = $derived(page.props.auth.role === 'orang_tua');
     const tahunAjaran = $derived(page.props.tahunAjaran);
     const namaAplikasi = $derived(page.props.aplikasi?.nama ?? 'Absensi Guru');
     const userName = $derived(page.props.auth.user.name);
@@ -78,7 +80,11 @@
             {@render children?.()}
         </main>
 
-        <GuruBottomNavigation />
+        {#if isOrangTua}
+            <OrangTuaBottomNavigation />
+        {:else}
+            <GuruBottomNavigation />
+        {/if}
         <Toaster />
     </div>
 {/if}
