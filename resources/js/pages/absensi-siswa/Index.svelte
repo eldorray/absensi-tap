@@ -13,7 +13,7 @@
     import FileDown from 'lucide-svelte/icons/file-down';
     import AppHead from '@/components/AppHead.svelte';
     import { toUrl } from '@/lib/utils';
-    import { cetak, show } from '@/routes/absensi-siswa';
+    import { cetak, show, unduhPdf } from '@/routes/absensi-siswa';
     type Kelas = {
         id: number;
         nama: string;
@@ -51,15 +51,39 @@
         }
     }
     let periodeTerbuka = $state(false);
-    let dari = $state(tanggal);
+    // Rekap periode hampir selalu berarti "bulan ini sampai hari ini", bukan
+    // satu hari. Rentang satu hari tetap boleh, tapi awalnya diarahkan ke awal
+    // bulan supaya yang keluar memang rekap, bukan daftar harian.
+    let dari = $state(`${tanggal.slice(0, 8)}01`);
     let sampai = $state(tanggal);
     const urlHarian = $derived(
-        cetak.url({ query: { dari: tanggal, sampai: tanggal } }),
+        cetak.url({
+            query: { dari: tanggal, sampai: tanggal, jenis: 'harian' },
+        }),
     );
-    const urlPeriode = $derived(cetak.url({ query: { dari, sampai } }));
-    const periodeValid = $derived(
-        dari !== '' && sampai !== '' && dari <= sampai,
+    const urlPeriode = $derived(
+        cetak.url({ query: { dari, sampai, jenis: 'periode' } }),
     );
+    // Versi berkas: dirender jadi PDF di server lalu terunduh, jadi tidak
+    // bergantung pada dialog cetak peramban.
+    const urlHarianPdf = $derived(
+        unduhPdf.url({
+            query: { dari: tanggal, sampai: tanggal, jenis: 'harian' },
+        }),
+    );
+    const urlPeriodePdf = $derived(
+        unduhPdf.url({ query: { dari, sampai, jenis: 'periode' } }),
+    );
+    const jumlahHari = $derived(
+        dari && sampai && dari <= sampai
+            ? Math.round(
+                  (Date.parse(`${sampai}T00:00:00`) -
+                      Date.parse(`${dari}T00:00:00`)) /
+                      86_400_000,
+              ) + 1
+            : 0,
+    );
+    const periodeValid = $derived(jumlahHari > 0);
     const label: Record<string, string> = {
         belum_diperiksa: 'Belum diperiksa',
         draft: 'Draft',
@@ -101,12 +125,11 @@
 
         <div class="grid grid-cols-2 gap-2">
             <a
-                href={urlHarian}
-                target="_blank"
-                rel="noopener"
-                class="flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-current px-3 text-sm font-bold"
+                href={urlHarianPdf}
+                download
+                class="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-primary px-3 text-sm font-bold text-primary-foreground"
             >
-                <FileDown class="size-4" /> PDF harian
+                <FileDown class="size-4" /> Unduh PDF harian
             </a>
             <button
                 type="button"
@@ -117,6 +140,11 @@
                 <CalendarRange class="size-4" /> PDF periode
             </button>
         </div>
+        <p class="text-xs">
+            <a href={urlHarian} target="_blank" rel="noopener" class="underline"
+                >Pratinjau cetak harian</a
+            >
+        </p>
 
         {#if periodeTerbuka}
             <div class="grid gap-2 rounded-2xl bg-background/20 p-3">
@@ -139,14 +167,25 @@
                     />
                 </label>
                 {#if periodeValid}
+                    <p class="text-xs">
+                        Rekap {jumlahHari} hari: satu baris per siswa berisi jumlah
+                        hadir, sakit, izin, alpa, dan terlambat.
+                    </p>
                     <a
-                        href={urlPeriode}
-                        target="_blank"
-                        rel="noopener"
+                        href={urlPeriodePdf}
+                        download
                         class="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-3 text-sm font-bold text-primary-foreground"
                     >
-                        <FileDown class="size-4" /> Buka PDF periode
+                        <FileDown class="size-4" /> Unduh rekap periode
                     </a>
+                    <p class="text-xs">
+                        <a
+                            href={urlPeriode}
+                            target="_blank"
+                            rel="noopener"
+                            class="underline">Pratinjau cetak periode</a
+                        >
+                    </p>
                 {:else}
                     <p class="text-xs font-semibold">
                         Tanggal "sampai" tidak boleh mendahului "dari".

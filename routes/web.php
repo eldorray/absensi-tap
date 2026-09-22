@@ -50,6 +50,7 @@ Route::middleware(['auth', 'verified', 'can:pegawai'])->group(function () {
     Route::get('absensi-siswa', [AbsensiSiswaController::class, 'index'])->name('absensi-siswa.index');
     // Harus di atas absensi-siswa/{kelas}, atau 'cetak' terbaca sebagai id kelas.
     Route::get('absensi-siswa/cetak', [AbsensiSiswaController::class, 'cetak'])->name('absensi-siswa.cetak');
+    Route::get('absensi-siswa/cetak/pdf', [AbsensiSiswaController::class, 'cetakPdf'])->name('absensi-siswa.unduh-pdf');
     Route::get('absensi-siswa/{kelas}', [AbsensiSiswaController::class, 'show'])->name('absensi-siswa.show');
 
     // Mengisi absensi siswa adalah pekerjaan guru piket, bukan wali kelas:

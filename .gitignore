@@ -32,6 +32,8 @@ yarn-error.log
 /.codex/
 /.hermes/
 /.ai/
+/.agents/
+/.cursor/
 /.impeccable/
 /CLAUDE.md
 /CODEX.md

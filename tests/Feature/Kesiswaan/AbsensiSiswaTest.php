@@ -221,6 +221,15 @@ test('halaman mobile menyediakan pencarian filter bottom sheet ringkasan dan kon
         ->toContain('dapat_mengisi')
         ->and($daftar)
         ->toContain('Pengisian absensi dilakukan guru piket.')
+        // Tombol PDF harus meminta jenis laporan yang benar, jangan
+        // mengandalkan tebakan server dari rentang tanggal.
+        ->toContain("jenis: 'harian'")
+        ->toContain("jenis: 'periode'")
+        // Tombol utama mengunduh berkas dari server, bukan membuka tab cetak.
+        ->toContain('unduhPdf')
+        ->toContain('Unduh PDF harian')
+        ->toContain('Unduh rekap periode')
+        ->toContain('Pratinjau cetak')
         ->and($nav)->toContain('@/routes/absensi-siswa')->toContain('Lihat kehadiran kelas')->not->toContain('Segera tersedia');
 });
 
@@ -315,6 +324,85 @@ test('guru dapat mencetak absensi harian dan periode bebas', function () {
 
     $this->actingAs($guru)->get(route('absensi-siswa.cetak', ['dari' => '2026-09-14', 'sampai' => '2026-09-13']))
         ->assertSessionHasErrors('sampai');
+
+    // Bentuk laporan ditentukan tombol yang ditekan, bukan ditebak dari
+    // rentang: "rekap periode" untuk satu hari tetap harus keluar sebagai
+    // rekap, dan "harian" tetap daftar per sesi walau rentangnya panjang.
+    $this->actingAs($guru)->get(route('absensi-siswa.cetak', ['dari' => '2026-09-13', 'sampai' => '2026-09-13', 'jenis' => 'periode']))
+        ->assertOk()
+        ->assertViewHas('harian', false)
+        ->assertSee('hari absensi tercatat');
+
+    $this->actingAs($guru)->get(route('absensi-siswa.cetak', ['dari' => '2026-09-01', 'sampai' => '2026-09-14', 'jenis' => 'harian']))
+        ->assertOk()
+        ->assertViewHas('harian', true);
+
+    $this->actingAs($guru)->get(route('absensi-siswa.cetak', ['dari' => '2026-09-01', 'sampai' => '2026-09-14', 'jenis' => 'rekap']))
+        ->assertSessionHasErrors('jenis');
+});
+
+test('pdf absensi terunduh sebagai berkas, bukan halaman html', function () {
+    $guru = User::factory()->create(['name' => 'Bu Rina']);
+    [$kelas, $siswas] = kelasAbsensi($guru);
+    $sesi = SesiAbsensiSiswa::create(['kelas_id' => $kelas->id, 'tanggal' => Carbon::parse('2026-09-13'), 'status' => StatusSesiAbsensiSiswa::Final, 'dibuat_oleh' => $guru->id]);
+    $sesi->absensis()->create(['siswa_id' => $siswas[0]->id, 'status' => StatusKehadiranSiswa::Alpa, 'dicatat_oleh' => $guru->id]);
+
+    $unduh = $this->actingAs($guru)->get(route('absensi-siswa.unduh-pdf', ['dari' => '2026-09-13', 'sampai' => '2026-09-13', 'jenis' => 'harian']));
+
+    $unduh->assertOk()->assertHeader('content-type', 'application/pdf');
+
+    // Berkas sungguhan: header unduhan + magic bytes %PDF.
+    expect($unduh->headers->get('content-disposition'))
+        ->toContain('attachment')
+        ->toContain('.pdf')
+        ->and($unduh->getContent())->toStartWith('%PDF')
+        ->and(strlen((string) $unduh->getContent()))->toBeGreaterThan(2000);
+
+    // Rekap periode juga keluar sebagai berkas.
+    $this->actingAs($guru)->get(route('absensi-siswa.unduh-pdf', ['dari' => '2026-09-01', 'sampai' => '2026-09-14', 'jenis' => 'periode']))
+        ->assertOk()
+        ->assertHeader('content-type', 'application/pdf');
+
+    // Rentang tetap wajib, dan jenis tetap divalidasi.
+    $this->actingAs($guru)->get(route('absensi-siswa.unduh-pdf', ['sampai' => '2026-09-13']))
+        ->assertSessionHasErrors('dari');
+
+    $this->actingAs($guru)->get(route('absensi-siswa.unduh-pdf', ['dari' => '2026-09-13', 'sampai' => '2026-09-13', 'jenis' => 'rekap']))
+        ->assertSessionHasErrors('jenis');
+});
+
+test('pdf absensi tidak membocorkan kelas guru lain', function () {
+    $wali = User::factory()->create();
+    [$kelas, $siswas] = kelasAbsensi($wali);
+    $sesi = SesiAbsensiSiswa::create(['kelas_id' => $kelas->id, 'tanggal' => Carbon::parse('2026-09-13'), 'status' => StatusSesiAbsensiSiswa::Final, 'dibuat_oleh' => $wali->id]);
+    $sesi->absensis()->create(['siswa_id' => $siswas[0]->id, 'status' => StatusKehadiranSiswa::Alpa, 'dicatat_oleh' => $wali->id]);
+
+    // Guru asing tetap dapat mengunduh berkas, tapi isinya kosong: kelas itu
+    // bukan kelasnya, dan nama siswanya tidak ikut terbawa.
+    $asing = User::factory()->create();
+    $this->actingAs($asing)->get(route('absensi-siswa.cetak', ['dari' => '2026-09-13', 'sampai' => '2026-09-13', 'jenis' => 'harian']))
+        ->assertOk()
+        ->assertDontSee($siswas[0]->nama);
+
+    $this->actingAs($asing)->get(route('absensi-siswa.unduh-pdf', ['dari' => '2026-09-13', 'sampai' => '2026-09-13', 'jenis' => 'harian']))
+        ->assertOk()
+        ->assertHeader('content-type', 'application/pdf');
+});
+
+test('rekap periode tetap terbaca walau ada sesi draft tanpa rincian absensi', function () {
+    $piket = User::factory()->admin()->create();
+    [$kelas, $siswas] = kelasAbsensi(User::factory()->create());
+
+    $sesi = SesiAbsensiSiswa::create(['kelas_id' => $kelas->id, 'tanggal' => Carbon::parse('2026-09-13'), 'status' => StatusSesiAbsensiSiswa::Final, 'dibuat_oleh' => $piket->id]);
+    $sesi->absensis()->create(['siswa_id' => $siswas[0]->id, 'status' => StatusKehadiranSiswa::Terlambat, 'jam_datang' => '07:30', 'dicatat_oleh' => $piket->id]);
+
+    // Draft kosong: sesi ada, rinciannya belum diisi sama sekali.
+    SesiAbsensiSiswa::create(['kelas_id' => $kelas->id, 'tanggal' => Carbon::parse('2026-09-14'), 'status' => StatusSesiAbsensiSiswa::Draft, 'dibuat_oleh' => $piket->id]);
+
+    $this->actingAs($piket)->get(route('absensi-siswa.cetak', ['dari' => '2026-09-01', 'sampai' => '2026-09-14', 'jenis' => 'periode']))
+        ->assertOk()
+        ->assertViewHas('rekap', fn (array $rekap) => count($rekap) === 1 && $rekap[0]['hari'] === 2)
+        ->assertSee($siswas[0]->nama);
 });
 
 test('guru piket mencetak absensi seluruh kelas, bukan hanya kelas yang diampu', function () {

@@ -35,8 +35,9 @@
         .ttd { margin-top: 36px; display: flex; justify-content: flex-end; }
         .ttd div { width: 200px; text-align: center; }
         .ttd .garis { margin-top: 56px; border-top: 1px solid #111; padding-top: 4px; }
-        .cetak-btn { margin-bottom: 16px; }
+        .cetak-btn { margin-bottom: 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
         .cetak-btn button { padding: 8px 16px; font-size: 12px; cursor: pointer; }
+        .cetak-btn span { font-size: 11px; color: #555; }
         @media print {
             body { padding: 0; }
             .cetak-btn { display: none; }
@@ -49,7 +50,8 @@
 </head>
 <body>
     <div class="cetak-btn">
-        <button type="button" onclick="window.print()">Cetak / Simpan PDF</button>
+        <button type="button" onclick="window.print()">Cetak halaman ini</button>
+        <span>Halaman ini untuk dilihat dan dicetak. Untuk berkas PDF, pakai tombol "Unduh PDF" di aplikasi.</span>
     </div>
 
     <header>
@@ -157,5 +159,6 @@
             <div class="garis">{{ $guru }}</div>
         </div>
     </div>
+
 </body>
 </html>
