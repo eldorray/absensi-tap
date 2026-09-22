@@ -211,6 +211,16 @@ test('halaman mobile menyediakan pencarian filter bottom sheet ringkasan dan kon
         ->toContain('sticky')
         ->toContain('mt-auto -mx-4')
         ->not->toContain('fixed inset-x-0')
+        // Shell admin adalah flex column setinggi viewport: tanpa shrink-0
+        // halaman ini diperas sampai min-height-nya, sehingga baris filter
+        // menciut jadi beberapa piksel dan daftar siswa terpotong tanpa bisa
+        // digulir. Jangan hapus.
+        ->toContain('shrink-0')
+        // Pil filter dilipat, bukan digeser horizontal: kalau meluber, pilihan
+        // terakhir (Terlambat) tersembunyi di luar layar.
+        ->toContain('flex flex-wrap gap-2')
+        ->not->toContain('overflow-x-auto')
+        ->toContain('aria-pressed')
         // Tombol kembali membawa tanggal yang sedang dibuka.
         ->toContain('Kembali')
         ->toContain('daftarKelas({ query: { tanggal } })')

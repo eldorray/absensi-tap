@@ -142,7 +142,7 @@
 
 <AppHead title={`Absensi ${kelas.nama}`} />
 <div
-    class="mx-auto flex min-h-[calc(100svh-4rem)] w-full max-w-lg flex-col gap-4 px-4 py-5 sm:px-6"
+    class="mx-auto flex min-h-[calc(100svh-4rem)] w-full max-w-lg shrink-0 flex-col gap-4 px-4 py-5 sm:px-6"
 >
     <Link
         href={toUrl(daftarKelas({ query: { tanggal } }))}
@@ -175,17 +175,23 @@
             class="min-h-12 w-full rounded-2xl border bg-background pl-12 pr-4"
         />
     </div>
-    <div class="flex gap-2 overflow-x-auto pb-1">
+    <div class="flex flex-wrap gap-2">
         <button
             type="button"
+            aria-pressed={filter === 'semua'}
             onclick={() => (filter = 'semua')}
-            class="min-h-11 rounded-full border px-4 font-semibold"
-            >Semua</button
+            class="min-h-11 rounded-full border px-4 font-semibold {filter ===
+            'semua'
+                ? 'border-transparent bg-primary text-primary-foreground'
+                : ''}">Semua</button
         >{#each pilihan as p (p.value)}<button
                 type="button"
+                aria-pressed={filter === p.value}
                 onclick={() => (filter = p.value)}
-                class="min-h-11 rounded-full border px-4 font-semibold"
-                >{p.label}</button
+                class="min-h-11 rounded-full border px-4 font-semibold {filter ===
+                p.value
+                    ? 'border-transparent bg-primary text-primary-foreground'
+                    : ''}">{p.label}</button
             >{/each}
     </div>
     <section class="overflow-hidden rounded-3xl border bg-card">

@@ -422,6 +422,16 @@
         -webkit-overflow-scrolling: touch;
     }
 
+    /* Di layar md+, SidebarInset memberi margin 1rem (m-2) pada kotak gulir
+       ini. Tanpa dikurangi, dasarnya jatuh 8px di bawah layar: halaman ikut
+       tergulir sedikit dan bar aksi/bottom sheet yang menempel ke dasar
+       terpotong 8px. */
+    @media (min-width: 768px) {
+        .admin-scroll {
+            height: calc(100dvh - 1rem);
+        }
+    }
+
     /*
      * Isian otomatis Chrome memaksa latar biru pucatnya sendiri, yang di
      * halaman hijau ini terlihat seperti kotak nyasar. Warnanya dikembalikan
