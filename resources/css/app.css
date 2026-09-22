@@ -384,18 +384,24 @@
 }
 
 @layer base {
+    /*
+     * clip, bukan hidden. overflow-x: hidden membuat html/body menjadi scroll
+     * container sendiri, dan position: sticky di dalamnya berhenti menempel --
+     * header guru dan bar aksi absensi ikut tergulir. clip tetap memotong
+     * luapan horizontal tanpa membuat scroll container.
+     */
     html {
         -webkit-text-size-adjust: 100%;
         width: 100%;
         min-height: 100%;
-        overflow-x: hidden;
+        overflow-x: clip;
         overscroll-behavior-x: none;
     }
 
     body {
         width: 100%;
         min-height: 100%;
-        overflow-x: hidden;
+        overflow-x: clip;
         overscroll-behavior-x: none;
         -webkit-tap-highlight-color: transparent;
     }

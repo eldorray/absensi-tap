@@ -5,6 +5,7 @@
     import CalendarCheck from 'lucide-svelte/icons/calendar-check';
     import CalendarClock from 'lucide-svelte/icons/calendar-clock';
     import CalendarOff from 'lucide-svelte/icons/calendar-off';
+    import ClipboardCheck from 'lucide-svelte/icons/clipboard-check';
     import ClipboardList from 'lucide-svelte/icons/clipboard-list';
     import Database from 'lucide-svelte/icons/database';
     import GraduationCap from 'lucide-svelte/icons/graduation-cap';
@@ -36,6 +37,7 @@
     } from '@/components/ui/sidebar';
     import { toUrl } from '@/lib/utils';
     import { dashboard } from '@/routes';
+    import { index as absensiSiswaIndex } from '@/routes/absensi-siswa';
     import { dashboard as adminDashboard } from '@/routes/admin';
     import { index as guruIndex } from '@/routes/admin/guru';
     import { index as adminIzinIndex } from '@/routes/admin/izin';
@@ -103,6 +105,11 @@
     ];
 
     const kesiswaanNavItems: NavItem[] = [
+        {
+            title: 'Absensi siswa',
+            href: absensiSiswaIndex(),
+            icon: ClipboardCheck,
+        },
         { title: 'Siswa', href: siswaIndex(), icon: BookUser },
         { title: 'Kelas', href: kelasIndex(), icon: School },
     ];

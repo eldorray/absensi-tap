@@ -98,7 +98,7 @@
                 <span
                     >Absensi Siswa<span
                         class="block text-xs font-normal text-muted-foreground"
-                        >Periksa kehadiran kelas</span
+                        >Lihat kehadiran kelas</span
                     ></span
                 >
             </Link>

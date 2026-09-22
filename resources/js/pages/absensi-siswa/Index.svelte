@@ -22,9 +22,23 @@
         status: string;
         terakhir_disimpan: string | null;
     };
-    let { kelas, tanggal }: { kelas: Kelas[]; tanggal: string } = $props();
+    let {
+        kelas,
+        tanggal,
+        piket,
+    }: { kelas: Kelas[]; tanggal: string; piket: boolean } = $props();
     const hariIni = new Date().toLocaleDateString('sv-SE');
     const lampau = $derived(tanggal !== hariIni);
+    /** Guru piket yang mengisi; guru hanya membaca hasilnya. */
+    function labelTombol(item: Kelas): string {
+        if (!piket) {
+            return 'Lihat absensi';
+        }
+
+        return lampau || item.status === 'final' || item.status === 'dikoreksi'
+            ? 'Lihat hasil'
+            : 'Periksa absensi';
+    }
     function pindahTanggal(event: Event): void {
         const pilihan = (event.currentTarget as HTMLInputElement).value;
 
@@ -64,8 +78,16 @@
         <p>
             {lampau
                 ? 'Menengok hari lampau. Hasilnya hanya dapat dibaca.'
-                : 'Pilih kelas yang akan diperiksa.'}
+                : piket
+                  ? 'Pilih kelas yang akan diperiksa.'
+                  : 'Lihat kehadiran siswa di kelas yang Anda ampu.'}
         </p>
+        {#if !piket}
+            <p class="rounded-2xl bg-background/20 p-3 text-xs font-semibold">
+                Pengisian absensi dilakukan guru piket. Di sini Anda hanya dapat
+                melihat hasilnya.
+            </p>
+        {/if}
         <label class="text-sm font-bold">
             Tanggal
             <input
@@ -155,11 +177,7 @@
             <Link
                 href={toUrl(show(item.id, { query: { tanggal } }))}
                 class="flex min-h-12 items-center justify-center rounded-2xl bg-primary px-4 font-bold text-primary-foreground"
-                >{lampau ||
-                item.status === 'final' ||
-                item.status === 'dikoreksi'
-                    ? 'Lihat hasil'
-                    : 'Periksa absensi'}</Link
+                >{labelTombol(item)}</Link
             >
         </section>
     {:else}<section class="g-tile g-tone-plain text-center">

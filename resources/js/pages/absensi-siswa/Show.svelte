@@ -1,13 +1,23 @@
 <script module lang="ts">
-    export const layout = { title: 'Periksa Absensi Siswa' };
+    import { index } from '@/routes/absensi-siswa';
+    export const layout = {
+        title: 'Periksa Absensi Siswa',
+        breadcrumbs: [{ title: 'Absensi Siswa', href: index() }],
+    };
 </script>
 
 <script lang="ts">
-    import { router } from '@inertiajs/svelte';
+    import { Link, router } from '@inertiajs/svelte';
+    import ChevronLeft from 'lucide-svelte/icons/chevron-left';
     import Search from 'lucide-svelte/icons/search';
     import AppHead from '@/components/AppHead.svelte';
     import { toUrl } from '@/lib/utils';
-    import { bukaFinalisasi, draft, finalisasi } from '@/routes/absensi-siswa';
+    import {
+        bukaFinalisasi,
+        draft,
+        finalisasi,
+        index as daftarKelas,
+    } from '@/routes/absensi-siswa';
     type Status = 'hadir' | 'sakit' | 'izin' | 'alpa' | 'terlambat';
     type Siswa = {
         id: number;
@@ -21,6 +31,7 @@
         kelas,
         tanggal,
         siswa: awal,
+        piket,
         sesi,
     }: {
         kelas: {
@@ -31,15 +42,24 @@
         };
         tanggal: string;
         siswa: Siswa[];
+        piket: boolean;
         sesi: {
             status: string;
             catatan: string | null;
             read_only: boolean;
+            dapat_mengisi: boolean;
             dapat_dibuka: boolean;
         };
     } = $props();
     let siswa = $state(awal.map((item) => ({ ...item })));
     const lampau = tanggal !== new Date().toLocaleDateString('sv-SE');
+    // Sebagian sekolah menamai kelasnya "Kelas VII A", sebagian lagi "VII A".
+    // Awalan dirapikan supaya tidak pernah terbaca "Kelas Kelas VII A".
+    const judulKelas = $derived(
+        /^kelas\b/i.test(kelas.nama.trim())
+            ? kelas.nama.trim()
+            : `Kelas ${kelas.nama.trim()}`,
+    );
     let cari = $state('');
     let filter = $state('semua');
     let dipilih = $state<Siswa | null>(null);
@@ -53,6 +73,15 @@
         { value: 'alpa', label: 'Alpa' },
         { value: 'terlambat', label: 'Terlambat' },
     ];
+    // Guru tidak pernah mengisi -- absensi siswa adalah tugas guru piket.
+    // Pesannya dibedakan supaya tidak terbaca seperti kesalahan sendiri.
+    const pesanTerkunci = $derived(
+        !piket
+            ? 'Absensi diisi guru piket. Anda hanya dapat melihat.'
+            : lampau
+              ? 'Absensi hari lampau hanya dapat dilihat.'
+              : 'Absensi sudah final dan hanya dapat dilihat.',
+    );
     const tampil = $derived(
         siswa.filter(
             (x) =>
@@ -113,15 +142,22 @@
 
 <AppHead title={`Absensi ${kelas.nama}`} />
 <div
-    class="mx-auto flex w-full max-w-lg flex-col gap-4 px-4 py-5 pb-44 sm:px-6"
+    class="mx-auto flex min-h-[calc(100svh-4rem)] w-full max-w-lg flex-col gap-4 px-4 py-5 sm:px-6"
 >
+    <Link
+        href={toUrl(daftarKelas({ query: { tanggal } }))}
+        preserveScroll
+        class="inline-flex min-h-10 w-fit items-center gap-1 rounded-full border px-3 text-sm font-bold"
+    >
+        <ChevronLeft class="size-4" aria-hidden="true" /> Kembali
+    </Link>
     <section class="g-tile g-tone-green">
         <div class="flex justify-between gap-3">
             <div>
                 <p class="text-sm font-bold">
                     {tanggal} · {kelas.tahun_ajaran}
                 </p>
-                <h1 class="g-display text-3xl">Kelas {kelas.nama}</h1>
+                <h1 class="g-display text-3xl">{judulKelas}</h1>
                 <p>{kelas.kantor} · Status: {sesi.status.replace('_', ' ')}</p>
             </div>
             <span
@@ -155,9 +191,8 @@
     <section class="overflow-hidden rounded-3xl border bg-card">
         {#each tampil as item (item.id)}<button
                 type="button"
-                disabled={sesi.read_only}
                 onclick={() => (dipilih = item)}
-                class="flex min-h-16 w-full items-center justify-between gap-3 border-b px-4 text-left last:border-0 disabled:opacity-80"
+                class="flex min-h-16 w-full items-center justify-between gap-3 border-b px-4 text-left last:border-0"
                 ><div class="min-w-0">
                     <p class="truncate font-bold">{item.nama}</p>
                     <p class="font-mono text-xs text-muted-foreground">
@@ -172,150 +207,167 @@
                 Siswa tidak ditemukan.
             </p>{/each}
     </section>
-</div>
-<div
-    class="fixed inset-x-0 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-30 mx-auto max-w-lg border-t bg-background/95 p-3 backdrop-blur"
->
-    <div class="mb-3 grid grid-cols-5 gap-1 text-center">
-        {#each pilihan as p (p.value)}<div>
-                <strong class="block text-lg">{ringkasan[p.value]}</strong><span
-                    class="text-[10px] text-muted-foreground">{p.label}</span
-                >
-            </div>{/each}
-    </div>
-    {#if sesi.read_only}<div class="grid gap-2">
-            <p class="rounded-2xl bg-muted p-3 text-center font-bold">
-                {lampau
-                    ? 'Absensi hari lampau hanya dapat dilihat.'
-                    : 'Absensi sudah final dan hanya dapat dilihat.'}
-            </p>
-            {#if sesi.dapat_dibuka}
-                <button
-                    type="button"
-                    disabled={processing}
-                    onclick={() => (konfirmasiBuka = true)}
-                    class="min-h-12 rounded-2xl border font-bold"
-                    >Batalkan finalisasi</button
-                >
-            {/if}
-        </div>{:else}<div class="grid grid-cols-2 gap-2">
-            <button
-                type="submit"
-                disabled={processing}
-                onclick={() => simpan()}
-                class="min-h-12 rounded-2xl border font-bold"
-                >Simpan draft</button
-            ><button
-                type="button"
-                disabled={processing}
-                onclick={() => (konfirmasi = true)}
-                class="min-h-12 rounded-2xl bg-primary font-bold text-primary-foreground"
-                >Finalisasi Absensi</button
-            >
-        </div>{/if}
-</div>
-{#if dipilih}<button
-        type="button"
-        aria-label="Tutup pilihan status"
-        class="fixed inset-0 z-40 bg-black/30"
-        onclick={() => (dipilih = null)}
-    ></button>
-    <section
-        class="fixed inset-x-0 bottom-0 z-50 mx-auto max-w-lg rounded-t-3xl bg-background p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
+    <div
+        class="sticky {piket
+            ? 'bottom-0'
+            : 'bottom-[calc(4.75rem+env(safe-area-inset-bottom))]'} z-30 mt-auto -mx-4 border-t bg-background/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6"
     >
-        <h2 class="text-xl font-bold">{dipilih.nama}</h2>
-        <div class="my-4 grid grid-cols-2 gap-2">
-            {#each pilihan as p (p.value)}<button
-                    type="button"
-                    onclick={() => dipilih && (dipilih.status = p.value)}
-                    class="min-h-12 rounded-2xl border font-bold {dipilih.status ===
-                    p.value
-                        ? 'bg-primary text-primary-foreground'
-                        : ''}">{p.label}</button
-                >{/each}
-        </div>
-        {#if dipilih.status !== 'hadir'}<label class="text-sm font-bold"
-                >Catatan opsional<textarea
-                    bind:value={dipilih.catatan}
-                    class="mt-1 min-h-20 w-full rounded-2xl border bg-background p-3"
-                ></textarea></label
-            >{/if}<button
-            type="button"
-            onclick={() => (dipilih = null)}
-            class="mt-3 min-h-12 w-full rounded-2xl bg-primary font-bold text-primary-foreground"
-            >Selesai</button
-        >
-    </section>{/if}
-{#if konfirmasi}<button
-        type="button"
-        class="fixed inset-0 z-40 bg-black/30"
-        onclick={() => (konfirmasi = false)}
-        aria-label="Batal finalisasi"
-    ></button>
-    <section
-        role="dialog"
-        aria-modal="true"
-        class="fixed inset-x-4 top-1/2 z-50 mx-auto max-w-md -translate-y-1/2 rounded-3xl bg-background p-5 shadow-xl"
-    >
-        <h2 class="text-xl font-bold">Finalisasi {kelas.nama}?</h2>
-        <p class="my-2 text-sm text-muted-foreground">
-            {tanggal} · Total {siswa.length} siswa
-        </p>
-        <div class="my-4 grid grid-cols-5 gap-1 text-center">
+        <div class="mb-3 grid grid-cols-5 gap-1 text-center">
             {#each pilihan as p (p.value)}<div>
-                    <strong class="block">{ringkasan[p.value]}</strong><span
-                        class="text-[10px]">{p.label}</span
+                    <strong class="block text-lg">{ringkasan[p.value]}</strong
+                    ><span class="text-[10px] text-muted-foreground"
+                        >{p.label}</span
                     >
                 </div>{/each}
         </div>
-        <p class="rounded-2xl bg-muted p-3 text-sm font-semibold">
-            Hasil akan dapat dilihat orang tua dan tidak dapat diubah lagi oleh
-            guru.
-        </p>
-        <div class="mt-4 grid grid-cols-2 gap-2">
-            <button
-                type="button"
-                onclick={() => (konfirmasi = false)}
-                class="min-h-12 rounded-2xl border font-bold">Batal</button
-            ><button
-                type="submit"
-                disabled={processing}
-                onclick={() => simpan(true)}
-                class="min-h-12 rounded-2xl bg-primary font-bold text-primary-foreground"
-                >Ya, finalisasi</button
+        {#if sesi.read_only}<div class="grid gap-2">
+                <p class="rounded-2xl bg-muted p-3 text-center font-bold">
+                    {pesanTerkunci}
+                </p>
+                {#if sesi.dapat_dibuka}
+                    <button
+                        type="button"
+                        disabled={processing}
+                        onclick={() => (konfirmasiBuka = true)}
+                        class="min-h-12 rounded-2xl border font-bold"
+                        >Batalkan finalisasi</button
+                    >
+                {/if}
+            </div>{:else}<div class="grid grid-cols-2 gap-2">
+                <button
+                    type="submit"
+                    disabled={processing}
+                    onclick={() => simpan()}
+                    class="min-h-12 rounded-2xl border font-bold"
+                    >Simpan draft</button
+                ><button
+                    type="button"
+                    disabled={processing}
+                    onclick={() => (konfirmasi = true)}
+                    class="min-h-12 rounded-2xl bg-primary font-bold text-primary-foreground"
+                    >Finalisasi Absensi</button
+                >
+            </div>{/if}
+    </div>
+    {#if dipilih}<button
+            type="button"
+            aria-label="Tutup pilihan status"
+            class="fixed inset-0 z-40 bg-black/30"
+            onclick={() => (dipilih = null)}
+        ></button>
+        <div
+            class="sticky {piket
+                ? 'bottom-0'
+                : 'bottom-[calc(4.75rem+env(safe-area-inset-bottom))]'} z-50 -mx-4 h-0 sm:-mx-6"
+        >
+            <section
+                class="absolute inset-x-0 bottom-0 rounded-t-3xl bg-background p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
             >
-        </div>
-    </section>{/if}
-{#if konfirmasiBuka}<button
-        type="button"
-        class="fixed inset-0 z-40 bg-black/30"
-        onclick={() => (konfirmasiBuka = false)}
-        aria-label="Batal membuka finalisasi"
-    ></button>
-    <section
-        role="dialog"
-        aria-modal="true"
-        class="fixed inset-x-4 top-1/2 z-50 mx-auto max-w-md -translate-y-1/2 rounded-3xl bg-background p-5 shadow-xl"
-    >
-        <h2 class="text-xl font-bold">Batalkan finalisasi?</h2>
-        <p class="my-2 text-sm text-muted-foreground">
-            {kelas.nama} · {tanggal}
-        </p>
-        <p class="rounded-2xl bg-muted p-3 text-sm font-semibold">
-            Absensi kembali jadi draft dan bisa diperbaiki. Nama Anda dan waktu
-            pembatalan dicatat. Hanya berlaku untuk absensi hari ini.
-        </p>
-        <div class="mt-4 grid grid-cols-2 gap-2">
-            <button
-                type="button"
-                onclick={() => (konfirmasiBuka = false)}
-                class="min-h-12 rounded-2xl border font-bold">Batal</button
-            ><button
-                type="submit"
-                disabled={processing}
-                onclick={buka}
-                class="min-h-12 rounded-2xl bg-primary font-bold text-primary-foreground"
-                >Ya, buka kembali</button
-            >
-        </div>
-    </section>{/if}
+                <h2 class="text-xl font-bold">{dipilih.nama}</h2>
+                {#if !sesi.dapat_mengisi}
+                    <p
+                        class="mt-2 rounded-2xl bg-muted p-3 text-xs font-semibold"
+                    >
+                        {pesanTerkunci}
+                    </p>
+                {/if}
+                <div class="my-4 grid grid-cols-2 gap-2">
+                    {#each pilihan as p (p.value)}<button
+                            type="button"
+                            disabled={!sesi.dapat_mengisi}
+                            onclick={() =>
+                                dipilih && (dipilih.status = p.value)}
+                            class="min-h-12 rounded-2xl border font-bold disabled:opacity-60 {dipilih.status ===
+                            p.value
+                                ? 'bg-primary text-primary-foreground'
+                                : ''}">{p.label}</button
+                        >{/each}
+                </div>
+                {#if dipilih.status !== 'hadir'}<label class="text-sm font-bold"
+                        >Catatan opsional<textarea
+                            bind:value={dipilih.catatan}
+                            readonly={!sesi.dapat_mengisi}
+                            class="mt-1 min-h-20 w-full rounded-2xl border bg-background p-3"
+                        ></textarea></label
+                    >{/if}<button
+                    type="button"
+                    onclick={() => (dipilih = null)}
+                    class="mt-3 min-h-12 w-full rounded-2xl bg-primary font-bold text-primary-foreground"
+                    >Selesai</button
+                >
+            </section>
+        </div>{/if}
+    {#if konfirmasi}<button
+            type="button"
+            class="fixed inset-0 z-40 bg-black/30"
+            onclick={() => (konfirmasi = false)}
+            aria-label="Batal finalisasi"
+        ></button>
+        <section
+            role="dialog"
+            aria-modal="true"
+            class="fixed inset-x-4 top-1/2 z-50 mx-auto max-w-md -translate-y-1/2 rounded-3xl bg-background p-5 shadow-xl"
+        >
+            <h2 class="text-xl font-bold">Finalisasi {kelas.nama}?</h2>
+            <p class="my-2 text-sm text-muted-foreground">
+                {tanggal} · Total {siswa.length} siswa
+            </p>
+            <div class="my-4 grid grid-cols-5 gap-1 text-center">
+                {#each pilihan as p (p.value)}<div>
+                        <strong class="block">{ringkasan[p.value]}</strong><span
+                            class="text-[10px]">{p.label}</span
+                        >
+                    </div>{/each}
+            </div>
+            <p class="rounded-2xl bg-muted p-3 text-sm font-semibold">
+                Hasil akan dapat dilihat orang tua dan tidak dapat diubah lagi.
+                Salah pencet masih bisa dibatalkan selama hari ini.
+            </p>
+            <div class="mt-4 grid grid-cols-2 gap-2">
+                <button
+                    type="button"
+                    onclick={() => (konfirmasi = false)}
+                    class="min-h-12 rounded-2xl border font-bold">Batal</button
+                ><button
+                    type="submit"
+                    disabled={processing}
+                    onclick={() => simpan(true)}
+                    class="min-h-12 rounded-2xl bg-primary font-bold text-primary-foreground"
+                    >Ya, finalisasi</button
+                >
+            </div>
+        </section>{/if}
+    {#if konfirmasiBuka}<button
+            type="button"
+            class="fixed inset-0 z-40 bg-black/30"
+            onclick={() => (konfirmasiBuka = false)}
+            aria-label="Batal membuka finalisasi"
+        ></button>
+        <section
+            role="dialog"
+            aria-modal="true"
+            class="fixed inset-x-4 top-1/2 z-50 mx-auto max-w-md -translate-y-1/2 rounded-3xl bg-background p-5 shadow-xl"
+        >
+            <h2 class="text-xl font-bold">Batalkan finalisasi?</h2>
+            <p class="my-2 text-sm text-muted-foreground">
+                {kelas.nama} · {tanggal}
+            </p>
+            <p class="rounded-2xl bg-muted p-3 text-sm font-semibold">
+                Absensi kembali jadi draft dan bisa diperbaiki. Nama Anda dan
+                waktu pembatalan dicatat. Hanya berlaku untuk absensi hari ini.
+            </p>
+            <div class="mt-4 grid grid-cols-2 gap-2">
+                <button
+                    type="button"
+                    onclick={() => (konfirmasiBuka = false)}
+                    class="min-h-12 rounded-2xl border font-bold">Batal</button
+                ><button
+                    type="submit"
+                    disabled={processing}
+                    onclick={buka}
+                    class="min-h-12 rounded-2xl bg-primary font-bold text-primary-foreground"
+                    >Ya, buka kembali</button
+                >
+            </div>
+        </section>{/if}
+</div>

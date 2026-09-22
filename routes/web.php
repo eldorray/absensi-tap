@@ -51,9 +51,14 @@ Route::middleware(['auth', 'verified', 'can:pegawai'])->group(function () {
     // Harus di atas absensi-siswa/{kelas}, atau 'cetak' terbaca sebagai id kelas.
     Route::get('absensi-siswa/cetak', [AbsensiSiswaController::class, 'cetak'])->name('absensi-siswa.cetak');
     Route::get('absensi-siswa/{kelas}', [AbsensiSiswaController::class, 'show'])->name('absensi-siswa.show');
-    Route::put('absensi-siswa/{kelas}/draft', [AbsensiSiswaController::class, 'draft'])->name('absensi-siswa.draft');
-    Route::put('absensi-siswa/{kelas}/finalisasi', [AbsensiSiswaController::class, 'finalisasi'])->name('absensi-siswa.finalisasi');
-    Route::put('absensi-siswa/{kelas}/buka-finalisasi', [AbsensiSiswaController::class, 'bukaFinalisasi'])->name('absensi-siswa.buka-finalisasi');
+
+    // Mengisi absensi siswa adalah pekerjaan guru piket, bukan wali kelas:
+    // guru hanya membaca lewat route di atas. Lihat gate 'piket'.
+    Route::middleware('can:piket')->group(function (): void {
+        Route::put('absensi-siswa/{kelas}/draft', [AbsensiSiswaController::class, 'draft'])->name('absensi-siswa.draft');
+        Route::put('absensi-siswa/{kelas}/finalisasi', [AbsensiSiswaController::class, 'finalisasi'])->name('absensi-siswa.finalisasi');
+        Route::put('absensi-siswa/{kelas}/buka-finalisasi', [AbsensiSiswaController::class, 'bukaFinalisasi'])->name('absensi-siswa.buka-finalisasi');
+    });
     Route::get('riwayat', [RiwayatAbsensiController::class, 'index'])->name('riwayat.index');
 
     Route::post('absensi', [AbsensiController::class, 'store'])

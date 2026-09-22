@@ -26,20 +26,38 @@ class AbsensiSiswaController extends Controller
 {
     public function index(Request $request): Response
     {
+        $guru = $request->user();
         $tanggal = $this->tanggalDiminta($request);
-        $kelas = Kelas::query()->diampuOleh($request->user(), $tanggal)->where('is_active', true)->with('kantor:id,nama')->get()->map(function (Kelas $kelas) use ($tanggal): array {
+        $piket = $guru->can('piket');
+
+        // Guru piket mengabsen seluruh sekolah, jadi daftarnya seluruh kelas
+        // aktif tahun berjalan dan diurut per unit agar bisa dijelajahi
+        // kelas demi kelas. Guru cukup kelas yang diampu (wali atau
+        // pengganti) pada tanggal itu.
+        $query = Kelas::query()->where('is_active', true)->with('kantor:id,nama');
+
+        if ($piket) {
+            $query->orderBy('kantor_id')->orderBy('tingkat')->orderBy('nama');
+        } else {
+            $query->diampuOleh($guru, $tanggal);
+        }
+
+        $kelas = $query->get()->map(function (Kelas $kelas) use ($tanggal): array {
             $sesi = SesiAbsensiSiswa::query()->where('kelas_id', $kelas->id)->whereDate('tanggal', $tanggal)->first();
 
             return ['id' => $kelas->id, 'nama' => $kelas->nama, 'kantor' => $kelas->kantor?->nama, 'jumlah_siswa' => AnggotaKelas::query()->where('kelas_id', $kelas->id)->berlakuPada($tanggal)->count(), 'status' => $sesi?->status->value ?? StatusSesiAbsensiSiswa::BelumDiperiksa->value, 'terakhir_disimpan' => $sesi?->updated_at?->toIso8601String()];
         })->values()->all();
 
-        return Inertia::render('absensi-siswa/Index', ['kelas' => $kelas, 'tanggal' => $tanggal->toDateString()]);
+        return Inertia::render('absensi-siswa/Index', ['kelas' => $kelas, 'tanggal' => $tanggal->toDateString(), 'piket' => $piket]);
     }
 
     public function show(Request $request, Kelas $kelas): Response
     {
+        $guru = $request->user();
         $tanggal = $this->tanggalDiminta($request);
-        abort_unless(Kelas::query()->diampuOleh($request->user(), $tanggal)->whereKey($kelas->id)->exists(), 403);
+        $piket = $guru->can('piket');
+
+        abort_unless($piket || Kelas::query()->diampuOleh($guru, $tanggal)->whereKey($kelas->id)->exists(), 403);
         $sesi = SesiAbsensiSiswa::query()->where('kelas_id', $kelas->id)->whereDate('tanggal', $tanggal)->with('absensis')->first();
         $details = $sesi?->absensis->keyBy('siswa_id') ?? collect();
         $siswas = AnggotaKelas::query()->where('kelas_id', $kelas->id)->berlakuPada($tanggal)->with('siswa:id,nis,nama')->get()->sortBy(fn (AnggotaKelas $a) => $a->siswa?->nama)->values()->map(function (AnggotaKelas $a) use ($details): array {
@@ -48,9 +66,13 @@ class AbsensiSiswaController extends Controller
             return ['id' => $a->siswa_id, 'nis' => $a->siswa?->nis, 'nama' => $a->siswa?->nama, 'status' => $detail?->status->value ?? StatusKehadiranSiswa::Hadir->value, 'catatan' => $detail?->catatan, 'jam_datang' => $detail?->jam_datang];
         })->all();
         $status = $sesi === null ? StatusSesiAbsensiSiswa::BelumDiperiksa : $sesi->status;
+        $terkunci = in_array($status, [StatusSesiAbsensiSiswa::Final, StatusSesiAbsensiSiswa::Dikoreksi], true);
+        // Mengisi absensi hanya hak guru piket, dan hanya untuk hari ini.
+        // Bagi guru, lembar ini selalu terbaca saja.
+        $dapatMengisi = $piket && $tanggal->isToday() && ! $terkunci;
         $kelas->load('kantor:id,nama', 'tahunAjaran:id,nama');
 
-        return Inertia::render('absensi-siswa/Show', ['kelas' => ['id' => $kelas->id, 'nama' => $kelas->nama, 'kantor' => $kelas->kantor?->nama, 'tahun_ajaran' => $kelas->tahunAjaran?->nama], 'tanggal' => $tanggal->toDateString(), 'siswa' => $siswas, 'sesi' => ['status' => $status->value, 'catatan' => $sesi?->catatan, 'read_only' => ! $tanggal->isToday() || in_array($status, [StatusSesiAbsensiSiswa::Final, StatusSesiAbsensiSiswa::Dikoreksi], true), 'dapat_dibuka' => $tanggal->isToday() && $status === StatusSesiAbsensiSiswa::Final]]);
+        return Inertia::render('absensi-siswa/Show', ['kelas' => ['id' => $kelas->id, 'nama' => $kelas->nama, 'kantor' => $kelas->kantor?->nama, 'tahun_ajaran' => $kelas->tahunAjaran?->nama], 'tanggal' => $tanggal->toDateString(), 'siswa' => $siswas, 'piket' => $piket, 'sesi' => ['status' => $status->value, 'catatan' => $sesi?->catatan, 'read_only' => ! $dapatMengisi, 'dapat_mengisi' => $dapatMengisi, 'dapat_dibuka' => $piket && $tanggal->isToday() && $status === StatusSesiAbsensiSiswa::Final]]);
     }
 
     /**
@@ -80,23 +102,27 @@ class AbsensiSiswaController extends Controller
         $dari = Carbon::createFromFormat('Y-m-d', $data['dari'])->startOfDay();
         $sampai = Carbon::createFromFormat('Y-m-d', $data['sampai'])->startOfDay();
         $guru = $request->user();
+        $piket = $guru->can('piket');
 
         // Kelas yang mungkin tersentuh rentang ini diambil sekali, lengkap
         // dengan penugasan penggantinya, lalu kelayakan per tanggal diuji di
         // memori. Menanyakan scopeDiampuOleh() sekali per hari berarti satu
-        // query per hari untuk rentang yang panjang.
+        // query per hari untuk rentang yang panjang. Guru piket mencetak
+        // seluruh kelas, jadi penyaringan itu tidak berlaku baginya.
         $kelasKandidat = Kelas::query()
-            ->where(function ($q) use ($guru, $dari, $sampai): void {
-                $q->where('wali_kelas_id', $guru->id)
-                    ->orWhereHas('pengganti', function ($p) use ($guru, $dari, $sampai): void {
-                        $p->where('user_id', $guru->id)
-                            ->where(function ($b) use ($sampai): void {
-                                $b->whereNull('tanggal_mulai')->orWhere('tanggal_mulai', '<=', $sampai->toDateString());
-                            })
-                            ->where(function ($b) use ($dari): void {
-                                $b->whereNull('tanggal_selesai')->orWhere('tanggal_selesai', '>=', $dari->toDateString());
-                            });
-                    });
+            ->when(! $piket, function ($query) use ($guru, $dari, $sampai): void {
+                $query->where(function ($q) use ($guru, $dari, $sampai): void {
+                    $q->where('wali_kelas_id', $guru->id)
+                        ->orWhereHas('pengganti', function ($p) use ($guru, $dari, $sampai): void {
+                            $p->where('user_id', $guru->id)
+                                ->where(function ($b) use ($sampai): void {
+                                    $b->whereNull('tanggal_mulai')->orWhere('tanggal_mulai', '<=', $sampai->toDateString());
+                                })
+                                ->where(function ($b) use ($dari): void {
+                                    $b->whereNull('tanggal_selesai')->orWhere('tanggal_selesai', '>=', $dari->toDateString());
+                                });
+                        });
+                });
             })
             ->with(['kantor:id,nama', 'pengganti' => fn ($p) => $p->where('user_id', $guru->id)])
             ->get()
@@ -188,7 +214,8 @@ class AbsensiSiswaController extends Controller
 
     /**
      * Kelayakan guru atas satu kelas pada satu tanggal, diuji di memori dengan
-     * aturan yang sama seperti Kelas::scopeDiampuOleh().
+     * aturan yang sama seperti Kelas::scopeDiampuOleh(). Guru piket melihat
+     * seluruh kelas, jadi aturan wali/pengganti hanya mengikat guru.
      */
     private function bolehDilihat(?Kelas $kelas, User $guru, CarbonInterface $tanggal): bool
     {
@@ -196,7 +223,7 @@ class AbsensiSiswaController extends Controller
             return false;
         }
 
-        if ($kelas->wali_kelas_id === $guru->id) {
+        if ($guru->can('piket') || $kelas->wali_kelas_id === $guru->id) {
             return true;
         }
 

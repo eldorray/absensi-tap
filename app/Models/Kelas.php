@@ -72,8 +72,8 @@ class Kelas extends Model
      * Kelas yang boleh diabsen guru ini pada satu tanggal.
      *
      * Dua jalan masuk: wali kelasnya, atau guru pengganti yang penugasannya
-     * mencakup tanggal itu. Admin sengaja tidak diistimewakan di sini --
-     * akses admin lewat gate 'admin', dan mencampurnya ke scope ini membuat
+     * mencakup tanggal itu. Admin sengaja tidak diistimewakan di sini -- akses
+     * guru piket lewat gate 'piket', dan mencampurnya ke scope ini membuat
      * layar guru diam-diam menampilkan seluruh kelas sekolah kepada admin.
      *
      * Batas tanggalnya dibandingkan lewat where() biasa terhadap string

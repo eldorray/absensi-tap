@@ -14,22 +14,23 @@ use Illuminate\Support\Facades\DB;
  * Membuka finalisasi yang terlanjur ditekan, kembali ke draft.
  *
  * Hanya berlaku untuk sesi hari ini: salah pencet ketahuan dalam hitungan
- * menit, sedangkan hari lampau sudah mungkin dibaca orang tua -- membukanya
- * adalah urusan admin lewat status Dikoreksi, bukan guru.
+ * menit, sedangkan hari lampau sudah mungkin dibaca orang tua. Yang membuka
+ * adalah guru piket yang sama dengan yang mengisi -- bukan guru, yang kini
+ * hanya membaca.
  */
 class BukaFinalisasiAbsensiSiswa
 {
-    public function execute(Kelas $kelas, User $guru, Carbon $tanggal): SesiAbsensiSiswa
+    public function execute(Kelas $kelas, User $petugas, Carbon $tanggal): SesiAbsensiSiswa
     {
+        if (! $petugas->can('piket')) {
+            throw new AuthorizationException('Hanya guru piket yang dapat membuka finalisasi absensi siswa.');
+        }
+
         if (! $tanggal->isToday()) {
-            throw new AuthorizationException('Finalisasi hari lampau hanya dapat dibuka admin.');
+            throw new AuthorizationException('Finalisasi hanya dapat dibuka pada hari yang sama.');
         }
 
-        if (! Kelas::query()->diampuOleh($guru, $tanggal)->whereKey($kelas->id)->exists()) {
-            throw new AuthorizationException;
-        }
-
-        return DB::transaction(function () use ($kelas, $guru, $tanggal): SesiAbsensiSiswa {
+        return DB::transaction(function () use ($kelas, $petugas, $tanggal): SesiAbsensiSiswa {
             $sesi = SesiAbsensiSiswa::query()->withoutGlobalScopes()->where('kelas_id', $kelas->id)->whereDate('tanggal', $tanggal)->lockForUpdate()->first();
 
             if ($sesi === null || $sesi->status !== StatusSesiAbsensiSiswa::Final) {
@@ -38,7 +39,7 @@ class BukaFinalisasiAbsensiSiswa
 
             $sesi->update([
                 'status' => StatusSesiAbsensiSiswa::Draft,
-                'dibuka_oleh' => $guru->id,
+                'dibuka_oleh' => $petugas->id,
                 'dibuka_pada' => now(),
             ]);
 

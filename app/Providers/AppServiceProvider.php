@@ -36,6 +36,15 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::define('admin', fn (User $user): bool => $user->role === Role::Admin && $user->is_active);
 
+        // Guru piket: pengisi absensi siswa untuk seluruh sekolah.
+        //
+        // Piket memakai akun ber-role admin, jadi isinya memang sama dengan
+        // gate 'admin' di atas. Gerbangnya tetap dipisah supaya izin "siapa
+        // yang boleh mengisi absensi siswa" punya satu tempat yang terbaca
+        // jelas di route -- kalau nanti piket jadi penugasan tersendiri,
+        // yang berubah cuma baris ini, bukan setiap route yang memakainya.
+        Gate::define('piket', fn (User $user): bool => $user->role === Role::Admin && $user->is_active);
+
         // Wilayah kerja pegawai sekolah: tap absen, jadwal, riwayat, izin.
         // Admin ikut lolos karena admin di sekolah ini juga tap absen sendiri.
         // Gate ini sengaja tidak memeriksa is_active supaya guru yang sedang
