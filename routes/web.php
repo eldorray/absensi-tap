@@ -113,6 +113,8 @@ Route::middleware(['auth', 'verified', 'can:admin'])
         Route::post('user/{user}/reset-password', [UserController::class, 'resetPassword'])->name('user.reset-password');
         Route::delete('user/{user}', [UserController::class, 'destroy'])->name('user.destroy');
         Route::get('orang-tua', [OrangTuaController::class, 'index'])->name('orang-tua.index');
+        Route::get('orang-tua/template', [OrangTuaController::class, 'template'])->name('orang-tua.template');
+        Route::post('orang-tua/impor', [OrangTuaController::class, 'impor'])->name('orang-tua.impor');
         Route::post('orang-tua', [OrangTuaController::class, 'store'])->name('orang-tua.store');
         Route::patch('orang-tua/{orangTua}', [OrangTuaController::class, 'update'])->name('orang-tua.update');
         Route::post('orang-tua/{orangTua}/reset-password', [OrangTuaController::class, 'resetPassword'])->name('orang-tua.reset-password');

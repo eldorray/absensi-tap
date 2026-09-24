@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Actions\OrangTua\ImporOrangTua;
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\ImporOrangTuaRequest;
 use App\Http\Requests\Admin\SimpanOrangTuaRequest;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -12,6 +14,7 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class OrangTuaController extends Controller
 {
@@ -34,8 +37,41 @@ class OrangTuaController extends Controller
                         'nis' => $siswa->nis,
                     ])->values(),
                 ]),
+            'hasilImpor' => session('impor_orang_tua'),
             'passwordBaru' => session('password_baru'),
         ]);
+    }
+
+    /**
+     * Berkas contoh untuk diisi di Excel lalu diunggah kembali.
+     */
+    public function template(): StreamedResponse
+    {
+        return response()->streamDownload(function (): void {
+            $keluaran = fopen('php://output', 'wb');
+
+            if ($keluaran === false) {
+                throw new \RuntimeException('Gagal membuka keluaran CSV.');
+            }
+
+            fwrite($keluaran, "\xEF\xBB\xBF");
+            fputcsv($keluaran, ImporOrangTua::KOLOM);
+            fputcsv($keluaran, ['Siti Aminah', 'wali.siti@example.test', 'RahasiaKuat123']);
+            fputcsv($keluaran, ['Budi Santoso', '', '']);
+            fclose($keluaran);
+        }, 'template-impor-orang-tua.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    public function impor(ImporOrangTuaRequest $request, ImporOrangTua $imporOrangTua): RedirectResponse
+    {
+        $hasil = $imporOrangTua($request->file('berkas')->getRealPath());
+
+        Inertia::flash('toast', [
+            'type' => $hasil['dibuat'] > 0 ? 'success' : 'error',
+            'message' => $hasil['dibuat'].' akun dibuat, '.$hasil['dilewati'].' dilewati.',
+        ]);
+
+        return to_route('admin.orang-tua.index')->with('impor_orang_tua', $hasil);
     }
 
     public function store(SimpanOrangTuaRequest $request): RedirectResponse

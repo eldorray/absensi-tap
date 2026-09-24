@@ -126,3 +126,13 @@ test('sidebar menyediakan menu orang tua terpisah dari akun staf', function () {
         ->toContain("title: 'Orang tua'")
         ->toContain('@/routes/admin/orang-tua');
 });
+
+test('halaman orang tua menyediakan aksi upload csv', function () {
+    $halaman = file_get_contents(resource_path('js/pages/admin/OrangTua.svelte'));
+
+    expect($halaman)
+        ->toContain('Upload CSV')
+        ->toContain('Template CSV')
+        ->toContain('accept=".csv,text/csv"')
+        ->toContain('orangTuaImpor()');
+});

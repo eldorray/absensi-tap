@@ -42,3 +42,6 @@ yarn-error.log
 
 # Scratch orkestrasi agent (ledger, brief, review package) — bukan bagian aplikasi.
 /.superpowers/
+
+# Laporan dan bukti QA lokal.
+/artifacts/

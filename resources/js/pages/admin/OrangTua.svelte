@@ -8,11 +8,13 @@
 
 <script lang="ts">
     import { router, useForm } from '@inertiajs/svelte';
+    import Download from 'lucide-svelte/icons/download';
     import KeyRound from 'lucide-svelte/icons/key-round';
     import Pencil from 'lucide-svelte/icons/pencil';
     import Power from 'lucide-svelte/icons/power';
     import Search from 'lucide-svelte/icons/search';
     import Trash2 from 'lucide-svelte/icons/trash-2';
+    import Upload from 'lucide-svelte/icons/upload';
     import UserPlus from 'lucide-svelte/icons/user-plus';
     import UsersRound from 'lucide-svelte/icons/users-round';
     import AppHead from '@/components/AppHead.svelte';
@@ -26,8 +28,10 @@
     import { Label } from '@/components/ui/label';
     import {
         destroy,
+        impor as orangTuaImpor,
         resetPassword,
         store,
+        template as orangTuaTemplate,
         update,
     } from '@/routes/admin/orang-tua';
 
@@ -40,16 +44,27 @@
         anak: Anak[];
     };
     type PasswordBaru = { nama: string; email: string; password: string };
+    type AkunImpor = { nama: string; email: string; password: string };
+    type HasilImpor = {
+        dibuat: number;
+        dilewati: number;
+        galat: string[];
+        akun: AkunImpor[];
+    };
 
     let {
         orangTuas,
+        hasilImpor = null,
         passwordBaru = null,
     }: {
         orangTuas: OrangTua[];
+        hasilImpor?: HasilImpor | null;
         passwordBaru?: PasswordBaru | null;
     } = $props();
 
     const tambah = useForm({ name: '', email: '', password: '' });
+    const impor = useForm<{ berkas: File | null }>({ berkas: null });
+    let dialogImpor = $state(false);
     const ubah = useForm({ name: '', email: '' });
     let dialogTambah = $state(false);
     let diubah = $state<OrangTua | null>(null);
@@ -64,6 +79,40 @@
                 .includes(cari.trim().toLowerCase()),
         ),
     );
+
+    function unduhAkun(): void {
+        if (!hasilImpor || hasilImpor.akun.length === 0) {
+            return;
+        }
+
+        const csv = [
+            ['Nama', 'Email', 'Password'],
+            ...hasilImpor.akun.map((akun) => [
+                akun.nama,
+                akun.email,
+                akun.password,
+            ]),
+        ]
+            .map((baris) =>
+                baris
+                    .map((nilai) => {
+                        const aman = /^[=+\-@\t\r]/.test(nilai)
+                            ? `'${nilai}`
+                            : nilai;
+
+                        return `"${aman.replaceAll('"', '""')}"`;
+                    })
+                    .join(','),
+            )
+            .join('\r\n');
+        const tautan = document.createElement('a');
+        tautan.href = URL.createObjectURL(
+            new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' }),
+        );
+        tautan.download = 'akun-orang-tua-baru.csv';
+        tautan.click();
+        URL.revokeObjectURL(tautan.href);
+    }
 
     function mulaiUbah(orangTua: OrangTua): void {
         ubah.name = orangTua.name;
@@ -134,11 +183,89 @@
                     dari menu Siswa.
                 </p>
             </div>
-            <Button type="button" onclick={() => (dialogTambah = true)}>
-                <UserPlus class="size-4" aria-hidden="true" />
-                Tambah orang tua
-            </Button>
+            <div class="flex flex-wrap gap-2">
+                <Button
+                    type="button"
+                    variant="outline"
+                    onclick={() => (dialogImpor = true)}
+                    data-test="buka-impor-orang-tua"
+                >
+                    <Upload class="size-4" aria-hidden="true" />
+                    Upload CSV
+                </Button>
+                <Button type="button" onclick={() => (dialogTambah = true)}>
+                    <UserPlus class="size-4" aria-hidden="true" />
+                    Tambah orang tua
+                </Button>
+            </div>
         </div>
+
+        {#if hasilImpor}
+            <div class="grid gap-2 rounded-2xl border border-border px-4 py-3">
+                <p class="text-sm font-semibold">
+                    Impor terakhir: {hasilImpor.dibuat} dibuat · {hasilImpor.dilewati}
+                    dilewati
+                </p>
+                {#if hasilImpor.galat.length > 0}
+                    <ul class="grid gap-1">
+                        {#each hasilImpor.galat as galat (galat)}
+                            <li class="text-xs text-destructive">{galat}</li>
+                        {/each}
+                    </ul>
+                {/if}
+                {#if hasilImpor.akun.length > 0}
+                    <div class="grid gap-2 border-t border-border pt-2">
+                        <p class="text-xs text-muted-foreground">
+                            Password yang dibuat otomatis hanya tampil sekali.
+                            Unduh atau catat sebelum meninggalkan halaman ini.
+                        </p>
+                        <div class="overflow-x-auto">
+                            <table class="w-full border-collapse text-sm">
+                                <thead>
+                                    <tr class="text-left text-muted-foreground">
+                                        <th class="px-2 py-1 font-medium"
+                                            >Nama</th
+                                        >
+                                        <th class="px-2 py-1 font-medium"
+                                            >Email</th
+                                        >
+                                        <th class="px-2 py-1 font-medium"
+                                            >Password</th
+                                        >
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {#each hasilImpor.akun as akun (akun.email)}
+                                        <tr class="border-t border-border/60">
+                                            <td class="px-2 py-1"
+                                                >{akun.nama}</td
+                                            >
+                                            <td class="px-2 py-1 font-mono"
+                                                >{akun.email}</td
+                                            >
+                                            <td class="px-2 py-1 font-mono"
+                                                >{akun.password}</td
+                                            >
+                                        </tr>
+                                    {/each}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div>
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onclick={unduhAkun}
+                            >
+                                <Download class="size-4" aria-hidden="true" />
+                                Unduh daftar akun
+                            </Button>
+                        </div>
+                    </div>
+                {/if}
+            </div>
+        {/if}
 
         <div class="relative">
             <Label for="cari-orang-tua" class="sr-only">Cari orang tua</Label>
@@ -317,6 +444,69 @@
                 <Button type="submit" disabled={tambah.processing}
                     >Buat akun</Button
                 >
+            </div>
+        </form>
+    </DialogContent>
+</Dialog>
+
+<Dialog bind:open={dialogImpor}>
+    <DialogContent class="max-h-[85svh] overflow-y-auto">
+        <DialogTitle class="text-xl font-bold">Upload akun dari CSV</DialogTitle
+        >
+        <p class="mt-1 mb-4 text-sm text-muted-foreground">
+            Unduh template, isi di Excel, simpan sebagai CSV, lalu unggah di
+            sini. Kolom <b>nama</b> wajib; email dan password boleh dikosongkan karena
+            akan dibuatkan otomatis.
+        </p>
+        <form
+            class="grid gap-3"
+            onsubmit={(event) => {
+                event.preventDefault();
+                impor.submit(orangTuaImpor(), {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        impor.reset();
+                        dialogImpor = false;
+                    },
+                });
+            }}
+        >
+            <div class="grid gap-1.5">
+                <Label for="berkas-impor-orang-tua">Berkas CSV</Label>
+                <input
+                    id="berkas-impor-orang-tua"
+                    type="file"
+                    accept=".csv,text/csv"
+                    class="h-12 w-full rounded-2xl border border-input bg-background px-4 py-3 text-sm file:mr-3 file:rounded-full file:border-0 file:bg-primary file:px-3 file:py-1 file:text-primary-foreground"
+                    onchange={(event) => {
+                        impor.berkas =
+                            event.currentTarget.files?.item(0) ?? null;
+                    }}
+                />
+                {#if impor.errors.berkas}
+                    <p class="text-xs text-destructive">
+                        {impor.errors.berkas}
+                    </p>
+                {/if}
+            </div>
+            <div class="mt-2 flex flex-wrap justify-end gap-2">
+                <Button
+                    type="button"
+                    variant="outline"
+                    onclick={() => {
+                        window.location.href = orangTuaTemplate().url;
+                    }}
+                >
+                    <Download class="size-4" aria-hidden="true" />
+                    Template CSV
+                </Button>
+                <Button
+                    type="submit"
+                    disabled={impor.processing || impor.berkas === null}
+                >
+                    <Upload class="size-4" aria-hidden="true" />
+                    Upload
+                </Button>
             </div>
         </form>
     </DialogContent>
