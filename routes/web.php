@@ -7,6 +7,7 @@ use App\Http\Controllers\AbsensiSiswaController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\GuruController;
 use App\Http\Controllers\Admin\IzinController as AdminIzinController;
+use App\Http\Controllers\Admin\IzinOrangTuaController as AdminIzinOrangTuaController;
 use App\Http\Controllers\Admin\JadwalGuruController;
 use App\Http\Controllers\Admin\KantorController;
 use App\Http\Controllers\Admin\KelasController;
@@ -23,6 +24,7 @@ use App\Http\Controllers\IzinController;
 use App\Http\Controllers\JadwalSayaController;
 use App\Http\Controllers\KelasSayaController;
 use App\Http\Controllers\OrangTua\DashboardController as OrangTuaDashboardController;
+use App\Http\Controllers\OrangTua\IzinController as OrangTuaIzinController;
 use App\Http\Controllers\PerangkatController;
 use App\Http\Controllers\RiwayatAbsensiController;
 use Illuminate\Support\Facades\Route;
@@ -41,6 +43,13 @@ Route::middleware(['auth', 'verified', 'can:orang-tua'])
     ->name('orang-tua.')
     ->group(function () {
         Route::get('/', OrangTuaDashboardController::class)->name('dashboard');
+        Route::get('izin', [OrangTuaIzinController::class, 'index'])->name('izin.index');
+        Route::post('izin', [OrangTuaIzinController::class, 'store'])
+            ->middleware('throttle:10,1')
+            ->name('izin.store');
+        Route::get('izin/{izinOrangTua}/lampiran', [OrangTuaIzinController::class, 'lampiran'])
+            ->middleware('can:view,izinOrangTua')
+            ->name('izin.lampiran');
     });
 
 Route::middleware(['auth', 'verified', 'can:pegawai'])->group(function () {
@@ -95,6 +104,9 @@ Route::middleware(['auth', 'verified', 'can:admin'])
         Route::delete('rekap-harian/{guru}', [RekapHarianController::class, 'reset'])->name('rekap-harian.reset');
         Route::get('izin', [AdminIzinController::class, 'index'])->name('izin.index');
         Route::patch('izin/{izin}', [AdminIzinController::class, 'update'])->name('izin.update');
+        Route::get('izin-orang-tua', [AdminIzinOrangTuaController::class, 'index'])->name('izin-orang-tua.index');
+        Route::get('izin-orang-tua/{izinOrangTua}/lampiran', [AdminIzinOrangTuaController::class, 'lampiran'])->name('izin-orang-tua.lampiran');
+        Route::patch('izin-orang-tua/{izinOrangTua}', [AdminIzinOrangTuaController::class, 'update'])->name('izin-orang-tua.update');
         Route::get('pengaturan', [PengaturanController::class, 'edit'])->name('pengaturan.edit');
         Route::post('aplikasi', [PengaturanController::class, 'simpanAplikasi'])->name('aplikasi.update');
         Route::post('lokasi', [PengaturanController::class, 'simpanLokasi'])->name('lokasi.store');

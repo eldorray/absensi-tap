@@ -11,6 +11,7 @@ use App\Http\Requests\Admin\ImporSiswaRequest;
 use App\Http\Requests\Admin\SimpanSiswaRequest;
 use App\Http\Requests\Admin\SinkronkanOrangTuaSiswaRequest;
 use App\Models\AnggotaKelas;
+use App\Models\IzinOrangTua;
 use App\Models\Kantor;
 use App\Models\Kelas;
 use App\Models\Siswa;
@@ -154,7 +155,8 @@ class SiswaController extends Controller
      */
     public function destroy(Siswa $siswa): RedirectResponse
     {
-        $punyaRiwayat = AnggotaKelas::query()->where('siswa_id', $siswa->id)->exists();
+        $punyaRiwayat = AnggotaKelas::query()->where('siswa_id', $siswa->id)->exists()
+            || IzinOrangTua::query()->where('siswa_id', $siswa->id)->exists();
 
         if ($punyaRiwayat) {
             $siswa->update(['is_active' => false]);

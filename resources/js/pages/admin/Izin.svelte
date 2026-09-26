@@ -1,6 +1,6 @@
 <script module lang="ts">
     export const layout = {
-        breadcrumbs: [{ title: 'Izin masuk', href: '/admin/izin' }],
+        breadcrumbs: [{ title: 'Izin guru', href: '/admin/izin' }],
     };
 </script>
 
@@ -40,7 +40,7 @@
     }
 </script>
 
-<AppHead title="Izin masuk" />
+<AppHead title="Izin guru" />
 
 <div class="mx-auto flex w-full max-w-4xl flex-col gap-4 px-4 py-5 sm:px-6">
     <section class="g-tile g-tone-plain">

@@ -47,7 +47,8 @@
 
     const labelJumlah: Record<string, string> = {
         absensi: 'absensi',
-        izin: 'izin',
+        izin: 'izin guru',
+        izin_orang_tua: 'izin orang tua',
         jadwal: 'jadwal',
         hari_libur: 'hari libur',
         pengumuman: 'pengumuman',

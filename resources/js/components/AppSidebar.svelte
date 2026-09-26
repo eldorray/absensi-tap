@@ -8,6 +8,7 @@
     import ClipboardCheck from 'lucide-svelte/icons/clipboard-check';
     import ClipboardList from 'lucide-svelte/icons/clipboard-list';
     import Database from 'lucide-svelte/icons/database';
+    import FileHeart from 'lucide-svelte/icons/file-heart';
     import GraduationCap from 'lucide-svelte/icons/graduation-cap';
     import LayoutDashboard from 'lucide-svelte/icons/layout-dashboard';
     import Megaphone from 'lucide-svelte/icons/megaphone';
@@ -41,6 +42,7 @@
     import { dashboard as adminDashboard } from '@/routes/admin';
     import { index as guruIndex } from '@/routes/admin/guru';
     import { index as adminIzinIndex } from '@/routes/admin/izin';
+    import { index as izinOrangTuaIndex } from '@/routes/admin/izin-orang-tua';
     import { index as jadwalGuruIndex } from '@/routes/admin/jadwal-guru';
     import { index as kantorIndex } from '@/routes/admin/kantor';
     import { index as kelasIndex } from '@/routes/admin/kelas';
@@ -80,7 +82,12 @@
             icon: CalendarCheck,
         },
         { title: 'Rekap bulanan', href: rekapIndex(), icon: Table2 },
-        { title: 'Izin masuk', href: adminIzinIndex(), icon: CalendarOff },
+        { title: 'Izin guru', href: adminIzinIndex(), icon: CalendarOff },
+        {
+            title: 'Izin orang tua',
+            href: izinOrangTuaIndex(),
+            icon: FileHeart,
+        },
     ];
 
     const dashboardNavItems: NavItem[] = [

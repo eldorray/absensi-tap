@@ -14,6 +14,17 @@ test('checkbox orang tua memperbarui payload form yang dikirim', function () {
         ->not->toContain('onCheckedChange=');
 });
 
+test('modal penautan orang tua menyediakan pencarian langsung dan ringkasan pilihan', function () {
+    $halaman = file_get_contents(resource_path('js/pages/admin/Siswa.svelte'));
+
+    expect($halaman)
+        ->toContain('placeholder="Cari nama atau email orang tua"')
+        ->toContain('orangTuaTerfilter')
+        ->toContain('Tidak ada akun yang cocok')
+        ->toContain('akun dipilih')
+        ->toContain('Hapus pencarian');
+});
+
 test('admin dapat menautkan beberapa orang tua dan mengganti tautannya secara atomik', function () {
     $admin = User::factory()->admin()->create();
     $siswa = Siswa::factory()->create();

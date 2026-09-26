@@ -22,7 +22,7 @@ enum Role: string
         return match ($this) {
             self::Guru => 'Tap absen dari HP sendiri, ajukan izin, melihat jadwal dan riwayatnya, serta memantau kehadiran siswa kelas yang diampu (hanya baca).',
             self::Admin => 'Seluruh menu admin: rekap, guru, jadwal, kantor, user, tahun ajaran, pengaturan, dan mengisi absensi siswa seluruh sekolah sebagai guru piket.',
-            self::OrangTua => 'Melihat kehadiran anak yang ditautkan admin. Tidak bisa tap absen dan tidak melihat data siswa lain.',
+            self::OrangTua => 'Melihat kehadiran dan mengajukan izin atau sakit untuk anak yang ditautkan admin. Tidak bisa tap absen dan tidak melihat data siswa lain.',
         };
     }
 
@@ -56,6 +56,7 @@ enum Role: string
             self::OrangTua => [
                 'Kehadiran anak yang ditautkan',
                 'Riwayat dan ringkasan kehadiran anak',
+                'Mengajukan izin atau sakit untuk anak',
                 'Profil dan tampilan',
             ],
         };

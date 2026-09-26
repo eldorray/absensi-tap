@@ -3,6 +3,7 @@
 use App\Enums\Role;
 use App\Models\Absensi;
 use App\Models\HariLibur;
+use App\Models\IzinOrangTua;
 use App\Models\JadwalKerja;
 use App\Models\Pengumuman;
 use App\Models\TahunAjaran;
@@ -43,6 +44,7 @@ test('mengaktifkan tahun baru menyisakan layar bersih tanpa menghapus data lama'
     ])->assertSessionHasNoErrors();
     HariLibur::factory()->create();
     Pengumuman::factory()->create();
+    IzinOrangTua::factory()->create();
 
     $lama = TahunAjaran::aktif();
     $baru = TahunAjaran::factory()->create(['nama' => '2027/2028']);
@@ -56,10 +58,12 @@ test('mengaktifkan tahun baru menyisakan layar bersih tanpa menghapus data lama'
     expect(Absensi::count())->toBe(0)
         ->and(HariLibur::count())->toBe(0)
         ->and(Pengumuman::count())->toBe(0)
+        ->and(IzinOrangTua::count())->toBe(0)
         ->and(JadwalKerja::count())->toBe(0)
         // Tapi barisnya masih ada, hanya milik tahun lain.
         ->and(Absensi::withoutGlobalScopes()->where('tahun_ajaran_id', $lama->id)->count())->toBe(1)
         ->and(HariLibur::withoutGlobalScopes()->where('tahun_ajaran_id', $lama->id)->count())->toBe(1)
+        ->and(IzinOrangTua::withoutGlobalScopes()->where('tahun_ajaran_id', $lama->id)->count())->toBe(1)
         ->and(JadwalKerja::withoutGlobalScopes()->where('tahun_ajaran_id', $lama->id)->count())->toBe(7)
         // Guru dan rolenya tidak tersentuh.
         ->and(User::whereKey($guru->id)->exists())->toBeTrue()

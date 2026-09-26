@@ -14,7 +14,8 @@ test('halaman kelola role menampilkan orang tua beserta aksesnya', function () {
         ->assertInertia(fn ($p) => $p->has('roles', 3)
             ->where('roles.2.value', 'orang_tua')
             ->where('roles.2.label', 'Orang Tua')
-            ->where('roles.2.jumlah', 0));
+            ->where('roles.2.jumlah', 0)
+            ->where('roles.2.akses.2', 'Mengajukan izin atau sakit untuk anak'));
 });
 
 test('orang tua ditolak dari seluruh halaman guru', function () {

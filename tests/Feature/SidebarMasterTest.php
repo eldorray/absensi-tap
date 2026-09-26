@@ -34,7 +34,8 @@ test('menu master dikelompokkan sebagai dropdown di sidebar', function () {
 
     expect($adminBlok)
         ->toContain("title: 'Rekap harian'")
-        ->toContain("title: 'Izin masuk'")
+        ->toContain("title: 'Izin guru'")
+        ->toContain("title: 'Izin orang tua'")
         ->not->toContain("title: 'Akun staf'");
 });
 
@@ -62,7 +63,8 @@ test('rekap dan izin dikelompokkan dalam dropdown Laporan Kehadiran', function (
         ->toContain('label="Laporan Kehadiran"')
         ->toContain("title: 'Rekap harian'")
         ->toContain("title: 'Rekap bulanan'")
-        ->toContain("title: 'Izin masuk'");
+        ->toContain("title: 'Izin guru'")
+        ->toContain("title: 'Izin orang tua'");
 
     // Urutan sidebar: Dashboard, Master, Kesiswaan, lalu Laporan Kehadiran.
     expect(strpos($sidebar, 'label="RINGKASAN"'))
@@ -82,7 +84,8 @@ test('rekap dan izin dikelompokkan dalam dropdown Laporan Kehadiran', function (
     expect($adminBlok)
         ->not->toContain("title: 'Rekap harian'")
         ->not->toContain("title: 'Rekap bulanan'")
-        ->not->toContain("title: 'Izin masuk'")
+        ->not->toContain("title: 'Izin guru'")
+        ->not->toContain("title: 'Izin orang tua'")
         ->toContain("title: 'Jadwal guru'");
 });
 

@@ -21,6 +21,7 @@ test('semua route admin tertutup untuk guru', function (string $nama, array $par
 })->with([
     ['admin.rekap.index', []],
     ['admin.izin.index', []],
+    ['admin.izin-orang-tua.index', []],
     ['admin.guru.index', []],
     ['admin.pengaturan.edit', []],
 ]);

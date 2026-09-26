@@ -2,6 +2,7 @@
 
 use App\Enums\Role;
 use App\Models\AnggotaKelas;
+use App\Models\IzinOrangTua;
 use App\Models\Kantor;
 use App\Models\Kelas;
 use App\Models\Siswa;
@@ -110,6 +111,18 @@ test('unit siswa dengan riwayat kelas tidak boleh diubah', function () {
         ->assertSessionHasErrors('kantor_id');
 
     expect($siswa->refresh()->kantor_id)->toBe($kantorAwal);
+});
+
+test('siswa dengan riwayat izin orang tua dinonaktifkan, bukan dihapus', function () {
+    $siswa = Siswa::factory()->create();
+    IzinOrangTua::factory()->create(['siswa_id' => $siswa->id]);
+
+    $this->actingAs(User::factory()->admin()->create())
+        ->delete(route('admin.siswa.destroy', $siswa))
+        ->assertRedirect();
+
+    expect($siswa->refresh()->is_active)->toBeFalse()
+        ->and(IzinOrangTua::query()->where('siswa_id', $siswa->id)->exists())->toBeTrue();
 });
 
 test('siswa tanpa riwayat boleh dihapus', function () {

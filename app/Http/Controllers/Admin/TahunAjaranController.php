@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\SimpanTahunAjaranRequest;
 use App\Models\Absensi;
 use App\Models\HariLibur;
 use App\Models\Izin;
+use App\Models\IzinOrangTua;
 use App\Models\JadwalKerja;
 use App\Models\Pengumuman;
 use App\Models\TahunAjaran;
@@ -107,6 +108,7 @@ class TahunAjaranController extends Controller
         return [
             'absensi' => Absensi::query()->withoutGlobalScopes()->where('tahun_ajaran_id', $tahun->id)->count(),
             'izin' => Izin::query()->withoutGlobalScopes()->where('tahun_ajaran_id', $tahun->id)->count(),
+            'izin_orang_tua' => IzinOrangTua::query()->withoutGlobalScopes()->where('tahun_ajaran_id', $tahun->id)->count(),
             'jadwal' => JadwalKerja::query()->withoutGlobalScopes()->where('tahun_ajaran_id', $tahun->id)->count(),
             'hari_libur' => HariLibur::query()->withoutGlobalScopes()->where('tahun_ajaran_id', $tahun->id)->count(),
             'pengumuman' => Pengumuman::query()->withoutGlobalScopes()->where('tahun_ajaran_id', $tahun->id)->count(),
