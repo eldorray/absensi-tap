@@ -1,7 +1,7 @@
 {
     "name": "Absensi Syekh Yusuf",
     "short_name": "Absensi",
-    "start_url": "/dashboard",
+    "start_url": "/aplikasi",
     "scope": "/",
     "display": "standalone",
     "display_override": ["standalone"],

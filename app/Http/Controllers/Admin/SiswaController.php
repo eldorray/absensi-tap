@@ -57,6 +57,7 @@ class SiswaController extends Controller
                     'nama' => $siswa->nama,
                     'jenis_kelamin' => $siswa->jenis_kelamin->value,
                     'jenis_kelamin_label' => $siswa->jenis_kelamin->label(),
+                    'tempat_lahir' => $siswa->tempat_lahir,
                     'tanggal_lahir' => $siswa->tanggal_lahir?->toDateString(),
                     'is_active' => $siswa->is_active,
                     'orang_tuas' => $siswa->orangTuas->map(fn (User $orangTua): array => [
@@ -131,7 +132,7 @@ class SiswaController extends Controller
                 return;
             }
             fputcsv($keluaran, ImporSiswa::KOLOM, ',', '"', '');
-            fputcsv($keluaran, ['Aisyah Putri', '20260001', '0091234567', 'P', '2015-04-11', '5A'], ',', '"', '');
+            fputcsv($keluaran, ['Aisyah Putri', '20260001', '0091234567', 'P', 'Tangerang', '2015-04-11', '5A'], ',', '"', '');
             fclose($keluaran);
         }, 'template-siswa.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
     }

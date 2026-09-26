@@ -79,6 +79,40 @@ test('akun tanpa anak tertaut mendapat empty state yang aman', function () {
             ->has('riwayat', 0));
 });
 
+test('portal mengirim biodata lengkap hanya untuk anak yang dipilih', function () {
+    $orangTua = User::factory()->orangTua()->create();
+    $anak = Siswa::factory()->create([
+        'nama' => 'Aisyah Putri Rahman',
+        'tempat_lahir' => 'Tangerang',
+        'tanggal_lahir' => '2015-01-11',
+        'nisn' => '0091234567',
+        'nis' => '20260001',
+    ]);
+    $orangTua->siswas()->attach($anak);
+
+    $this->actingAs($orangTua)->get(route('orang-tua.dashboard'))
+        ->assertInertia(fn ($page) => $page
+            ->where('siswaTerpilih.nama', 'Aisyah Putri Rahman')
+            ->where('siswaTerpilih.tempat_lahir', 'Tangerang')
+            ->where('siswaTerpilih.tanggal_lahir', '2015-01-11')
+            ->where('siswaTerpilih.tanggal_lahir_label', '11 Januari 2015')
+            ->where('siswaTerpilih.nisn', '0091234567')
+            ->where('siswaTerpilih.nis', '20260001'));
+});
+
+test('card anak membuka biodata dari bottom sheet', function () {
+    $halaman = file_get_contents(resource_path('js/pages/orang-tua/Index.svelte'));
+
+    expect($halaman)
+        ->toContain('aria-label="Lihat biodata')
+        ->toContain('<SheetContent')
+        ->toContain('side="bottom"')
+        ->toContain('Nama lengkap')
+        ->toContain('Tempat, tanggal lahir')
+        ->toContain('NISN')
+        ->toContain('NIS');
+});
+
 test('orang tua melihat beberapa anak tetapi tidak melihat anak akun lain', function () {
     $kantor = Kantor::factory()->create();
     $orangTua = User::factory()->orangTua()->create();

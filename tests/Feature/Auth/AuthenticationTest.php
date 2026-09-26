@@ -34,6 +34,42 @@ test('admin diarahkan langsung ke dashboard admin setelah login', function () {
     $response->assertRedirect(route('admin.dashboard', absolute: false));
 });
 
+test('orang tua tidak diarahkan ke url intended milik pegawai setelah login', function () {
+    $orangTua = User::factory()->orangTua()->create();
+
+    $this->get('/dashboard')->assertRedirect(route('login'));
+
+    $this->post(route('login.store'), [
+        'email' => $orangTua->email,
+        'password' => 'password',
+    ])->assertRedirect(route('aplikasi', absolute: false));
+
+    $this->assertAuthenticatedAs($orangTua);
+    $this->get(route('aplikasi'))->assertRedirect(route('orang-tua.dashboard'));
+});
+
+test('orang tua tetap diarahkan ke url intended di wilayahnya', function () {
+    $orangTua = User::factory()->orangTua()->create();
+
+    $this->get(route('orang-tua.dashboard'))->assertRedirect(route('login'));
+
+    $this->post(route('login.store'), [
+        'email' => $orangTua->email,
+        'password' => 'password',
+    ])->assertRedirect(route('orang-tua.dashboard'));
+});
+
+test('guru tetap diarahkan ke url intended pegawai setelah login', function () {
+    $guru = User::factory()->create();
+
+    $this->get('/dashboard')->assertRedirect(route('login'));
+
+    $this->post(route('login.store'), [
+        'email' => $guru->email,
+        'password' => 'password',
+    ])->assertRedirect('/dashboard');
+});
+
 test('users with two factor enabled are redirected to two factor challenge', function () {
     $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
 

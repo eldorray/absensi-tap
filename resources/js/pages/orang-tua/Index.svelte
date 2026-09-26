@@ -11,14 +11,26 @@
     import { router } from '@inertiajs/svelte';
     import BookOpenCheck from 'lucide-svelte/icons/book-open-check';
     import CalendarCheck from 'lucide-svelte/icons/calendar-check';
+    import CalendarDays from 'lucide-svelte/icons/calendar-days';
     import CheckCircle2 from 'lucide-svelte/icons/circle-check-big';
     import Clock3 from 'lucide-svelte/icons/clock-3';
     import GraduationCap from 'lucide-svelte/icons/graduation-cap';
     import HeartHandshake from 'lucide-svelte/icons/heart-handshake';
+    import IdCard from 'lucide-svelte/icons/id-card';
+    import MapPin from 'lucide-svelte/icons/map-pin';
     import ShieldCheck from 'lucide-svelte/icons/shield-check';
+    import UserRound from 'lucide-svelte/icons/user-round';
     import UserRoundCheck from 'lucide-svelte/icons/user-round-check';
+    import { onMount } from 'svelte';
     import AppHead from '@/components/AppHead.svelte';
     import { Badge } from '@/components/ui/badge';
+    import {
+        Sheet,
+        SheetContent,
+        SheetDescription,
+        SheetHeader,
+        SheetTitle,
+    } from '@/components/ui/sheet';
     import { dashboard } from '@/routes/orang-tua';
 
     type Anak = {
@@ -34,6 +46,10 @@
         id: number;
         nama: string;
         nis: string;
+        nisn: string | null;
+        tempat_lahir: string | null;
+        tanggal_lahir: string | null;
+        tanggal_lahir_label: string | null;
         unit: string | null;
         kelas: string | null;
         foto: string | null;
@@ -76,7 +92,51 @@
         ) ?? null,
     );
 
+    let biodataTerbuka = $state(false);
+    let riwayatBiodataAktif = false;
+
+    onMount(() => {
+        const tanganiMundur = (): void => {
+            if (!riwayatBiodataAktif) {
+                return;
+            }
+
+            riwayatBiodataAktif = false;
+            biodataTerbuka = false;
+        };
+
+        window.addEventListener('popstate', tanganiMundur);
+
+        return () => window.removeEventListener('popstate', tanganiMundur);
+    });
+
+    function aturBiodataTerbuka(terbuka: boolean): void {
+        if (terbuka) {
+            biodataTerbuka = true;
+
+            if (!riwayatBiodataAktif) {
+                window.history.pushState({ biodataAnak: true }, '');
+                riwayatBiodataAktif = true;
+            }
+
+            return;
+        }
+
+        biodataTerbuka = false;
+
+        if (riwayatBiodataAktif) {
+            riwayatBiodataAktif = false;
+            window.history.back();
+        }
+    }
+
     function pilihAnak(id: number): void {
+        if (id === siswaTerpilih?.id) {
+            aturBiodataTerbuka(true);
+
+            return;
+        }
+
         router.get(
             dashboard.url({ query: { siswa: id } }),
             {},
@@ -84,8 +144,19 @@
                 preserveScroll: true,
                 preserveState: true,
                 replace: true,
+                onSuccess: () => {
+                    aturBiodataTerbuka(true);
+                },
             },
         );
+    }
+
+    function formatTempatTanggalLahir(siswa: SiswaTerpilih): string {
+        if (siswa.tempat_lahir && siswa.tanggal_lahir_label) {
+            return `${siswa.tempat_lahir}, ${siswa.tanggal_lahir_label}`;
+        }
+
+        return siswa.tempat_lahir ?? siswa.tanggal_lahir_label ?? 'Belum diisi';
     }
 </script>
 
@@ -167,7 +238,12 @@
         {/if}
 
         {#if siswaTerpilih}
-            <section class="g-tile g-tone-blue">
+            <button
+                type="button"
+                class="g-tile g-tone-blue w-full text-left transition active:scale-[0.985]"
+                aria-label="Lihat biodata anak"
+                onclick={() => aturBiodataTerbuka(true)}
+            >
                 <div class="flex items-center gap-3">
                     <span
                         class="grid size-14 shrink-0 place-items-center overflow-hidden rounded-[1.25rem] bg-white/35 text-xl font-black dark:bg-white/10"
@@ -190,13 +266,16 @@
                             {siswaTerpilih.kelas ?? 'Belum ditempatkan'} · {siswaTerpilih.unit ??
                                 'Tanpa unit'}
                         </p>
+                        <p class="mt-1 text-xs font-semibold opacity-65">
+                            Ketuk untuk melihat biodata
+                        </p>
                     </div>
                     <GraduationCap
                         class="size-6 shrink-0 opacity-60"
                         aria-hidden="true"
                     />
                 </div>
-            </section>
+            </button>
 
             <section
                 class="g-tile {statusHariIni
@@ -327,3 +406,124 @@
         {/if}
     {/if}
 </div>
+
+{#if siswaTerpilih}
+    <Sheet
+        open={biodataTerbuka}
+        onOpenChange={(terbuka) => aturBiodataTerbuka(terbuka)}
+    >
+        <SheetContent
+            side="bottom"
+            class="inset-x-0 mx-auto max-h-[82dvh] w-full max-w-lg gap-0 overflow-y-auto rounded-t-[2rem] border-x border-t border-border/70 bg-background px-5 pt-3 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-[0_-24px_80px_rgba(15,23,42,0.24)]"
+        >
+            <div
+                class="mx-auto mb-5 h-1.5 w-12 rounded-full bg-muted-foreground/25"
+                aria-hidden="true"
+            ></div>
+            <SheetHeader class="pr-8 text-left">
+                <div class="flex items-center gap-3">
+                    <span
+                        class="grid size-16 shrink-0 place-items-center overflow-hidden rounded-[1.4rem] bg-primary/12 text-2xl font-black text-primary"
+                    >
+                        {#if siswaTerpilih.foto}
+                            <img
+                                src={`/storage/${siswaTerpilih.foto}`}
+                                alt={`Foto ${siswaTerpilih.nama}`}
+                                class="size-full object-cover"
+                            />
+                        {:else}
+                            {siswaTerpilih.nama.charAt(0).toUpperCase()}
+                        {/if}
+                    </span>
+                    <div class="min-w-0">
+                        <p
+                            class="text-xs font-bold tracking-[0.12em] text-muted-foreground uppercase"
+                        >
+                            Informasi anak
+                        </p>
+                        <SheetTitle class="truncate text-xl"
+                            >{siswaTerpilih.nama}</SheetTitle
+                        >
+                        <SheetDescription class="truncate">
+                            {siswaTerpilih.kelas ?? 'Belum ditempatkan'} · {siswaTerpilih.unit ??
+                                'Tanpa unit'}
+                        </SheetDescription>
+                    </div>
+                </div>
+            </SheetHeader>
+
+            <dl class="mt-6 grid gap-2.5">
+                <div
+                    class="flex items-start gap-3 rounded-2xl border border-border/70 bg-muted/45 p-3.5"
+                >
+                    <UserRound
+                        class="mt-0.5 size-5 shrink-0 text-primary"
+                        aria-hidden="true"
+                    />
+                    <div class="min-w-0">
+                        <dt class="text-xs font-semibold text-muted-foreground">
+                            Nama lengkap
+                        </dt>
+                        <dd class="mt-0.5 font-bold break-words">
+                            {siswaTerpilih.nama}
+                        </dd>
+                    </div>
+                </div>
+                <div
+                    class="flex items-start gap-3 rounded-2xl border border-border/70 bg-muted/45 p-3.5"
+                >
+                    <MapPin
+                        class="mt-0.5 size-5 shrink-0 text-primary"
+                        aria-hidden="true"
+                    />
+                    <div class="min-w-0">
+                        <dt class="text-xs font-semibold text-muted-foreground">
+                            Tempat, tanggal lahir
+                        </dt>
+                        <dd class="mt-0.5 font-bold break-words">
+                            {formatTempatTanggalLahir(siswaTerpilih)}
+                        </dd>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <div
+                        class="flex min-w-0 items-start gap-3 rounded-2xl border border-border/70 bg-muted/45 p-3.5"
+                    >
+                        <IdCard
+                            class="mt-0.5 size-5 shrink-0 text-primary"
+                            aria-hidden="true"
+                        />
+                        <div class="min-w-0">
+                            <dt
+                                class="text-xs font-semibold text-muted-foreground"
+                            >
+                                NISN
+                            </dt>
+                            <dd class="mt-0.5 truncate font-mono font-bold">
+                                {siswaTerpilih.nisn ?? 'Belum diisi'}
+                            </dd>
+                        </div>
+                    </div>
+                    <div
+                        class="flex min-w-0 items-start gap-3 rounded-2xl border border-border/70 bg-muted/45 p-3.5"
+                    >
+                        <CalendarDays
+                            class="mt-0.5 size-5 shrink-0 text-primary"
+                            aria-hidden="true"
+                        />
+                        <div class="min-w-0">
+                            <dt
+                                class="text-xs font-semibold text-muted-foreground"
+                            >
+                                NIS
+                            </dt>
+                            <dd class="mt-0.5 truncate font-mono font-bold">
+                                {siswaTerpilih.nis}
+                            </dd>
+                        </div>
+                    </div>
+                </div>
+            </dl>
+        </SheetContent>
+    </Sheet>
+{/if}

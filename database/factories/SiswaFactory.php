@@ -23,6 +23,7 @@ class SiswaFactory extends Factory
             'nisn' => fake()->unique()->numerify('##########'),
             'nama' => fake()->name(),
             'jenis_kelamin' => fake()->randomElement(JenisKelamin::cases()),
+            'tempat_lahir' => fake()->city(),
             'tanggal_lahir' => fake()->dateTimeBetween('-15 years', '-6 years'),
             'is_active' => true,
         ];

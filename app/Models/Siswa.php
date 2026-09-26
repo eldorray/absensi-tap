@@ -25,11 +25,12 @@ use Illuminate\Support\Carbon;
  * @property string|null $nisn
  * @property string $nama
  * @property JenisKelamin $jenis_kelamin
+ * @property string|null $tempat_lahir
  * @property Carbon|null $tanggal_lahir
  * @property string|null $foto
  * @property bool $is_active
  */
-#[Fillable(['kantor_id', 'nis', 'nisn', 'nama', 'jenis_kelamin', 'tanggal_lahir', 'is_active'])]
+#[Fillable(['kantor_id', 'nis', 'nisn', 'nama', 'jenis_kelamin', 'tempat_lahir', 'tanggal_lahir', 'is_active'])]
 class Siswa extends Model
 {
     /** @use HasFactory<SiswaFactory> */

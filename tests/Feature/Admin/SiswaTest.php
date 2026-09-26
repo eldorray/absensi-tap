@@ -33,12 +33,14 @@ test('admin menambah siswa', function () {
             'nisn' => '0091234567',
             'nama' => 'Aisyah Putri',
             'jenis_kelamin' => 'P',
+            'tempat_lahir' => 'Tangerang',
             'tanggal_lahir' => '2015-04-11',
             'is_active' => true,
         ])
         ->assertRedirect(route('admin.siswa.index'));
 
-    expect(Siswa::where('nis', '20260001')->value('nama'))->toBe('Aisyah Putri');
+    expect(Siswa::where('nis', '20260001')->value('nama'))->toBe('Aisyah Putri')
+        ->and(Siswa::where('nis', '20260001')->value('tempat_lahir'))->toBe('Tangerang');
 });
 
 test('nis kembar di kantor yang sama ditolak validasi, bukan galat database', function () {

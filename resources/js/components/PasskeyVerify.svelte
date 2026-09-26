@@ -33,7 +33,7 @@
             : {}),
         onSuccess: (response) => {
             const redirect = response.redirect;
-            router.visit(redirect ?? '/dashboard');
+            router.visit(redirect ?? '/aplikasi');
         },
     });
 </script>

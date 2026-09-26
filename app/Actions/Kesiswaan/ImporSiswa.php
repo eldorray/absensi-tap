@@ -25,7 +25,7 @@ class ImporSiswa
     /**
      * Kolom yang dikenali di baris judul, apa pun urutannya.
      */
-    public const KOLOM = ['nama', 'nis', 'nisn', 'jenis_kelamin', 'tanggal_lahir', 'kelas'];
+    public const KOLOM = ['nama', 'nis', 'nisn', 'jenis_kelamin', 'tempat_lahir', 'tanggal_lahir', 'kelas'];
 
     /**
      * Batas baris satu berkas, supaya satu unggahan tidak menahan request lama.
@@ -115,6 +115,7 @@ class ImporSiswa
                 'nis' => $nis,
                 'nisn' => $this->sel($baris, $peta, 'nisn'),
                 'jenis_kelamin' => strtoupper((string) ($this->sel($baris, $peta, 'jenis_kelamin') ?? 'L')),
+                'tempat_lahir' => $this->sel($baris, $peta, 'tempat_lahir'),
                 'tanggal_lahir' => $this->sel($baris, $peta, 'tanggal_lahir'),
                 'is_active' => true,
             ];
@@ -128,6 +129,7 @@ class ImporSiswa
                 ],
                 'nisn' => ['nullable', 'string', 'max:20', 'unique:siswas,nisn'],
                 'jenis_kelamin' => ['required', Rule::enum(JenisKelamin::class)],
+                'tempat_lahir' => ['nullable', 'string', 'max:120'],
                 'tanggal_lahir' => ['nullable', 'date_format:Y-m-d', 'before:today'],
             ]);
 

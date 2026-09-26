@@ -44,6 +44,7 @@
         nama: string;
         jenis_kelamin: string;
         jenis_kelamin_label: string;
+        tempat_lahir: string | null;
         tanggal_lahir: string | null;
         is_active: boolean;
         orang_tuas: OrangTua[];
@@ -95,6 +96,7 @@
         nisn: '',
         nama: '',
         jenis_kelamin: jenisKelamins[0]?.value ?? 'L',
+        tempat_lahir: '',
         tanggal_lahir: '',
         is_active: true,
     };
@@ -126,6 +128,7 @@
         ubah.nisn = s.nisn ?? '';
         ubah.nama = s.nama;
         ubah.jenis_kelamin = s.jenis_kelamin;
+        ubah.tempat_lahir = s.tempat_lahir ?? '';
         ubah.tanggal_lahir = s.tanggal_lahir ?? '';
         ubah.is_active = s.is_active;
         ubah.clearErrors();
@@ -395,6 +398,19 @@
                     </select>
                 </div>
                 <div class="grid gap-1.5">
+                    <Label for="tempat-lahir">Tempat lahir</Label>
+                    <Input
+                        id="tempat-lahir"
+                        placeholder="Tangerang"
+                        bind:value={baru.tempat_lahir}
+                    />
+                    {#if baru.errors.tempat_lahir}<p
+                            class="text-xs text-destructive"
+                        >
+                            {baru.errors.tempat_lahir}
+                        </p>{/if}
+                </div>
+                <div class="grid gap-1.5">
                     <Label for="lahir">Tanggal lahir</Label>
                     <Input
                         id="lahir"
@@ -543,6 +559,20 @@
                             <option value={jk.value}>{jk.label}</option>
                         {/each}
                     </select>
+                </div>
+                <div class="grid gap-1.5">
+                    <Label for={`ubah-tempat-lahir-${diubah!}`}
+                        >Tempat lahir</Label
+                    >
+                    <Input
+                        id={`ubah-tempat-lahir-${diubah!}`}
+                        bind:value={ubah.tempat_lahir}
+                    />
+                    {#if ubah.errors.tempat_lahir}<p
+                            class="text-xs text-destructive"
+                        >
+                            {ubah.errors.tempat_lahir}
+                        </p>{/if}
                 </div>
                 <div class="grid gap-1.5">
                     <Label for={`ubah-lahir-${diubah!}`}>Tanggal lahir</Label>

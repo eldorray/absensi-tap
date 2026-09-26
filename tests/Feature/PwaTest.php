@@ -1,10 +1,10 @@
 <?php
 
-test('manifest menyatakan mode standalone dan start url dashboard', function () {
+test('manifest menyatakan mode standalone dan start url netral role', function () {
     $manifest = json_decode(file_get_contents(public_path('manifest.webmanifest')), true);
 
     expect($manifest['display'])->toBe('standalone')
-        ->and($manifest['start_url'])->toBe('/dashboard')
+        ->and($manifest['start_url'])->toBe('/aplikasi')
         ->and($manifest['orientation'])->toBe('portrait')
         ->and($manifest['short_name'])->toBe('Absensi');
 });

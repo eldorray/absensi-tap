@@ -34,6 +34,7 @@ class SimpanSiswaRequest extends FormRequest
             'nisn' => ['nullable', 'string', 'max:20', Rule::unique('siswas', 'nisn')->ignore($siswaId)],
             'nama' => ['required', 'string', 'max:120'],
             'jenis_kelamin' => ['required', Rule::enum(JenisKelamin::class)],
+            'tempat_lahir' => ['nullable', 'string', 'max:120'],
             'tanggal_lahir' => ['nullable', 'date', 'before:today'],
             'is_active' => ['required', 'boolean'],
         ];

@@ -23,12 +23,13 @@ test('admin mengimpor siswa dari csv', function () {
     $this->actingAs(User::factory()->admin()->create())
         ->post(route('admin.siswa.impor'), [
             'kantor_id' => $kantor->id,
-            'berkas' => berkasSiswa("nama,nis,nisn,jenis_kelamin,tanggal_lahir,kelas\nAisyah Putri,20260001,0091234567,P,2015-04-11,5A\nBudi Santoso,20260002,,L,,5A\n"),
+            'berkas' => berkasSiswa("nama,nis,nisn,jenis_kelamin,tempat_lahir,tanggal_lahir,kelas\nAisyah Putri,20260001,0091234567,P,Tangerang,2015-04-11,5A\nBudi Santoso,20260002,,L,Serang,,5A\n"),
         ])
         ->assertRedirect(route('admin.siswa.index'));
 
     expect(Siswa::count())->toBe(2)
         ->and(Siswa::where('nis', '20260001')->value('nama'))->toBe('Aisyah Putri')
+        ->and(Siswa::where('nis', '20260001')->value('tempat_lahir'))->toBe('Tangerang')
         ->and(Siswa::where('nis', '20260002')->value('nisn'))->toBeNull();
 });
 
@@ -112,5 +113,5 @@ test('template bisa diunduh dan memuat kolom yang benar', function () {
         ->assertOk()
         ->streamedContent();
 
-    expect($isi)->toContain('nama,nis,nisn,jenis_kelamin,tanggal_lahir');
+    expect($isi)->toContain('nama,nis,nisn,jenis_kelamin,tempat_lahir,tanggal_lahir');
 });

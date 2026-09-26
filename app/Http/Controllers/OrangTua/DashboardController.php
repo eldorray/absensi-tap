@@ -19,7 +19,17 @@ class DashboardController extends Controller
         $siswas = $request->user()->siswas()
             ->with('kantor:id,nama')
             ->orderBy('nama')
-            ->get(['siswas.id', 'siswas.nama', 'siswas.nis', 'siswas.kantor_id', 'siswas.foto', 'siswas.is_active']);
+            ->get([
+                'siswas.id',
+                'siswas.nama',
+                'siswas.nis',
+                'siswas.nisn',
+                'siswas.tempat_lahir',
+                'siswas.tanggal_lahir',
+                'siswas.kantor_id',
+                'siswas.foto',
+                'siswas.is_active',
+            ]);
 
         $siswaTerpilih = $siswas->firstWhere('id', $request->integer('siswa')) ?? $siswas->first();
         $riwayat = collect();
@@ -64,6 +74,10 @@ class DashboardController extends Controller
                 'id' => $siswaTerpilih->id,
                 'nama' => $siswaTerpilih->nama,
                 'nis' => $siswaTerpilih->nis,
+                'nisn' => $siswaTerpilih->nisn,
+                'tempat_lahir' => $siswaTerpilih->tempat_lahir,
+                'tanggal_lahir' => $siswaTerpilih->tanggal_lahir?->toDateString(),
+                'tanggal_lahir_label' => $siswaTerpilih->tanggal_lahir?->locale('id')->translatedFormat('d F Y'),
                 'unit' => $siswaTerpilih->kantor?->nama,
                 'kelas' => $kelas,
                 'foto' => $siswaTerpilih->foto,
