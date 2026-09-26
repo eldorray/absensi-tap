@@ -136,3 +136,18 @@ test('halaman orang tua menyediakan aksi upload csv', function () {
         ->toContain('accept=".csv,text/csv"')
         ->toContain('orangTuaImpor()');
 });
+
+test('halaman orang tua menyediakan filter penautan dan jumlah baris', function () {
+    $halaman = file_get_contents(resource_path('js/pages/admin/OrangTua.svelte'));
+
+    expect($halaman)
+        ->toContain('aria-label="Filter penautan"')
+        ->toContain('Sudah ditautkan')
+        ->toContain('Belum ditautkan')
+        ->toContain('aria-label="Jumlah baris"')
+        ->toContain('10 baris')
+        ->toContain('25 baris')
+        ->toContain('50 baris')
+        ->toContain('Semua')
+        ->toContain('Tidak ada akun orang tua yang cocok dengan filter.');
+});

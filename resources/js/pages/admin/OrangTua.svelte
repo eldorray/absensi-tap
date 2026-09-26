@@ -66,19 +66,51 @@
     const impor = useForm<{ berkas: File | null }>({ berkas: null });
     let dialogImpor = $state(false);
     const ubah = useForm({ name: '', email: '' });
+    type FilterPenautan = 'semua' | 'sudah' | 'belum';
+
     let dialogTambah = $state(false);
     let diubah = $state<OrangTua | null>(null);
     let cari = $state('');
+    let filterPenautan = $state<FilterPenautan>('semua');
+    let perHalaman = $state(10);
+    let halaman = $state(1);
     let konfirmasi = $state<Konfirmasi | null>(null);
     let passwordDitutup = $state(false);
     const passwordTampil = $derived(passwordDitutup ? null : passwordBaru);
     const terfilter = $derived(
-        orangTuas.filter((orangTua) =>
-            `${orangTua.name} ${orangTua.email} ${orangTua.anak.map((anak) => anak.nama).join(' ')}`
-                .toLowerCase()
-                .includes(cari.trim().toLowerCase()),
-        ),
+        orangTuas.filter((orangTua) => {
+            const cocokPencarian =
+                `${orangTua.name} ${orangTua.email} ${orangTua.anak.map((anak) => anak.nama).join(' ')}`
+                    .toLowerCase()
+                    .includes(cari.trim().toLowerCase());
+            const sudahDitautkan = orangTua.anak.length > 0;
+            const cocokPenautan =
+                filterPenautan === 'semua' ||
+                (filterPenautan === 'sudah' && sudahDitautkan) ||
+                (filterPenautan === 'belum' && !sudahDitautkan);
+
+            return cocokPencarian && cocokPenautan;
+        }),
     );
+    const jumlahHalaman = $derived(
+        perHalaman === 0
+            ? 1
+            : Math.max(1, Math.ceil(terfilter.length / perHalaman)),
+    );
+    const terlihat = $derived(
+        perHalaman === 0
+            ? terfilter
+            : terfilter.slice((halaman - 1) * perHalaman, halaman * perHalaman),
+    );
+
+    function ulangDariAwal(): void {
+        halaman = 1;
+    }
+
+    function ubahJumlahBaris(jumlah: number): void {
+        perHalaman = jumlah;
+        ulangDariAwal();
+    }
 
     function unduhAkun(): void {
         if (!hasilImpor || hasilImpor.akun.length === 0) {
@@ -267,18 +299,49 @@
             </div>
         {/if}
 
-        <div class="relative">
-            <Label for="cari-orang-tua" class="sr-only">Cari orang tua</Label>
-            <Search
-                class="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground"
-                aria-hidden="true"
-            />
-            <Input
-                id="cari-orang-tua"
-                class="pl-11"
-                placeholder="Cari nama, email, atau nama anak"
-                bind:value={cari}
-            />
+        <div class="flex flex-wrap items-center gap-2">
+            <div class="relative min-w-56 flex-1">
+                <Label for="cari-orang-tua" class="sr-only"
+                    >Cari orang tua</Label
+                >
+                <Search
+                    class="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground"
+                    aria-hidden="true"
+                />
+                <Input
+                    id="cari-orang-tua"
+                    class="pl-11"
+                    placeholder="Cari nama, email, atau nama anak"
+                    bind:value={cari}
+                    oninput={ulangDariAwal}
+                />
+            </div>
+            <select
+                aria-label="Filter penautan"
+                class="h-12 rounded-2xl border border-input bg-background px-3"
+                value={filterPenautan}
+                onchange={(event) => {
+                    filterPenautan = event.currentTarget
+                        .value as FilterPenautan;
+                    ulangDariAwal();
+                }}
+            >
+                <option value="semua">Semua penautan</option>
+                <option value="sudah">Sudah ditautkan</option>
+                <option value="belum">Belum ditautkan</option>
+            </select>
+            <select
+                aria-label="Jumlah baris"
+                class="h-12 rounded-2xl border border-input bg-background px-3"
+                value={perHalaman}
+                onchange={(event) =>
+                    ubahJumlahBaris(Number(event.currentTarget.value))}
+            >
+                <option value={10}>10 baris</option>
+                <option value={25}>25 baris</option>
+                <option value={50}>50 baris</option>
+                <option value={0}>Semua</option>
+            </select>
         </div>
 
         {#if terfilter.length === 0}
@@ -289,9 +352,15 @@
                     class="mx-auto mb-2 size-8 text-muted-foreground"
                     aria-hidden="true"
                 />
-                <p class="font-semibold">Belum ada akun orang tua</p>
+                <p class="font-semibold">
+                    {orangTuas.length === 0
+                        ? 'Belum ada akun orang tua'
+                        : 'Tidak ada akun orang tua yang cocok dengan filter.'}
+                </p>
                 <p class="text-sm text-muted-foreground">
-                    Tambahkan akun wali murid, lalu tautkan dari menu Siswa.
+                    {orangTuas.length === 0
+                        ? 'Tambahkan akun wali murid, lalu tautkan dari menu Siswa.'
+                        : 'Ubah pencarian atau filter penautan untuk melihat akun lain.'}
                 </p>
             </div>
         {:else}
@@ -308,7 +377,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {#each terfilter as orangTua (orangTua.id)}
+                        {#each terlihat as orangTua (orangTua.id)}
                             <tr class="border-t border-border">
                                 <td class="px-4 py-3">
                                     <p class="font-semibold">{orangTua.name}</p>
@@ -380,6 +449,45 @@
                         {/each}
                     </tbody>
                 </table>
+            </div>
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <p class="text-xs text-muted-foreground">
+                    Menampilkan {terlihat.length} dari {terfilter.length} akun
+                </p>
+                {#if perHalaman > 0 && jumlahHalaman > 1}
+                    <nav
+                        class="flex items-center gap-1"
+                        aria-label="Halaman akun orang tua"
+                    >
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={halaman === 1}
+                            onclick={() => (halaman = Math.max(1, halaman - 1))}
+                        >
+                            Sebelumnya
+                        </Button>
+                        <span
+                            class="min-w-20 text-center text-xs text-muted-foreground"
+                        >
+                            {halaman} / {jumlahHalaman}
+                        </span>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={halaman === jumlahHalaman}
+                            onclick={() =>
+                                (halaman = Math.min(
+                                    jumlahHalaman,
+                                    halaman + 1,
+                                ))}
+                        >
+                            Berikutnya
+                        </Button>
+                    </nav>
+                {/if}
             </div>
         {/if}
     </section>
