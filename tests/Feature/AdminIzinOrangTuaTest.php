@@ -32,6 +32,20 @@ test('admin melihat pengajuan orang tua secara terpisah dari izin guru', functio
             ->where('izins.0.siswa', 'Aisyah Putri'));
 });
 
+test('daftar izin orang tua ditampilkan sebagai tabel', function () {
+    $halaman = file_get_contents(resource_path('js/pages/admin/IzinOrangTua.svelte'));
+
+    expect($halaman)
+        ->toContain('<table')
+        ->toContain('Siswa')
+        ->toContain('Orang tua')
+        ->toContain('Pengajuan')
+        ->toContain('Alasan')
+        ->toContain('Status')
+        ->toContain('Review')
+        ->not->toContain('<article class="g-tile');
+});
+
 test('admin menyetujui pengajuan orang tua', function () {
     $admin = User::factory()->admin()->create();
     $izin = IzinOrangTua::factory()->create();

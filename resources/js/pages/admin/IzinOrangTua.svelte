@@ -13,8 +13,8 @@
     import Paperclip from 'lucide-svelte/icons/paperclip';
     import X from 'lucide-svelte/icons/x';
     import AppHead from '@/components/AppHead.svelte';
+    import TombolIkon from '@/components/TombolIkon.svelte';
     import { Badge } from '@/components/ui/badge';
-    import { Button } from '@/components/ui/button';
     import { lampiran, update } from '@/routes/admin/izin-orang-tua';
 
     type IzinBaris = {
@@ -100,116 +100,136 @@
             </p>
         </section>
     {:else}
-        <section class="grid gap-3">
-            {#each izins as izin (izin.id)}
-                <article class="g-tile g-tone-plain gap-4">
-                    <div
-                        class="flex flex-wrap items-start justify-between gap-3"
-                    >
-                        <div class="min-w-0">
-                            <div class="flex flex-wrap items-center gap-2">
-                                <h2 class="font-black">{izin.siswa}</h2>
-                                <Badge variant="outline">NIS {izin.nis}</Badge>
-                            </div>
-                            <p class="mt-1 text-sm text-muted-foreground">
-                                Diajukan oleh {izin.orang_tua} · {izin.email_orang_tua}
-                            </p>
-                        </div>
-                        <Badge
-                            variant={izin.status === 'ditolak'
-                                ? 'destructive'
-                                : izin.status === 'disetujui'
-                                  ? 'default'
-                                  : 'secondary'}
-                        >
-                            {labelStatus[izin.status] ?? izin.status}
-                        </Badge>
-                    </div>
-
-                    <div
-                        class="grid gap-3 rounded-2xl bg-muted/55 p-4 sm:grid-cols-[10rem_1fr]"
-                    >
-                        <div>
-                            <p
-                                class="text-xs font-bold tracking-wide text-muted-foreground uppercase"
-                            >
-                                Jenis dan tanggal
-                            </p>
-                            <p class="mt-1 font-bold capitalize">{izin.tipe}</p>
-                            <p class="text-sm text-muted-foreground">
-                                {izin.tanggal_mulai} – {izin.tanggal_selesai}
-                            </p>
-                        </div>
-                        <div>
-                            <p
-                                class="text-xs font-bold tracking-wide text-muted-foreground uppercase"
-                            >
-                                Alasan
-                            </p>
-                            <p class="mt-1 text-sm">{izin.alasan}</p>
-                        </div>
-                    </div>
-
-                    {#if izin.ada_lampiran}
-                        <a
-                            href={lampiran.url(izin.id)}
-                            class="inline-flex min-h-10 w-fit items-center gap-2 font-semibold text-primary"
-                        >
-                            <Paperclip class="size-4" aria-hidden="true" />
-                            Unduh lampiran orang tua
-                        </a>
-                    {/if}
-
-                    {#if izin.status === 'pending'}
-                        <div class="grid gap-3 border-t border-border/70 pt-4">
-                            <label
-                                for={`catatan-${izin.id}`}
-                                class="text-sm font-medium"
-                            >
-                                Catatan admin
-                                <span class="text-muted-foreground"
-                                    >(opsional)</span
-                                >
-                            </label>
-                            <textarea
-                                id={`catatan-${izin.id}`}
-                                rows="2"
-                                maxlength="1000"
-                                placeholder="Tambahkan penjelasan untuk orang tua"
-                                bind:value={catatan[izin.id]}
-                                class="resize-none rounded-2xl border border-input bg-background px-4 py-3 text-base"
-                            ></textarea>
-                            <div
-                                class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"
-                            >
-                                <Button
-                                    type="button"
-                                    variant="destructive"
-                                    class="min-h-11 rounded-2xl"
-                                    disabled={diproses === izin.id}
-                                    onclick={() => review(izin.id, 'ditolak')}
-                                >
-                                    <X class="size-4" aria-hidden="true" />
-                                    Tolak
-                                </Button>
-                                <Button
-                                    type="button"
-                                    class="min-h-11 rounded-2xl"
-                                    disabled={diproses === izin.id}
-                                    onclick={() => review(izin.id, 'disetujui')}
-                                >
-                                    <Check class="size-4" aria-hidden="true" />
-                                    Setujui
-                                </Button>
-                            </div>
-                        </div>
-                    {:else if izin.catatan_review}
-                        <p class="rounded-2xl bg-muted px-4 py-3 text-sm">
-                            Catatan admin: {izin.catatan_review}
-                        </p>
-                    {/if}
-                </article>
-            {/each}
+        <section class="g-tile g-tone-plain gap-4">
+            <div class="overflow-x-auto rounded-2xl border border-border">
+                <table
+                    class="w-full min-w-[55rem] table-fixed text-left text-sm"
+                >
+                    <colgroup>
+                        <col class="w-[13%]" />
+                        <col class="w-[16%]" />
+                        <col class="w-[17%]" />
+                        <col class="w-[19%]" />
+                        <col class="w-[12%]" />
+                        <col class="w-[23%]" />
+                    </colgroup>
+                    <thead class="bg-muted/80 text-foreground">
+                        <tr>
+                            <th class="px-4 py-3 font-medium">Siswa</th>
+                            <th class="px-4 py-3 font-medium">Orang tua</th>
+                            <th class="px-4 py-3 font-medium">Pengajuan</th>
+                            <th class="px-4 py-3 font-medium">Alasan</th>
+                            <th class="px-4 py-3 font-medium">Status</th>
+                            <th class="px-4 py-3 font-medium">Review</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {#each izins as izin (izin.id)}
+                            <tr class="border-t border-border align-top">
+                                <td class="px-4 py-3">
+                                    <p class="font-semibold">{izin.siswa}</p>
+                                    <p class="text-xs text-muted-foreground">
+                                        NIS {izin.nis}
+                                    </p>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <p class="font-semibold">
+                                        {izin.orang_tua}
+                                    </p>
+                                    <p class="text-xs text-muted-foreground">
+                                        {izin.email_orang_tua}
+                                    </p>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <p class="font-semibold capitalize">
+                                        {izin.tipe}
+                                    </p>
+                                    <p
+                                        class="whitespace-nowrap text-xs text-muted-foreground"
+                                    >
+                                        {izin.tanggal_mulai} – {izin.tanggal_selesai}
+                                    </p>
+                                    {#if izin.ada_lampiran}
+                                        <a
+                                            href={lampiran.url(izin.id)}
+                                            class="mt-1 inline-flex min-h-8 items-center gap-1.5 font-semibold text-primary underline-offset-4 hover:underline"
+                                        >
+                                            <Paperclip
+                                                class="size-4"
+                                                aria-hidden="true"
+                                            />
+                                            Unduh lampiran
+                                        </a>
+                                    {/if}
+                                </td>
+                                <td class="px-4 py-3">
+                                    <p class="leading-relaxed">{izin.alasan}</p>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <Badge
+                                        variant={izin.status === 'ditolak'
+                                            ? 'destructive'
+                                            : izin.status === 'disetujui'
+                                              ? 'default'
+                                              : 'secondary'}
+                                    >
+                                        {labelStatus[izin.status] ??
+                                            izin.status}
+                                    </Badge>
+                                </td>
+                                <td class="px-4 py-3">
+                                    {#if izin.status === 'pending'}
+                                        <div class="grid gap-2">
+                                            <input
+                                                type="text"
+                                                maxlength="1000"
+                                                aria-label={`Catatan review izin ${izin.siswa}`}
+                                                placeholder="Catatan (opsional)"
+                                                bind:value={catatan[izin.id]}
+                                                class="h-10 w-full rounded-xl border border-input bg-background px-3 text-base"
+                                            />
+                                            <div class="flex justify-end gap-1">
+                                                <TombolIkon
+                                                    ikon={Check}
+                                                    nada="hijau"
+                                                    disabled={diproses ===
+                                                        izin.id}
+                                                    label={`Setujui izin ${izin.siswa}`}
+                                                    onclick={() =>
+                                                        review(
+                                                            izin.id,
+                                                            'disetujui',
+                                                        )}
+                                                />
+                                                <TombolIkon
+                                                    ikon={X}
+                                                    nada="merah"
+                                                    disabled={diproses ===
+                                                        izin.id}
+                                                    label={`Tolak izin ${izin.siswa}`}
+                                                    onclick={() =>
+                                                        review(
+                                                            izin.id,
+                                                            'ditolak',
+                                                        )}
+                                                />
+                                            </div>
+                                        </div>
+                                    {:else}
+                                        <p
+                                            class="text-sm text-muted-foreground"
+                                        >
+                                            {izin.catatan_review
+                                                ? `Catatan: ${izin.catatan_review}`
+                                                : 'Sudah direview tanpa catatan.'}
+                                        </p>
+                                    {/if}
+                                </td>
+                            </tr>
+                        {/each}
+                    </tbody>
+                </table>
+            </div>
         </section>
     {/if}
 </div>

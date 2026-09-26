@@ -21,6 +21,19 @@ test('admin melihat semua izin', function () {
         ->assertInertia(fn ($page) => $page->component('admin/Izin')->has('izins', 3));
 });
 
+test('daftar izin guru ditampilkan sebagai tabel', function () {
+    $halaman = file_get_contents(resource_path('js/pages/admin/Izin.svelte'));
+
+    expect($halaman)
+        ->toContain('<table')
+        ->toContain('Guru')
+        ->toContain('Pengajuan')
+        ->toContain('Alasan')
+        ->toContain('Status')
+        ->toContain('Review')
+        ->not->toContain('<ul class="divide-y divide-border">');
+});
+
 test('admin bisa menyetujui izin', function () {
     $admin = User::factory()->admin()->create();
     $izin = Izin::factory()->for(User::factory())->create();
