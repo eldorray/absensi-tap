@@ -8,6 +8,7 @@ use App\Models\JadwalKerja;
 use App\Models\Pengumuman;
 use App\Models\TahunAjaran;
 use App\Models\User;
+use App\Support\TahunAjaranTerpilih;
 use Database\Seeders\JadwalKerjaSeeder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
@@ -59,7 +60,8 @@ test('mengaktifkan tahun baru menyisakan layar bersih tanpa menghapus data lama'
         ->and(HariLibur::count())->toBe(0)
         ->and(Pengumuman::count())->toBe(0)
         ->and(IzinOrangTua::count())->toBe(0)
-        ->and(JadwalKerja::count())->toBe(0)
+        // Kecuali jadwal kerja: disalin dari tahun lama supaya absen tetap jalan.
+        ->and(JadwalKerja::count())->toBe(7)
         // Tapi barisnya masih ada, hanya milik tahun lain.
         ->and(Absensi::withoutGlobalScopes()->where('tahun_ajaran_id', $lama->id)->count())->toBe(1)
         ->and(HariLibur::withoutGlobalScopes()->where('tahun_ajaran_id', $lama->id)->count())->toBe(1)
@@ -150,4 +152,64 @@ test('seeder menstempel tahun ajaran walau event model dimatikan', function () {
 
     expect(JadwalKerja::query()->withoutGlobalScopes()->whereNull('tahun_ajaran_id')->count())->toBe(0)
         ->and(JadwalKerja::count())->toBe(7);
+});
+
+test('mengaktifkan tahun baru menyalin jadwal default dan jadwal khusus guru', function () {
+    $this->seed(JadwalKerjaSeeder::class);
+    $guru = User::factory()->create();
+    JadwalKerja::factory()->create(['user_id' => $guru->id, 'day_of_week' => 1, 'jam_masuk' => '08:00:00']);
+    $lama = TahunAjaran::aktif();
+    $baru = TahunAjaran::factory()->create(['nama' => '2027/2028']);
+
+    $this->actingAs(User::factory()->admin()->create())
+        ->post(route('admin.tahun-ajaran.aktifkan', $baru));
+
+    $jadwalBaru = JadwalKerja::withoutGlobalScopes()->where('tahun_ajaran_id', $baru->id);
+
+    expect((clone $jadwalBaru)->count())->toBe(8)
+        ->and((clone $jadwalBaru)->where('user_id', $guru->id)->value('jam_masuk'))->toBe('08:00:00')
+        ->and((clone $jadwalBaru)->whereNull('user_id')->where('day_of_week', 0)->value('is_hari_kerja'))->toBeFalse()
+        // Jadwal tahun lama tetap utuh.
+        ->and(JadwalKerja::withoutGlobalScopes()->where('tahun_ajaran_id', $lama->id)->count())->toBe(8);
+});
+
+test('jadwal khusus guru bisa diubah di tahun baru tanpa menyentuh tahun lama', function () {
+    $this->seed(JadwalKerjaSeeder::class);
+    $guru = User::factory()->create();
+    JadwalKerja::factory()->create(['user_id' => $guru->id, 'day_of_week' => 1, 'jam_masuk' => '08:00:00']);
+    $lama = TahunAjaran::aktif();
+    $baru = TahunAjaran::factory()->create(['nama' => '2027/2028']);
+    $admin = User::factory()->admin()->create();
+
+    $this->actingAs($admin)->post(route('admin.tahun-ajaran.aktifkan', $baru));
+    app(TahunAjaranTerpilih::class)->lupakan();
+
+    $this->actingAs($admin)->put(route('admin.jadwal-guru.update', $guru), [
+        'jadwals' => collect(range(0, 6))->map(fn (int $day): array => [
+            'day_of_week' => $day,
+            'jam_masuk' => '09:00',
+            'jam_pulang' => '15:00',
+            'is_hari_kerja' => $day !== 0,
+        ])->all(),
+    ])->assertSessionHasNoErrors();
+
+    $milikGuru = JadwalKerja::withoutGlobalScopes()->where('user_id', $guru->id)->where('day_of_week', 1);
+
+    expect((clone $milikGuru)->where('tahun_ajaran_id', $baru->id)->value('jam_masuk'))->toBe('09:00:00')
+        ->and((clone $milikGuru)->where('tahun_ajaran_id', $lama->id)->value('jam_masuk'))->toBe('08:00:00');
+});
+
+test('mengaktifkan tahun yang sudah punya jadwal tidak menimpanya', function () {
+    $this->seed(JadwalKerjaSeeder::class);
+    $baru = TahunAjaran::factory()->create(['nama' => '2027/2028']);
+    JadwalKerja::withoutEvents(fn () => JadwalKerja::factory()->create([
+        'tahun_ajaran_id' => $baru->id,
+        'day_of_week' => 1,
+        'jam_masuk' => '10:00:00',
+    ]));
+
+    $this->actingAs(User::factory()->admin()->create())
+        ->post(route('admin.tahun-ajaran.aktifkan', $baru));
+
+    expect(JadwalKerja::withoutGlobalScopes()->where('tahun_ajaran_id', $baru->id)->count())->toBe(1);
 });
