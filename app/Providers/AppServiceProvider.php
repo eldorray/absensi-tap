@@ -7,6 +7,7 @@ use App\Models\PengaturanAplikasi;
 use App\Models\User;
 use App\Support\TahunAjaranTerpilih;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -14,6 +15,8 @@ use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View as ViewView;
+use Inertia\ExceptionResponse;
+use Inertia\Inertia;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -33,6 +36,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        $this->configureErrorPages();
 
         Gate::define('admin', fn (User $user): bool => $user->role === Role::Admin && $user->is_active);
 
@@ -69,6 +73,35 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Configure default behaviors for production-ready applications.
      */
+    /**
+     * Halaman error berbahasa Indonesia, bukan halaman bawaan atau modal
+     * Inertia.
+     *
+     * Saat debug menyala halaman bawaan Laravel tetap dipakai supaya jejak
+     * error terlihat. Sesi habis (419) tidak diberi halaman sendiri:
+     * pengguna dikembalikan ke halaman sebelumnya dengan toast, jadi isian
+     * form cukup dikirim ulang.
+     */
+    private function configureErrorPages(): void
+    {
+        Inertia::handleExceptionsUsing(function (ExceptionResponse $response): ExceptionResponse|RedirectResponse|null {
+            if ($response->statusCode() === 419) {
+                Inertia::flash('toast', [
+                    'type' => 'warning',
+                    'message' => 'Sesi berakhir karena terlalu lama tidak aktif. Silakan coba lagi.',
+                ]);
+
+                return back();
+            }
+
+            if (config('app.debug') || ! in_array($response->statusCode(), [403, 404, 500, 503], true)) {
+                return null;
+            }
+
+            return $response->render('Error', ['status' => $response->statusCode()])->withSharedData();
+        });
+    }
+
     protected function configureDefaults(): void
     {
         Date::use(CarbonImmutable::class);

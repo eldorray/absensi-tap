@@ -1,4 +1,4 @@
-const CACHE = 'app-v1';
+const CACHE = 'app-v2';
 const OFFLINE = '/offline.html';
 
 self.addEventListener('install', (event) => {

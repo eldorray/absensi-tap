@@ -13,7 +13,9 @@ createInertiaApp({
     },
     layout: (name) => {
         switch (true) {
-            case name === 'Welcome':
+            // Halaman error bisa tampil sebelum login, jadi tanpa layout
+            // aplikasi yang membutuhkan data akun.
+            case name === 'Welcome' || name === 'Error':
                 return null;
             case name.startsWith('auth/'):
                 return AuthLayout;
