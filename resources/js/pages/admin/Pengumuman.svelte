@@ -13,6 +13,7 @@
     import AppHead from '@/components/AppHead.svelte';
     import KonfirmasiDialog from '@/components/KonfirmasiDialog.svelte';
     import type { Konfirmasi } from '@/components/KonfirmasiDialog.svelte';
+    import RichTextEditor from '@/components/RichTextEditor.svelte';
     import TombolIkon from '@/components/TombolIkon.svelte';
     import { Badge } from '@/components/ui/badge';
     import { Button } from '@/components/ui/button';
@@ -29,6 +30,7 @@
         id: number;
         judul: string;
         isi: string;
+        ringkasan: string;
         is_active: boolean;
         dibuat: string | null;
     };
@@ -98,14 +100,12 @@
                     </p>{/if}
             </div>
             <div class="grid gap-1.5">
-                <Label for="isi">Isi</Label>
-                <textarea
-                    id="isi"
-                    rows="3"
-                    maxlength="1000"
-                    class="w-full rounded-2xl border border-input bg-background px-4 py-3 text-[0.9375rem] transition-[border-color,box-shadow] hover:border-foreground/45 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/45 focus-visible:outline-none"
+                <Label id="label-isi">Isi</Label>
+                <RichTextEditor
                     bind:value={baru.isi}
-                ></textarea>
+                    labelledby="label-isi"
+                    invalid={!!baru.errors.isi}
+                />
                 {#if baru.errors.isi}<p class="text-xs text-destructive">
                         {baru.errors.isi}
                     </p>{/if}
@@ -156,9 +156,9 @@
                                     >
                                 </div>
                                 <p
-                                    class="mt-1 text-sm whitespace-pre-line text-muted-foreground"
+                                    class="mt-1 line-clamp-2 text-sm text-muted-foreground"
                                 >
-                                    {p.isi}
+                                    {p.ringkasan}
                                 </p>
                                 {#if p.dibuat}
                                     <p
@@ -215,14 +215,14 @@
                                         </p>{/if}
                                 </div>
                                 <div class="grid gap-1.5">
-                                    <Label for={`ubah-isi-${p.id}`}>Isi</Label>
-                                    <textarea
-                                        id={`ubah-isi-${p.id}`}
-                                        rows="3"
-                                        maxlength="1000"
-                                        class="w-full rounded-2xl border border-input bg-background px-4 py-3 text-[0.9375rem] focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/45 focus-visible:outline-none"
+                                    <Label id={`label-ubah-isi-${p.id}`}
+                                        >Isi</Label
+                                    >
+                                    <RichTextEditor
                                         bind:value={ubah.isi}
-                                    ></textarea>
+                                        labelledby={`label-ubah-isi-${p.id}`}
+                                        invalid={!!ubah.errors.isi}
+                                    />
                                     {#if ubah.errors.isi}<p
                                             class="text-xs text-destructive"
                                         >

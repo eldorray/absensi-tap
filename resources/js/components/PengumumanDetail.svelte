@@ -139,11 +139,12 @@
                     >
                         {pengumuman.judul}
                     </h2>
-                    <p
-                        class="mt-3 text-[0.9375rem] leading-relaxed break-words whitespace-pre-line"
-                    >
-                        {pengumuman.isi}
-                    </p>
+                    <!-- Aman dirender sebagai HTML: isi sudah dibersihkan server
+                         (App\Support\IsiKaya) sebelum disimpan. -->
+                    <div class="isi-kaya mt-3 text-[0.9375rem]">
+                        <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+                        {@html pengumuman.isi}
+                    </div>
                 </article>
             {/each}
         </div>

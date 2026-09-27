@@ -289,6 +289,51 @@
         font-size: 0.68rem;
     }
 
+    /* Isi berformat pengumuman: editor admin dan tampilan guru memakai
+       gaya yang sama, jadi yang ditulis admin persis yang dibaca guru. */
+    .isi-kaya {
+        line-height: 1.65;
+        overflow-wrap: anywhere;
+    }
+    .isi-kaya > * + * {
+        margin-top: 0.75em;
+    }
+    .isi-kaya h2 {
+        font-size: 1.125em;
+        font-weight: 700;
+        line-height: 1.35;
+    }
+    .isi-kaya h3 {
+        font-weight: 700;
+    }
+    .isi-kaya ul,
+    .isi-kaya ol {
+        padding-left: 1.4em;
+    }
+    .isi-kaya ul {
+        list-style: disc;
+    }
+    .isi-kaya ol {
+        list-style: decimal;
+    }
+    .isi-kaya li + li {
+        margin-top: 0.25em;
+    }
+    .isi-kaya li > p {
+        margin: 0;
+    }
+    .isi-kaya blockquote {
+        border-left: 3px solid var(--primary);
+        padding-left: 0.9em;
+        color: var(--muted-foreground);
+    }
+    .isi-kaya a {
+        color: var(--primary);
+        font-weight: 600;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+    }
+
     /* Material 3 Expressive tonal tile, shared by every surface. */
     .g-tile {
         display: flex;

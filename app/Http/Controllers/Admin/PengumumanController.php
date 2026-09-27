@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SimpanPengumumanRequest;
 use App\Models\Pengumuman;
+use App\Support\IsiKaya;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -21,6 +23,7 @@ class PengumumanController extends Controller
                     'id' => $p->id,
                     'judul' => $p->judul,
                     'isi' => $p->isi,
+                    'ringkasan' => Str::limit(IsiKaya::teks($p->isi), 160),
                     'is_active' => $p->is_active,
                     'dibuat' => $p->created_at?->format('d M Y'),
                 ])
