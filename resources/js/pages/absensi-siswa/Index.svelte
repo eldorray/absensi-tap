@@ -93,10 +93,12 @@
 </script>
 
 <AppHead title="Absensi Siswa" />
+<!-- HP: satu kolom. Layar lebar: panel tanggal & unduhan di kiri (menempel
+     saat digulir), kartu kelas berjajar di kanan. -->
 <div
-    class="mx-auto flex w-full max-w-lg flex-col gap-4 px-4 py-5 safe-bottom sm:px-6"
+    class="mx-auto flex w-full max-w-lg flex-col gap-4 px-4 py-5 safe-bottom sm:px-6 md:max-w-3xl lg:grid lg:max-w-6xl lg:grid-cols-[22rem_minmax(0,1fr)] lg:items-start"
 >
-    <section class="g-tile g-tone-green">
+    <section class="g-tile g-tone-green lg:sticky lg:top-4">
         <ClipboardCheck class="size-7" />
         <h1 class="g-display text-3xl">Absensi Siswa</h1>
         <p>
@@ -194,35 +196,37 @@
             </div>
         {/if}
     </section>
-    {#each kelas as item (item.id)}
-        <section class="g-tile g-tone-plain">
-            <div class="flex items-start justify-between gap-3">
-                <div>
-                    <h2 class="text-xl font-bold">{item.nama}</h2>
-                    <p class="text-sm text-muted-foreground">
-                        {item.kantor ?? 'Tanpa unit'} · {item.jumlah_siswa} siswa
-                    </p>
+    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {#each kelas as item (item.id)}
+            <section class="g-tile g-tone-plain">
+                <div class="flex items-start justify-between gap-3">
+                    <div>
+                        <h2 class="text-xl font-bold">{item.nama}</h2>
+                        <p class="text-sm text-muted-foreground">
+                            {item.kantor ?? 'Tanpa unit'} · {item.jumlah_siswa} siswa
+                        </p>
+                    </div>
+                    <span
+                        class="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary"
+                        >{label[item.status]}</span
+                    >
                 </div>
-                <span
-                    class="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary"
-                    >{label[item.status]}</span
+                <p class="text-xs text-muted-foreground">
+                    {item.terakhir_disimpan
+                        ? `Terakhir disimpan ${new Date(item.terakhir_disimpan).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`
+                        : 'Belum pernah disimpan'}
+                </p>
+                <Link
+                    href={toUrl(show(item.id, { query: { tanggal } }))}
+                    class="flex min-h-12 items-center justify-center rounded-2xl bg-primary px-4 font-bold text-primary-foreground"
+                    >{labelTombol(item)}</Link
                 >
-            </div>
-            <p class="text-xs text-muted-foreground">
-                {item.terakhir_disimpan
-                    ? `Terakhir disimpan ${new Date(item.terakhir_disimpan).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`
-                    : 'Belum pernah disimpan'}
-            </p>
-            <Link
-                href={toUrl(show(item.id, { query: { tanggal } }))}
-                class="flex min-h-12 items-center justify-center rounded-2xl bg-primary px-4 font-bold text-primary-foreground"
-                >{labelTombol(item)}</Link
-            >
-        </section>
-    {:else}<section class="g-tile g-tone-plain text-center">
-            <h2 class="font-bold">Tidak ada kelas</h2>
-            <p class="text-muted-foreground">
-                Tidak ada kelas yang Anda ampu pada tanggal ini.
-            </p>
-        </section>{/each}
+            </section>
+        {:else}<section class="g-tile g-tone-plain col-span-full text-center">
+                <h2 class="font-bold">Tidak ada kelas</h2>
+                <p class="text-muted-foreground">
+                    Tidak ada kelas yang Anda ampu pada tanggal ini.
+                </p>
+            </section>{/each}
+    </div>
 </div>

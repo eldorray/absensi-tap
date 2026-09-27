@@ -481,3 +481,10 @@ test('guru tidak dapat membuka finalisasi dan pembatalan hanya berlaku untuk har
     $this->actingAs($piket)->put(route('absensi-siswa.buka-finalisasi', $kelas))->assertForbidden();
     expect(SesiAbsensiSiswa::first()->status)->toBe(StatusSesiAbsensiSiswa::Final);
 });
+
+test('daftar kelas absensi siswa tersusun menyamping di layar lebar', function () {
+    $daftar = file_get_contents(resource_path('js/pages/absensi-siswa/Index.svelte'));
+
+    expect($daftar)->toContain('lg:grid-cols-[22rem_minmax(0,1fr)]')
+        ->toContain('md:grid-cols-2 xl:grid-cols-3');
+});
