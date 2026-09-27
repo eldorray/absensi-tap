@@ -154,6 +154,7 @@ class CatatAbsensi
 
                 if ($tipe === TipeTap::Masuk) {
                     $absensi->status = $this->statusMasuk($jadwal);
+                    $absensi->menit_terlambat = $this->menitTerlambat($jadwal, $absensi->status);
                 } else {
                     $absensi->pulang_cepat = $this->pulangCepat($jadwal);
                 }
@@ -255,6 +256,20 @@ class CatatAbsensi
             ->addMinutes(PengaturanAbsensi::current()->toleransi_menit);
 
         return now()->greaterThan($batas) ? StatusAbsensi::Terlambat : StatusAbsensi::Hadir;
+    }
+
+    /**
+     * Menit terlambat dikunci saat tap, dari jam masuk jadwal yang berlaku
+     * saat itu. Rekap tidak menghitung ulang: jadwal yang diubah belakangan
+     * tidak boleh mengubah (apalagi me-minus-kan) keterlambatan yang sudah lewat.
+     */
+    private function menitTerlambat(?JadwalKerja $jadwal, StatusAbsensi $status): int
+    {
+        if ($jadwal === null || $status !== StatusAbsensi::Terlambat) {
+            return 0;
+        }
+
+        return (int) today()->setTimeFromTimeString($jadwal->jam_masuk)->diffInMinutes(now());
     }
 
     private function pulangCepat(?JadwalKerja $jadwal): bool

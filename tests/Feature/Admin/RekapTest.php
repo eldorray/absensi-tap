@@ -121,3 +121,64 @@ test('guru tidak boleh mengekspor rekap', function () {
     $this->actingAs(User::factory()->create())
         ->get(route('admin.rekap.export', ['tahun' => 2026, 'bulan' => 9]))->assertForbidden();
 });
+
+test('rekap periode bisa melintasi batas bulan', function () {
+    $guru = User::factory()->create();
+    Absensi::factory()->for($guru)->create(['tanggal' => '2026-08-31']);
+    Absensi::factory()->for($guru)->create(['tanggal' => '2026-09-01']);
+
+    $rekap = app(RekapBulanan::class)->periode(Carbon::parse('2026-08-31'), Carbon::parse('2026-09-01'), $guru->id);
+
+    expect($rekap['tanggals'])->toBe(['2026-08-31', '2026-09-01'])
+        ->and($rekap['baris'][0]['hari_efektif'])->toBe(2)
+        ->and($rekap['baris'][0]['persentase'])->toBe(100.0);
+});
+
+test('admin melihat rekap periode sebagai ringkasan tanpa grid per tanggal', function () {
+    $guru = User::factory()->create();
+    Absensi::factory()->for($guru)->create(['tanggal' => '2026-09-01']);
+
+    $this->actingAs(User::factory()->admin()->create())
+        ->get(route('admin.rekap.index', ['mode' => 'periode', 'mulai' => '2026-09-01', 'selesai' => '2026-09-05']))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('filter.mode', 'periode')
+            ->where('filter.mulai', '2026-09-01')
+            ->where('filter.selesai', '2026-09-05')
+            ->has('rekap.tanggals', 0)
+            ->has('rekap.baris.0.hari', 0)
+            // 1-5 September 2026: Selasa-Sabtu, lima hari kerja.
+            ->where('rekap.baris.0.hari_efektif', 5)
+            ->where('rekap.baris.0.persentase', 20));
+});
+
+test('rekap periode menolak rentang terbalik, kosong, dan lebih dari setahun', function (array $query) {
+    $this->actingAs(User::factory()->admin()->create())
+        ->get(route('admin.rekap.index', ['mode' => 'periode', ...$query]))
+        ->assertSessionHasErrors();
+})->with([
+    'terbalik' => [['mulai' => '2026-09-10', 'selesai' => '2026-09-01']],
+    'tanpa tanggal' => [[]],
+    'lebih dari setahun' => [['mulai' => '2025-01-01', 'selesai' => '2026-01-02']],
+    'format rusak' => [['mulai' => 'kemarin', 'selesai' => '2026-09-01']],
+]);
+
+test('export CSV periode berisi ringkasan per guru', function () {
+    User::factory()->create(['name' => 'Bu Aminah', 'nip' => '123']);
+
+    $isi = $this->actingAs(User::factory()->admin()->create())
+        ->get(route('admin.rekap.export', ['mode' => 'periode', 'mulai' => '2026-09-01', 'selesai' => '2026-09-05']))
+        ->assertOk()
+        ->assertDownload('rekap-absensi-2026-09-01-sd-2026-09-05.csv')
+        ->streamedContent();
+
+    expect($isi)->toContain('Hari efektif')->and($isi)->toContain('% Kehadiran')->and($isi)->toContain('Bu Aminah')
+        ->and($isi)->not->toContain('2026-09-01');
+});
+
+test('laporan cetak periode menampilkan rentang tanggal', function () {
+    $this->actingAs(User::factory()->admin()->create())
+        ->get(route('admin.rekap.cetak', ['mode' => 'periode', 'mulai' => '2026-09-01', 'selesai' => '2026-09-05']))
+        ->assertOk()
+        ->assertSee('1 September 2026 – 5 September 2026');
+});

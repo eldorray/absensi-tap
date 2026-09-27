@@ -3,9 +3,12 @@
 use App\Actions\Absensi\RekapBulanan;
 use App\Enums\StatusIzin;
 use App\Enums\TipeIzin;
+use App\Models\Absensi;
 use App\Models\HariLibur;
 use App\Models\Izin;
+use App\Models\JadwalKerja;
 use App\Models\User;
+use Carbon\CarbonPeriod;
 use Database\Seeders\JadwalKerjaSeeder;
 use Illuminate\Support\Carbon;
 
@@ -59,6 +62,7 @@ test('laporan memuat komposisi hari efektif sampai persentase kehadiran', functi
 });
 
 test('hari efektif tidak menghitung hari libur, hari non-kerja, dan izin', function () {
+    Carbon::setTestNow('2026-10-01 07:30:00');
     $guru = User::factory()->create();
     HariLibur::factory()->create(['tanggal' => '2026-09-17']);
 
@@ -72,6 +76,7 @@ test('hari efektif tidak menghitung hari libur, hari non-kerja, dan izin', funct
 });
 
 test('izin yang disetujui mengurangi hari efektif, bukan dihitung alfa', function () {
+    Carbon::setTestNow('2026-10-01 07:30:00');
     $guru = User::factory()->create();
     Izin::factory()->for($guru)->create([
         'tipe' => TipeIzin::Sakit,
@@ -119,4 +124,65 @@ test('guru tanpa hari efektif tidak memicu pembagian nol', function () {
 
     expect($baris['hari_efektif'])->toBe(0)
         ->and($baris['persentase'])->toBe(0.0);
+});
+
+test('guru berjadwal 3 hari sepekan yang selalu datang mendapat 100 persen', function () {
+    Carbon::setTestNow('2026-03-01 07:30:00');
+    $guru = User::factory()->create();
+
+    // Senin, Rabu, Jumat saja.
+    foreach (range(0, 6) as $day) {
+        JadwalKerja::factory()->create([
+            'user_id' => $guru->id,
+            'day_of_week' => $day,
+            'is_hari_kerja' => in_array($day, [1, 3, 5], true),
+        ]);
+    }
+
+    // Februari 2026 tepat 4 pekan: 12 hari Senin/Rabu/Jumat.
+    foreach (CarbonPeriod::create('2026-02-01', '2026-02-28') as $tanggal) {
+        if (in_array($tanggal->dayOfWeek, [1, 3, 5], true)) {
+            Absensi::factory()->for($guru)->create(['tanggal' => $tanggal->toDateString()]);
+        }
+    }
+
+    $baris = app(RekapBulanan::class)(2026, 2, $guru->id)['baris'][0];
+
+    expect($baris['hari_efektif'])->toBe(12)
+        ->and($baris['kehadiran'])->toBe(12)
+        ->and($baris['persentase'])->toBe(100.0);
+});
+
+test('hari yang belum tiba tidak ikut hari efektif bulan berjalan', function () {
+    $guru = User::factory()->create();
+
+    // 1-5 September 2026 (Selasa-Sabtu) hadir; hari ini 7 September belum tap.
+    foreach (range(1, 5) as $hari) {
+        Absensi::factory()->for($guru)->create(['tanggal' => sprintf('2026-09-%02d', $hari)]);
+    }
+
+    $baris = app(RekapBulanan::class)(2026, 9, $guru->id)['baris'][0];
+
+    expect($baris['hari_efektif'])->toBe(5)
+        ->and($baris['persentase'])->toBe(100.0);
+});
+
+test('menit terlambat tetap mengikuti jadwal saat tap walau jam masuk diundur sesudahnya', function () {
+    [$guru, $perangkat] = guruSiapAbsen();
+
+    $this->actingAs($guru)->post(route('absensi.store'), [
+        'tipe' => 'masuk',
+        'latitude' => -6.1753924,
+        'longitude' => 106.8271528,
+        'accuracy' => 12,
+        'device_uuid' => $perangkat->uuid,
+    ])->assertSessionHasNoErrors();
+
+    // Tap 07:30 terlambat menurut jam masuk 07:00, lalu jadwal Senin diundur.
+    JadwalKerja::query()->whereNull('user_id')->where('day_of_week', 1)->update(['jam_masuk' => '08:00:00']);
+
+    $baris = app(RekapBulanan::class)(2026, 9, $guru->id)['baris'][0];
+
+    expect($baris['terlambat'])->toBe(1)
+        ->and($baris['menit_terlambat'])->toBe(30);
 });

@@ -18,12 +18,13 @@ use Illuminate\Support\Carbon;
  * @property int|null $masuk_attempt_id
  * @property int|null $pulang_attempt_id
  * @property StatusAbsensi|null $status
+ * @property int $menit_terlambat dihitung dari jam masuk jadwal saat tap
  * @property bool $pulang_cepat
  * @property-read User $user
  * @property-read AbsensiAttempt|null $masukAttempt
  * @property-read AbsensiAttempt|null $pulangAttempt
  */
-#[Fillable(['user_id', 'tanggal', 'masuk_attempt_id', 'pulang_attempt_id', 'status', 'pulang_cepat'])]
+#[Fillable(['user_id', 'tanggal', 'masuk_attempt_id', 'pulang_attempt_id', 'status', 'menit_terlambat', 'pulang_cepat'])]
 class Absensi extends Model
 {
     use BelongsToTahunAjaran;
@@ -41,6 +42,7 @@ class Absensi extends Model
         return [
             'tanggal' => 'date',
             'status' => StatusAbsensi::class,
+            'menit_terlambat' => 'integer',
             'pulang_cepat' => 'boolean',
         ];
     }

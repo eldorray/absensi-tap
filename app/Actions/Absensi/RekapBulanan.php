@@ -41,14 +41,43 @@ class RekapBulanan
     public function __invoke(int $tahun, int $bulan, ?int $userId = null): array
     {
         $mulai = Carbon::create($tahun, $bulan, 1)->startOfMonth();
-        $selesai = $mulai->copy()->endOfMonth();
+
+        return $this->periode($mulai, $mulai->copy()->endOfMonth(), $userId);
+    }
+
+    /**
+     * Rekap rentang tanggal bebas. Rumus hari efektif dan persentase sama
+     * persis dengan rekap bulanan -- bulanan hanyalah periode satu bulan.
+     *
+     * @return array{
+     *     tanggals: list<string>,
+     *     baris: list<array{
+     *         user_id: int,
+     *         nama: string,
+     *         nip: string|null,
+     *         hari: list<array{tanggal: string, status: string, label: string, anomali: list<string>}>,
+     *         ringkasan: array<string, int>,
+     *         hari_efektif: int,
+     *         kehadiran: int,
+     *         masuk: int,
+     *         pulang: int,
+     *         terlambat: int,
+     *         menit_terlambat: int,
+     *         persentase: float
+     *     }>
+     * }
+     */
+    public function periode(Carbon $mulai, Carbon $selesai, ?int $userId = null): array
+    {
+        $mulai = $mulai->copy()->startOfDay();
+        $selesai = $selesai->copy()->endOfDay();
         $tanggals = [];
 
         for ($hari = $mulai->copy(); $hari->lessThanOrEqualTo($selesai); $hari->addDay()) {
             $tanggals[] = $hari->toDateString();
         }
 
-        // Sekali ambil untuk seluruh bulan: jadwal default sekolah, lalu jadwal
+        // Sekali ambil untuk seluruh periode: jadwal default sekolah, lalu jadwal
         // milik guru yang menimpanya per hari.
         $semuaJadwal = JadwalKerja::query()->get();
         $jadwalDefault = $semuaJadwal->whereNull('user_id')->keyBy('day_of_week');
@@ -106,10 +135,12 @@ class RekapBulanan
                 ];
                 $ringkasan[$status->value] = ($ringkasan[$status->value] ?? 0) + 1;
 
-                // Hari efektif = hari yang seharusnya dia masuk: bukan hari
-                // libur, bukan hari non-kerja menurut jadwalnya sendiri, dan
-                // bukan hari yang izinnya disetujui.
-                if (! in_array($status, [StatusHari::BukanHariKerja, StatusHari::Libur, StatusHari::Izin, StatusHari::Sakit, StatusHari::Cuti], true)) {
+                // Hari efektif = hari yang seharusnya dia masuk dan sudah bisa
+                // dinilai: hanya hari kerja menurut jadwalnya sendiri, bukan
+                // libur, bukan izin yang disetujui, dan bukan hari yang belum
+                // tiba. Guru berjadwal 3 hari sepekan yang selalu datang tetap
+                // 100%, termasuk saat rekap bulan berjalan dibuka di tengah bulan.
+                if (in_array($status, [StatusHari::Hadir, StatusHari::Terlambat, StatusHari::Alfa], true)) {
                     $hariEfektif++;
                 }
 
@@ -121,9 +152,8 @@ class RekapBulanan
                     $pulang++;
                 }
 
-                if ($status === StatusHari::Terlambat && $absensi?->masukAttempt?->created_at !== null && $jadwal !== null) {
-                    $jamMasuk = Carbon::parse($tanggal.' '.$jadwal->jam_masuk);
-                    $menitTerlambat += (int) $jamMasuk->diffInMinutes($absensi->masukAttempt->created_at);
+                if ($status === StatusHari::Terlambat) {
+                    $menitTerlambat += $absensi->menit_terlambat ?? 0;
                 }
             }
 

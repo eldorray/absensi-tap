@@ -99,8 +99,8 @@
                     <td class="angka">{{ collect($baris)->sum('terlambat') }}</td>
                     <td class="angka">{{ collect($baris)->sum('menit_terlambat') }} menit</td>
                     <td class="angka">
-                        {{ $totalHariEfektif > 0 && count($baris) > 0
-                            ? number_format(collect($baris)->sum('kehadiran') / ($totalHariEfektif * count($baris)) * 100, 2, ',', '.')
+                        {{ $totalHariEfektif > 0
+                            ? number_format(collect($baris)->sum('kehadiran') / $totalHariEfektif * 100, 2, ',', '.')
                             : '0,00' }}%
                     </td>
                 </tr>
