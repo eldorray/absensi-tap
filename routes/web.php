@@ -25,6 +25,7 @@ use App\Http\Controllers\JadwalSayaController;
 use App\Http\Controllers\KelasSayaController;
 use App\Http\Controllers\OrangTua\DashboardController as OrangTuaDashboardController;
 use App\Http\Controllers\OrangTua\IzinController as OrangTuaIzinController;
+use App\Http\Controllers\PengumumanController as PengumumanGuruController;
 use App\Http\Controllers\PerangkatController;
 use App\Http\Controllers\RiwayatAbsensiController;
 use Illuminate\Support\Facades\Route;
@@ -70,6 +71,7 @@ Route::middleware(['auth', 'verified', 'can:pegawai'])->group(function () {
         Route::put('absensi-siswa/{kelas}/buka-finalisasi', [AbsensiSiswaController::class, 'bukaFinalisasi'])->name('absensi-siswa.buka-finalisasi');
     });
     Route::get('riwayat', [RiwayatAbsensiController::class, 'index'])->name('riwayat.index');
+    Route::get('pengumuman', [PengumumanGuruController::class, 'index'])->name('pengumuman.index');
 
     Route::post('absensi', [AbsensiController::class, 'store'])
         ->middleware('throttle:10,1')

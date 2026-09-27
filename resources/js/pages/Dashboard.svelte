@@ -15,7 +15,7 @@
 </script>
 
 <script lang="ts">
-    import { router } from '@inertiajs/svelte';
+    import { Link, router } from '@inertiajs/svelte';
     import CalendarClock from 'lucide-svelte/icons/calendar-clock';
     import CircleCheck from 'lucide-svelte/icons/circle-check';
     import MapPin from 'lucide-svelte/icons/map-pin';
@@ -25,13 +25,19 @@
     import AppHead from '@/components/AppHead.svelte';
     import InstallPrompt from '@/components/InstallPrompt.svelte';
     import JarakLokasi from '@/components/JarakLokasi.svelte';
+    import PengumumanDetail from '@/components/PengumumanDetail.svelte';
+    import PengumumanKartu from '@/components/PengumumanKartu.svelte';
     import TapButton from '@/components/TapButton.svelte';
     import { Badge } from '@/components/ui/badge';
+    import { pembacaBaru } from '@/lib/pengumuman';
+    import type { Pengumuman } from '@/lib/pengumuman';
     import {
         bacaDeviceUuid,
         buatDeviceUuid,
         simpanDeviceUuid,
     } from '@/lib/perangkat';
+    import { toUrl } from '@/lib/utils';
+    import { index as pengumumanIndex } from '@/routes/pengumuman';
 
     type Jadwal = {
         jam_masuk: string;
@@ -50,8 +56,6 @@
         pulang_cepat: boolean;
         terverifikasi: boolean;
     };
-
-    type Pengumuman = { id: number; judul: string; isi: string };
 
     type Lokasi = {
         id: number;
@@ -79,6 +83,10 @@
         statusPerangkat?: 'pending' | 'active' | 'revoked' | null;
     } = $props();
 
+    // Dashboard hanya membaca penanda "Baru"; yang menandai terbaca adalah
+    // halaman Pengumuman.
+    const pengumumanBaru = pembacaBaru();
+    let detailPengumuman = $state<PengumumanDetail | null>(null);
     let deviceUuid = $state<string | null>(null);
     let jam = $state(waktuSekarang());
 
@@ -266,22 +274,44 @@
     {/if}
 
     {#if pengumumans.length > 0}
-        <section class="g-tile g-tone-blue gap-3">
-            <div class="flex items-center gap-2">
-                <Megaphone class="size-4" aria-hidden="true" />
-                <h3 class="text-base">Informasi</h3>
+        <section class="grid gap-3" aria-labelledby="judul-pengumuman">
+            <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                    <Megaphone class="size-4 text-primary" aria-hidden="true" />
+                    <h3 id="judul-pengumuman" class="text-base font-bold">
+                        Pengumuman
+                    </h3>
+                </div>
+                <Link
+                    href={toUrl(pengumumanIndex())}
+                    class="-my-2 inline-flex min-h-11 items-center rounded-xl px-2 text-sm font-semibold text-primary hover:bg-primary/10"
+                    >Lihat semua</Link
+                >
             </div>
 
-            <ul class="grid gap-3">
-                {#each pengumumans as pengumuman (pengumuman.id)}
-                    <li class="grid gap-1">
-                        <p class="text-sm font-bold">{pengumuman.judul}</p>
-                        <p class="text-sm whitespace-pre-line">
-                            {pengumuman.isi}
-                        </p>
+            <!-- Kartu berikutnya sengaja mengintip di tepi kanan: tanda
+                 deretan ini bisa digeser. -->
+            <ul
+                class="-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto overscroll-x-contain px-4 pb-2 [scrollbar-width:none] sm:-mx-6 sm:scroll-px-6 sm:px-6 [&::-webkit-scrollbar]:hidden"
+                aria-label="Pengumuman terbaru"
+            >
+                {#each pengumumans as pengumuman, indeks (pengumuman.id)}
+                    <li class="flex w-[62%] max-w-60 shrink-0 snap-start">
+                        <PengumumanKartu
+                            class="w-full"
+                            {pengumuman}
+                            baru={pengumumanBaru(pengumuman)}
+                            onclick={() => detailPengumuman?.buka(indeks)}
+                        />
                     </li>
                 {/each}
             </ul>
         </section>
+
+        <PengumumanDetail
+            bind:this={detailPengumuman}
+            {pengumumans}
+            baru={pengumumanBaru}
+        />
     {/if}
 </div>

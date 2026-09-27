@@ -60,8 +60,15 @@ class AbsensiController extends Controller
             'pengumumans' => Pengumuman::query()
                 ->where('is_active', true)
                 ->latest()
+                ->latest('id')
                 ->limit(5)
-                ->get(['id', 'judul', 'isi']),
+                ->get(['id', 'judul', 'isi', 'created_at'])
+                ->map(fn (Pengumuman $pengumuman): array => [
+                    'id' => $pengumuman->id,
+                    'judul' => $pengumuman->judul,
+                    'isi' => $pengumuman->isi,
+                    'dibuat' => $pengumuman->created_at?->toIso8601String(),
+                ]),
             'lokasis' => Lokasi::query()
                 ->aktifUntukKantor($guru->kantor_id)
                 ->orderBy('nama')

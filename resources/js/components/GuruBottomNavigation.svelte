@@ -6,6 +6,7 @@
     import MoreHorizontal from 'lucide-svelte/icons/ellipsis';
     import Fingerprint from 'lucide-svelte/icons/fingerprint';
     import History from 'lucide-svelte/icons/history';
+    import Megaphone from 'lucide-svelte/icons/megaphone';
     import UsersRound from 'lucide-svelte/icons/users-round';
     import { toUrl } from '@/lib/utils';
     import { dashboard } from '@/routes';
@@ -13,6 +14,7 @@
     import { index as izinIndex } from '@/routes/izin';
     import { index as jadwalIndex } from '@/routes/jadwal';
     import { index as kelasSayaIndex } from '@/routes/kelas-saya';
+    import { index as pengumumanIndex } from '@/routes/pengumuman';
     import { index as riwayatIndex } from '@/routes/riwayat';
 
     let terbuka = $state(false);
@@ -26,6 +28,7 @@
     const punyaKelas = $derived(page.props.auth.punyaKelas === true);
     const lainnyaAktif = $derived(
         isActive(toUrl(riwayatIndex())) ||
+            isActive(toUrl(pengumumanIndex())) ||
             (punyaKelas &&
                 (isActive(toUrl(kelasSayaIndex())) ||
                     isActive(toUrl(absensiSiswaIndex())))),
@@ -50,6 +53,26 @@
         class="fixed right-3 bottom-[calc(5rem+env(safe-area-inset-bottom))] left-3 z-50 mx-auto max-w-md rounded-[1.75rem] border border-border/80 bg-background p-2 shadow-[0_20px_60px_rgba(15,23,42,0.22)]"
         aria-label="Menu lainnya"
     >
+        <Link
+            href={toUrl(pengumumanIndex())}
+            onclick={() => (terbuka = false)}
+            class="flex min-h-14 items-center gap-3 rounded-2xl px-3 font-semibold {isActive(
+                toUrl(pengumumanIndex()),
+            )
+                ? 'bg-primary/10 text-primary'
+                : 'hover:bg-muted'}"
+        >
+            <span class="grid size-10 place-items-center rounded-2xl bg-muted"
+                ><Megaphone class="size-5" /></span
+            >
+            <span
+                >Pengumuman<span
+                    class="block text-xs font-normal text-muted-foreground"
+                    >Informasi dari sekolah</span
+                ></span
+            >
+        </Link>
+
         <Link
             href={toUrl(riwayatIndex())}
             onclick={() => (terbuka = false)}
