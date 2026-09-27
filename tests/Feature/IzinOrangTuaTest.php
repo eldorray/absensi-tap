@@ -181,6 +181,15 @@ test('orang tua hanya dapat mengunduh lampiran pengajuannya sendiri', function (
         ->assertForbidden();
 });
 
+test('form izin anak dapat menyusut pada layar mobile', function () {
+    $halaman = file_get_contents(resource_path('js/pages/orang-tua/Izin.svelte'));
+
+    expect($halaman)
+        ->toContain('class="grid min-w-0 gap-4"')
+        ->toContain('class="w-full min-w-0 max-w-full')
+        ->toContain('class="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2"');
+});
+
 test('menu dan halaman orang tua menyediakan pengajuan izin anak', function () {
     $navigasi = file_get_contents(resource_path('js/components/OrangTuaBottomNavigation.svelte'));
     $halaman = file_get_contents(resource_path('js/pages/orang-tua/Izin.svelte'));

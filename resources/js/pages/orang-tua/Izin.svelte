@@ -96,7 +96,7 @@
 <AppHead title="Izin Anak" />
 
 <div
-    class="mx-auto flex w-full max-w-lg flex-col gap-4 px-4 py-5 safe-bottom sm:px-6"
+    class="mx-auto flex w-full min-w-0 max-w-lg flex-col gap-4 px-4 py-5 safe-bottom sm:px-6"
 >
     <section class="g-tile g-tone-green overflow-hidden">
         <div class="flex items-start gap-3">
@@ -133,14 +133,14 @@
             </p>
         </section>
     {:else}
-        <section class="g-tile g-tone-plain">
-            <form class="grid gap-4" onsubmit={kirim}>
-                <div class="grid gap-1.5">
+        <section class="g-tile g-tone-plain min-w-0 max-w-full">
+            <form class="grid min-w-0 gap-4" onsubmit={kirim}>
+                <div class="grid min-w-0 gap-1.5">
                     <Label for="izin-siswa">Pilih anak</Label>
                     <select
                         id="izin-siswa"
                         bind:value={form.siswa_id}
-                        class="h-12 rounded-2xl border border-input bg-background px-4 text-base"
+                        class="w-full min-w-0 max-w-full h-12 truncate rounded-2xl border border-input bg-background px-4 text-base"
                     >
                         {#each anak as siswa (siswa.id)}
                             <option value={siswa.id}>
@@ -151,9 +151,9 @@
                     <InputError message={form.errors.siswa_id} />
                 </div>
 
-                <fieldset class="grid gap-2">
+                <fieldset class="grid min-w-0 gap-2">
                     <legend class="text-sm font-medium">Jenis pengajuan</legend>
-                    <div class="grid grid-cols-2 gap-2">
+                    <div class="grid min-w-0 grid-cols-2 gap-2">
                         {#each [['izin', 'Izin'], ['sakit', 'Sakit']] as pilihan (pilihan[0])}
                             <label
                                 class="flex min-h-12 cursor-pointer items-center justify-center rounded-2xl border px-4 font-bold transition-colors {form.tipe ===
@@ -175,34 +175,34 @@
                     <InputError message={form.errors.tipe} />
                 </fieldset>
 
-                <div class="grid grid-cols-2 gap-3">
-                    <div class="grid gap-1.5">
+                <div class="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div class="grid min-w-0 gap-1.5">
                         <Label for="izin-mulai">Tanggal mulai</Label>
                         <Input
                             id="izin-mulai"
                             type="date"
                             min={tanggalMinimum}
                             max={tanggalMaximum ?? undefined}
-                            class="h-12 rounded-2xl"
+                            class="h-12 min-w-0 max-w-full rounded-2xl"
                             bind:value={form.tanggal_mulai}
                         />
                         <InputError message={form.errors.tanggal_mulai} />
                     </div>
-                    <div class="grid gap-1.5">
+                    <div class="grid min-w-0 gap-1.5">
                         <Label for="izin-selesai">Tanggal selesai</Label>
                         <Input
                             id="izin-selesai"
                             type="date"
                             min={form.tanggal_mulai || tanggalMinimum}
                             max={tanggalMaximum ?? undefined}
-                            class="h-12 rounded-2xl"
+                            class="h-12 min-w-0 max-w-full rounded-2xl"
                             bind:value={form.tanggal_selesai}
                         />
                         <InputError message={form.errors.tanggal_selesai} />
                     </div>
                 </div>
 
-                <div class="grid gap-1.5">
+                <div class="grid min-w-0 gap-1.5">
                     <Label for="izin-alasan">Alasan</Label>
                     <textarea
                         id="izin-alasan"
@@ -210,7 +210,7 @@
                         maxlength="1000"
                         placeholder="Jelaskan alasan izin atau kondisi sakit anak"
                         bind:value={form.alasan}
-                        class="resize-none rounded-2xl border border-input bg-background px-4 py-3 text-base"
+                        class="w-full min-w-0 max-w-full resize-none rounded-2xl border border-input bg-background px-4 py-3 text-base"
                     ></textarea>
                     <div class="flex justify-between gap-3">
                         <InputError message={form.errors.alasan} />
@@ -220,7 +220,7 @@
                     </div>
                 </div>
 
-                <div class="grid gap-1.5">
+                <div class="grid min-w-0 gap-1.5">
                     <Label for="izin-lampiran">
                         Lampiran <span class="text-muted-foreground"
                             >(opsional)</span
@@ -228,7 +228,7 @@
                     </Label>
                     <label
                         for="izin-lampiran"
-                        class="flex min-h-14 cursor-pointer items-center gap-3 rounded-2xl border border-dashed border-input bg-muted/35 px-4 text-sm"
+                        class="flex min-h-14 w-full min-w-0 max-w-full cursor-pointer items-center gap-3 rounded-2xl border border-dashed border-input bg-muted/35 px-4 text-sm"
                     >
                         <Paperclip
                             class="size-5 shrink-0 text-primary"
