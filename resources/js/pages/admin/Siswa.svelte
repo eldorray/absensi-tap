@@ -40,6 +40,7 @@
         id: number;
         kantor_id: number;
         kantor: string | null;
+        kelas: string | null;
         nis: string;
         nisn: string | null;
         nama: string;
@@ -70,7 +71,11 @@
         kelases: { id: number; nama: string; kantor_id: number }[];
         kantors: { id: number; nama: string }[];
         jenisKelamins: Pilihan[];
-        filter: { cari: string; kantor_id: number | null };
+        filter: {
+            cari: string;
+            kantor_id: number | null;
+            kelas_id: number | 'tanpa' | null;
+        };
         hasilImpor: {
             dibuat: number;
             diperbarui: number;
@@ -88,6 +93,11 @@
     let dialogOrangTua = $state(false);
     let cari = $state(filter.cari);
     let unitFilter = $state(filter.kantor_id ?? 0);
+    let kelasFilter = $state<number | 'tanpa' | 0>(filter.kelas_id ?? 0);
+    const namaUnit = $derived(new Map(kantors.map((k) => [k.id, k.nama])));
+    const kelasPilihan = $derived(
+        kelases.filter((k) => !unitFilter || k.kantor_id === unitFilter),
+    );
     const impor = useForm({
         kantor_id: 0,
         berkas: null as File | null,
@@ -133,7 +143,11 @@
         event.preventDefault();
         router.get(
             siswaIndex().url,
-            { cari, kantor_id: unitFilter || undefined },
+            {
+                cari,
+                kantor_id: unitFilter || undefined,
+                kelas_id: kelasFilter || undefined,
+            },
             { preserveState: true, replace: true },
         );
     }
@@ -224,9 +238,30 @@
                 aria-label="Filter unit"
                 class="h-11 rounded-xl border border-border bg-background px-3"
                 bind:value={unitFilter}
+                onchange={() => {
+                    // Kelas unit lain tidak lagi ada di pilihan.
+                    if (
+                        typeof kelasFilter === 'number' &&
+                        !kelasPilihan.some((k) => k.id === kelasFilter)
+                    ) {
+                        kelasFilter = 0;
+                    }
+                }}
                 ><option value={0}>Semua unit</option
                 >{#each kantors as k (k.id)}<option value={k.id}
                         >{k.nama}</option
+                    >{/each}</select
+            >
+            <select
+                aria-label="Filter kelas"
+                class="h-11 rounded-xl border border-border bg-background px-3"
+                bind:value={kelasFilter}
+                ><option value={0}>Semua kelas</option><option value="tanpa"
+                    >Belum ada kelas</option
+                >{#each kelasPilihan as k (k.id)}<option value={k.id}
+                        >{k.nama}{unitFilter
+                            ? ''
+                            : ` · ${namaUnit.get(k.kantor_id) ?? ''}`}</option
                     >{/each}</select
             >
             <Input
@@ -248,10 +283,12 @@
                         ><th class="px-4 py-3">Nama siswa</th><th
                             class="px-4 py-3">NIS / NISN</th
                         ><th class="px-4 py-3">Unit</th><th class="px-4 py-3"
-                            >Jenis kelamin</th
-                        ><th class="px-4 py-3">Orang tua</th><th
-                            class="px-4 py-3">Status</th
-                        ><th class="px-4 py-3 text-right">Aksi</th></tr
+                            >Kelas</th
+                        ><th class="px-4 py-3">Jenis kelamin</th><th
+                            class="px-4 py-3">Orang tua</th
+                        ><th class="px-4 py-3">Status</th><th
+                            class="px-4 py-3 text-right">Aksi</th
+                        ></tr
                     ></thead
                 >
                 <tbody
@@ -264,7 +301,12 @@
                                     >{s.nisn ?? '—'}</span
                                 ></td
                             ><td class="px-4 py-3">{s.kantor ?? '—'}</td><td
-                                class="px-4 py-3">{s.jenis_kelamin_label}</td
+                                class="px-4 py-3"
+                                >{#if s.kelas}{s.kelas}{:else}<span
+                                        class="text-xs text-muted-foreground"
+                                        >Belum ada kelas</span
+                                    >{/if}</td
+                            ><td class="px-4 py-3">{s.jenis_kelamin_label}</td
                             ><td class="px-4 py-3"
                                 >{#if s.orang_tuas.length > 0}<div
                                         class="flex max-w-48 flex-wrap gap-1"
@@ -304,7 +346,7 @@
                         >
                     {:else}<tr
                             ><td
-                                colspan="7"
+                                colspan="8"
                                 class="px-4 py-10 text-center text-muted-foreground"
                                 >Belum ada siswa yang cocok. Tambahkan siswa
                                 atau impor CSV.</td

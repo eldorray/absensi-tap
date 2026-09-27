@@ -37,15 +37,30 @@ class SiswaController extends Controller
     {
         $cari = trim((string) $request->string('cari'));
         $kantorId = $request->integer('kantor_id') ?: null;
+        // Id kelas, atau 'tanpa' untuk siswa yang belum ditempatkan -- berguna
+        // di awal tahun ajaran sebelum semua siswa masuk kelas barunya.
+        $kelasFilter = $request->input('kelas_id') === 'tanpa' ? 'tanpa' : ($request->integer('kelas_id') ?: null);
+        // Kelas hari ini, dan hanya kelas milik tahun ajaran yang sedang dilihat
+        // (whereHas('kelas') ikut disaring global scope tahun ajaran).
+        $kelasBerlaku = fn ($query) => $query->berlakuPada(today())->whereHas('kelas');
 
         return Inertia::render('admin/Siswa', [
             'hasilImpor' => session('impor_siswa'),
             'siswas' => Siswa::query()
-                ->with(['kantor:id,nama', 'orangTuas:id,name,email'])
+                ->with([
+                    'kantor:id,nama',
+                    'orangTuas:id,name,email',
+                    'keanggotaanKelas' => fn ($query) => $kelasBerlaku($query)->with('kelas:id,nama'),
+                ])
                 ->when($cari !== '', fn ($query) => $query->where(
                     fn ($q) => $q->where('nama', 'like', '%'.$cari.'%')->orWhere('nis', 'like', $cari.'%')
                 ))
                 ->when($kantorId !== null, fn ($query) => $query->where('kantor_id', $kantorId))
+                ->when($kelasFilter === 'tanpa', fn ($query) => $query->whereDoesntHave('keanggotaanKelas', $kelasBerlaku))
+                ->when(is_int($kelasFilter), fn ($query) => $query->whereHas(
+                    'keanggotaanKelas',
+                    fn ($anggota) => $kelasBerlaku($anggota)->where('kelas_id', $kelasFilter),
+                ))
                 ->orderBy('nama')
                 ->paginate(25)
                 ->withQueryString()
@@ -53,6 +68,7 @@ class SiswaController extends Controller
                     'id' => $siswa->id,
                     'kantor_id' => $siswa->kantor_id,
                     'kantor' => $siswa->kantor?->nama,
+                    'kelas' => $siswa->keanggotaanKelas->first()?->kelas?->nama,
                     'nis' => $siswa->nis,
                     'nisn' => $siswa->nisn,
                     'nama' => $siswa->nama,
@@ -78,7 +94,7 @@ class SiswaController extends Controller
                 fn (JenisKelamin $jk): array => ['value' => $jk->value, 'label' => $jk->label()],
                 JenisKelamin::cases(),
             ),
-            'filter' => ['cari' => $cari, 'kantor_id' => $kantorId],
+            'filter' => ['cari' => $cari, 'kantor_id' => $kantorId, 'kelas_id' => $kelasFilter],
         ]);
     }
 

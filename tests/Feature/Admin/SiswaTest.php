@@ -144,3 +144,41 @@ test('daftar siswa dipaginasi dan bisa dicari', function () {
         ->assertInertia(fn ($p) => $p->has('siswas.data', 1)
             ->where('siswas.data.0.nama', 'Zulfikar Rahman'));
 });
+
+test('daftar siswa menampilkan kelas saat ini dan bisa disaring per kelas', function () {
+    $kantor = Kantor::factory()->create();
+    $kelas5A = Kelas::factory()->create(['kantor_id' => $kantor->id, 'nama' => '5A']);
+    $kelas5B = Kelas::factory()->create(['kantor_id' => $kantor->id, 'nama' => '5B']);
+    $aisyah = Siswa::factory()->create(['kantor_id' => $kantor->id, 'nama' => 'Aisyah']);
+    $budi = Siswa::factory()->create(['kantor_id' => $kantor->id, 'nama' => 'Budi']);
+    Siswa::factory()->create(['kantor_id' => $kantor->id, 'nama' => 'Citra']);
+    // Aisyah pernah di 5B lalu pindah ke 5A: yang tampil kelas hari ini.
+    AnggotaKelas::factory()->create(['kelas_id' => $kelas5B->id, 'siswa_id' => $aisyah->id, 'tanggal_mulai' => now()->subMonth(), 'tanggal_selesai' => now()->subDays(3), 'is_active' => false]);
+    AnggotaKelas::factory()->create(['kelas_id' => $kelas5A->id, 'siswa_id' => $aisyah->id, 'tanggal_mulai' => now()->subDays(2)]);
+    AnggotaKelas::factory()->create(['kelas_id' => $kelas5B->id, 'siswa_id' => $budi->id, 'tanggal_mulai' => now()->subMonth()]);
+    $admin = User::factory()->admin()->create();
+
+    $this->actingAs($admin)->get(route('admin.siswa.index'))
+        ->assertInertia(fn ($p) => $p->where('siswas.data.0.kelas', '5A')
+            ->where('siswas.data.1.kelas', '5B')
+            ->where('siswas.data.2.kelas', null));
+
+    $this->actingAs($admin)->get(route('admin.siswa.index', ['kelas_id' => $kelas5B->id]))
+        ->assertInertia(fn ($p) => $p->has('siswas.data', 1)->where('siswas.data.0.nama', 'Budi')->where('filter.kelas_id', $kelas5B->id));
+
+    $this->actingAs($admin)->get(route('admin.siswa.index', ['kelas_id' => 'tanpa']))
+        ->assertInertia(fn ($p) => $p->has('siswas.data', 1)->where('siswas.data.0.nama', 'Citra')->where('filter.kelas_id', 'tanpa'));
+});
+
+test('kelas dari tahun ajaran lain tidak dianggap kelas siswa', function () {
+    $kantor = Kantor::factory()->create();
+    $siswa = Siswa::factory()->create(['kantor_id' => $kantor->id]);
+    $kelasLama = Kelas::factory()->create(['kantor_id' => $kantor->id, 'nama' => '4A']);
+    AnggotaKelas::factory()->create(['kelas_id' => $kelasLama->id, 'siswa_id' => $siswa->id, 'tanggal_mulai' => now()->subMonth()]);
+
+    tahunAjaranAktif('2027/2028');
+
+    $this->actingAs(User::factory()->admin()->create())
+        ->get(route('admin.siswa.index', ['kelas_id' => 'tanpa']))
+        ->assertInertia(fn ($p) => $p->has('siswas.data', 1)->where('siswas.data.0.kelas', null));
+});
