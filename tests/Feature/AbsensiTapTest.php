@@ -7,12 +7,14 @@ use App\Enums\HasilTap;
 use App\Enums\StatusAbsensi;
 use App\Models\Absensi;
 use App\Models\AbsensiAttempt;
+use App\Models\HariLibur;
 use App\Models\JadwalKerja;
 use App\Models\Perangkat;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Inertia\Support\SessionKey;
 
 /**
  * Payload tap yang valid, tepat di titik lokasi.
@@ -401,4 +403,69 @@ test('tamu tidak bisa tap', function () {
     [, $perangkat] = guruSiapAbsen();
 
     $this->post(route('absensi.store'), payloadTap($perangkat))->assertRedirect(route('login'));
+});
+
+test('tap di hari non-kerja ditolak', function () {
+    // 2026-09-06 hari Minggu: bukan hari kerja di jadwal default.
+    Carbon::setTestNow('2026-09-06 07:00:00');
+    [$guru, $perangkat] = guruSiapAbsen();
+
+    $this->actingAs($guru)
+        ->post(route('absensi.store'), payloadTap($perangkat))
+        ->assertSessionHasErrors(['tap' => 'Hari ini bukan hari kerjamu, jadi tidak perlu absen.']);
+
+    expect(Absensi::count())->toBe(0)
+        ->and(AbsensiAttempt::value('hasil'))->toBe(HasilTap::LuarJadwal);
+});
+
+test('tap di hari libur sekolah ditolak', function () {
+    [$guru, $perangkat] = guruSiapAbsen();
+    HariLibur::factory()->create(['tanggal' => '2026-09-07', 'nama' => 'Maulid Nabi']);
+
+    $this->actingAs($guru)
+        ->post(route('absensi.store'), payloadTap($perangkat))
+        ->assertSessionHasErrors(['tap' => 'Hari ini libur (Maulid Nabi), jadi tidak perlu absen.']);
+
+    expect(Absensi::count())->toBe(0);
+});
+
+test('pesan sukses menyebut jam tap dan keterlambatan', function () {
+    Carbon::setTestNow('2026-09-07 07:30:00');
+    [$guru, $perangkat] = guruSiapAbsen();
+
+    $this->actingAs($guru)->post(route('absensi.store'), payloadTap($perangkat));
+
+    expect(session(SessionKey::FLASH_DATA)['toast'])->toBe([
+        'type' => 'success',
+        'message' => 'Absen masuk tercatat pukul 07.30. Terlambat 30 menit.',
+    ]);
+
+    Carbon::setTestNow('2026-09-07 13:45:00');
+    $this->actingAs($guru)->post(route('absensi.store'), payloadTap($perangkat, 'pulang'));
+
+    expect(session(SessionKey::FLASH_DATA)['toast']['message'])
+        ->toBe('Absen pulang tercatat pukul 13.45. Tercatat pulang cepat.');
+});
+
+test('dashboard mengirim jam server dan nama hari libur untuk tombol absen', function () {
+    [$guru] = guruSiapAbsen();
+    HariLibur::factory()->create(['tanggal' => '2026-09-07', 'nama' => 'Maulid Nabi']);
+
+    $this->actingAs($guru)
+        ->get(route('dashboard'))
+        ->assertInertia(fn ($page) => $page->where('waktuServer', now()->toIso8601String())
+            ->where('libur', 'Maulid Nabi'));
+});
+
+test('tampilan tap absen memakai jendela, konfirmasi pulang cepat, dan pesan jaringan', function () {
+    $dashboard = file_get_contents(resource_path('js/pages/Dashboard.svelte'));
+    $tombol = file_get_contents(resource_path('js/components/TapButton.svelte'));
+
+    expect($dashboard)->toContain('statusJendela(jadwal, libur, sudahMasuk, menitServer)')
+        ->toContain("addEventListener('visibilitychange'")
+        ->and($tombol)->toContain('Belum jam pulang')
+        ->toContain('onNetworkError')
+        ->toContain('role="alert"')
+        ->and(file_get_contents(resource_path('js/components/InstallPrompt.svelte')))->toContain('localStorage.setItem(KUNCI_DITUTUP')
+        ->and(file_get_contents(resource_path('js/components/JarakLokasi.svelte')))->toContain('watchPosition');
 });

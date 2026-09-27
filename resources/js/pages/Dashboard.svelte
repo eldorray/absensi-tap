@@ -29,6 +29,7 @@
     import PengumumanKartu from '@/components/PengumumanKartu.svelte';
     import TapButton from '@/components/TapButton.svelte';
     import { Badge } from '@/components/ui/badge';
+    import { jamServer, statusJendela } from '@/lib/jendela-absen';
     import { pembacaBaru } from '@/lib/pengumuman';
     import type { Pengumuman } from '@/lib/pengumuman';
     import {
@@ -37,6 +38,7 @@
         simpanDeviceUuid,
     } from '@/lib/perangkat';
     import { toUrl } from '@/lib/utils';
+    import { index as izinIndex } from '@/routes/izin';
     import { index as pengumumanIndex } from '@/routes/pengumuman';
 
     type Jadwal = {
@@ -73,6 +75,8 @@
         punyaPasskey,
         perangkatUuidTersimpan,
         statusPerangkat = null,
+        waktuServer,
+        libur = null,
     }: {
         jadwal: Jadwal | null;
         hariIni: Hari | null;
@@ -81,6 +85,8 @@
         punyaPasskey: boolean;
         perangkatUuidTersimpan: string | null;
         statusPerangkat?: 'pending' | 'active' | 'revoked' | null;
+        waktuServer: string;
+        libur?: string | null;
     } = $props();
 
     // Dashboard hanya membaca penanda "Baru"; yang menandai terbaca adalah
@@ -105,12 +111,51 @@
         }).format(new Date());
     }
 
+    // Selisih jam HP dengan server, dihitung ulang setiap props dimuat.
+    const selisihMs = $derived(new Date(waktuServer).getTime() - Date.now());
+    let detik = $state(Date.now());
+    const menitServer = $derived(jamServer(waktuServer, selisihMs, detik));
+
     $effect(() => {
         const jeda = setInterval(() => {
+            const menitSebelum = jamServer(waktuServer, selisihMs, detik);
+
             jam = waktuSekarang();
+            detik = Date.now();
+
+            // Lewat tengah malam: status dan jadwal kemarin sudah basi.
+            if (jamServer(waktuServer, selisihMs, detik) < menitSebelum - 60) {
+                router.reload();
+            }
         }, 1000);
 
         return () => clearInterval(jeda);
+    });
+
+    /*
+     * PWA sering dibuka lagi dari background tanpa dimuat ulang. Tanpa ini
+     * guru bisa melihat status kemarin -- mis. "absen sudah lengkap" padahal
+     * belum absen hari ini.
+     */
+    $effect(() => {
+        let tersembunyiSejak = 0;
+
+        const saatBerganti = (): void => {
+            if (document.hidden) {
+                tersembunyiSejak = Date.now();
+
+                return;
+            }
+
+            if (tersembunyiSejak && Date.now() - tersembunyiSejak > 60_000) {
+                router.reload();
+            }
+        };
+
+        document.addEventListener('visibilitychange', saatBerganti);
+
+        return () =>
+            document.removeEventListener('visibilitychange', saatBerganti);
     });
 
     $effect(() => {
@@ -141,6 +186,9 @@
     const sudahMasuk = $derived(hariIni?.jam_masuk != null);
     const sudahPulang = $derived(hariIni?.jam_pulang != null);
     const selesai = $derived(sudahMasuk && sudahPulang);
+    const jendela = $derived(
+        statusJendela(jadwal, libur, sudahMasuk, menitServer),
+    );
 
     const labelStatus: Record<string, string> = {
         hadir: 'Hadir',
@@ -167,7 +215,11 @@
             {jam}
         </p>
 
-        {#if jadwal && jadwal.is_hari_kerja}
+        {#if libur}
+            <p class="text-sm text-muted-foreground">
+                Hari ini libur: {libur}.
+            </p>
+        {:else if jadwal && jadwal.is_hari_kerja}
             <p class="flex items-center gap-2 text-sm text-muted-foreground">
                 <CalendarClock class="size-4" aria-hidden="true" />
                 Masuk {jadwal.jam_masuk} · Pulang {jadwal.jam_pulang} · Toleransi
@@ -177,9 +229,13 @@
                 Absen masuk {jadwal.buka_masuk}–{jadwal.tutup_masuk} · absen pulang
                 buka {jadwal.buka_pulang}
             </p>
+        {:else if jadwal}
+            <p class="text-sm text-muted-foreground">
+                Hari ini bukan hari kerjamu.
+            </p>
         {:else}
             <p class="text-sm text-muted-foreground">
-                Hari ini bukan hari kerja.
+                Jadwal hari ini belum diatur TU. Absen tetap bisa dilakukan.
             </p>
         {/if}
 
@@ -279,8 +335,33 @@
             label={sudahMasuk ? 'TAP PULANG' : 'TAP MASUK'}
             {punyaPasskey}
             {deviceUuid}
-            disabled={deviceUuid === null || statusPerangkat !== 'active'}
+            disabled={deviceUuid === null ||
+                statusPerangkat !== 'active' ||
+                !jendela.bisa}
+            pulangCepatSebelum={jendela.bisa && jendela.konfirmasiPulangCepat
+                ? (jadwal?.jam_pulang ?? null)
+                : null}
         />
+
+        {#if !jendela.bisa}
+            <!-- Tombol mati selalu disertai alasan dan langkah berikutnya. -->
+            <section class="g-tile g-tone-plain gap-1" role="status">
+                <h3 class="text-base">{jendela.judul}</h3>
+                <p class="text-sm">{jendela.pesan}</p>
+                {#if jendela.sarankanIzin}
+                    <Link
+                        href={toUrl(izinIndex())}
+                        class="mt-1 inline-flex min-h-11 items-center self-start rounded-2xl bg-primary px-4 text-sm font-semibold text-primary-foreground"
+                        >Ajukan izin</Link
+                    >
+                {/if}
+            </section>
+        {:else if statusPerangkat === null && !page.props.errors.device_uuid}
+            <p class="text-center text-sm text-muted-foreground" role="status">
+                Mendaftarkan HP ini… Kalau tombol tetap mati, muat ulang
+                halaman.
+            </p>
+        {/if}
     {/if}
 
     {#if pengumumans.length > 0}

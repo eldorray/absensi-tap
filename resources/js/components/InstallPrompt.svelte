@@ -17,6 +17,25 @@
     let ditutup = $state(true);
     let langkahIphone = $state(false);
 
+    /**
+     * Banner yang sudah ditutup tidak muncul lagi selama seminggu. Sebelumnya
+     * status "ditutup" hanya hidup di komponen, jadi banner kembali setiap
+     * kali guru membuka tab Absensi.
+     */
+    const KUNCI_DITUTUP = 'pasang-aplikasi.ditutup';
+    const SEMINGGU = 7 * 24 * 60 * 60 * 1000;
+
+    function baruDitutup(): boolean {
+        try {
+            return (
+                Date.now() - Number(localStorage.getItem(KUNCI_DITUTUP) ?? 0) <
+                SEMINGGU
+            );
+        } catch {
+            return false;
+        }
+    }
+
     $effect(() => {
         terpasang =
             window.matchMedia('(display-mode: standalone)').matches ||
@@ -26,7 +45,7 @@
             /iphone|ipad|ipod/i.test(navigator.userAgent) &&
             !('onbeforeinstallprompt' in window);
         android = /android/i.test(navigator.userAgent);
-        ditutup = false;
+        ditutup = baruDitutup();
 
         const tangkap = (event: Event) => {
             event.preventDefault();
@@ -47,6 +66,12 @@
 
     function tutup(): void {
         ditutup = true;
+
+        try {
+            localStorage.setItem(KUNCI_DITUTUP, String(Date.now()));
+        } catch {
+            // Penyimpanan diblokir: banner hanya tersembunyi sampai halaman dimuat ulang.
+        }
     }
 
     async function pasangAndroid(): Promise<void> {
@@ -135,9 +160,10 @@
 <style>
     .install-banner {
         position: fixed;
-        z-index: 60;
+        z-index: 40;
         right: 1rem;
-        bottom: max(1rem, env(safe-area-inset-bottom));
+        /* Di atas navigasi bawah guru (±5rem), bukan menutupinya. */
+        bottom: calc(5.5rem + env(safe-area-inset-bottom));
         left: 1rem;
         display: grid;
         grid-template-columns: auto minmax(0, 1fr);

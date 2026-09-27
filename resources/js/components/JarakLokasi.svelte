@@ -69,18 +69,71 @@
                 sedangCari = false;
             },
             (kesalahan) => {
-                galat =
-                    kesalahan.code === kesalahan.PERMISSION_DENIED
-                        ? 'Izin lokasi ditolak.'
-                        : 'Lokasi belum terbaca.';
+                galat = pesanGalat(kesalahan);
                 sedangCari = false;
             },
             { enableHighAccuracy: true, timeout: 10_000, maximumAge: 30_000 },
         );
     }
 
+    function pesanGalat(kesalahan: GeolocationPositionError): string {
+        return kesalahan.code === kesalahan.PERMISSION_DENIED
+            ? 'Izin lokasi ditolak. Buka pengaturan browser atau aplikasi, lalu aktifkan Lokasi dan Lokasi Tepat.'
+            : 'Lokasi belum terbaca. Coba di luar ruangan.';
+    }
+
+    /*
+     * Jarak diperbarui terus selama halaman terlihat, supaya guru yang sedang
+     * berjalan masuk area sekolah melihat angkanya turun tanpa menekan
+     * refresh. Pemantauan dihentikan saat halaman di background agar hemat
+     * baterai.
+     */
     $effect(() => {
         cariPosisi();
+
+        if (!('geolocation' in navigator)) {
+            return;
+        }
+
+        let pantau: number | null = null;
+
+        const mulai = (): void => {
+            if (pantau !== null || document.hidden) {
+                return;
+            }
+
+            pantau = navigator.geolocation.watchPosition(
+                (hasil) => {
+                    posisi = hasil;
+                    galat = '';
+                },
+                (kesalahan) => {
+                    // Gagal sesaat saat memantau tidak menimpa posisi terakhir.
+                    if (kesalahan.code === kesalahan.PERMISSION_DENIED) {
+                        galat = pesanGalat(kesalahan);
+                    }
+                },
+                { enableHighAccuracy: true, maximumAge: 15_000 },
+            );
+        };
+
+        const berhenti = (): void => {
+            if (pantau !== null) {
+                navigator.geolocation.clearWatch(pantau);
+                pantau = null;
+            }
+        };
+
+        const saatBerganti = (): void =>
+            document.hidden ? berhenti() : mulai();
+
+        mulai();
+        document.addEventListener('visibilitychange', saatBerganti);
+
+        return () => {
+            berhenti();
+            document.removeEventListener('visibilitychange', saatBerganti);
+        };
     });
 </script>
 
@@ -114,7 +167,7 @@
             onclick={cariPosisi}
             disabled={sedangCari}
             aria-label="Perbarui jarak"
-            class="grid size-8 shrink-0 place-items-center rounded-full transition-colors active:bg-background/60 disabled:opacity-50"
+            class="-my-1.5 grid size-11 shrink-0 place-items-center rounded-full transition-colors active:bg-background/60 disabled:opacity-50"
         >
             <RotateCw
                 class="size-4 {sedangCari ? 'animate-spin' : ''}"

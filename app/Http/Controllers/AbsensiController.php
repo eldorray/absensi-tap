@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Absensi\CatatAbsensi;
+use App\Enums\StatusAbsensi;
 use App\Enums\TipeTap;
 use App\Http\Requests\CatatAbsensiRequest;
 use App\Models\Absensi;
+use App\Models\HariLibur;
 use App\Models\JadwalKerja;
 use App\Models\Lokasi;
 use App\Models\PengaturanAbsensi;
@@ -57,6 +59,10 @@ class AbsensiController extends Controller
                 'pulang_cepat' => $hariIni->pulang_cepat,
                 'terverifikasi' => $hariIni->masukAttempt->terverifikasi ?? false,
             ],
+            // Jam server, supaya tombol absen di HP mengikuti jendela yang sama
+            // dengan yang dinilai server walau jam HP meleset.
+            'waktuServer' => now()->toIso8601String(),
+            'libur' => HariLibur::query()->whereDate('tanggal', today())->value('nama'),
             'pengumumans' => Pengumuman::query()
                 ->where('is_active', true)
                 ->latest()
@@ -87,7 +93,7 @@ class AbsensiController extends Controller
      */
     public function store(CatatAbsensiRequest $request, CatatAbsensi $catat): RedirectResponse
     {
-        $catat(
+        $absensi = $catat(
             $request->user(),
             TipeTap::from($request->string('tipe')->toString()),
             (float) $request->input('latitude'),
@@ -97,9 +103,26 @@ class AbsensiController extends Controller
             $this->passkeyTerverifikasi($request),
         );
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Absen tercatat.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => $this->pesanTercatat($absensi, $request->string('tipe')->toString())]);
 
         return to_route('dashboard');
+    }
+
+    /**
+     * Pesan sukses yang langsung menjawab "tercatat jam berapa, telat atau
+     * tidak", supaya guru tidak perlu membuka riwayat untuk memastikan.
+     */
+    private function pesanTercatat(Absensi $absensi, string $tipe): string
+    {
+        $jam = now()->format('H.i');
+
+        if ($tipe === TipeTap::Pulang->value) {
+            return "Absen pulang tercatat pukul {$jam}.".($absensi->pulang_cepat ? ' Tercatat pulang cepat.' : '');
+        }
+
+        return "Absen masuk tercatat pukul {$jam}.".($absensi->status === StatusAbsensi::Terlambat
+            ? " Terlambat {$absensi->menit_terlambat} menit."
+            : ' Tepat waktu.');
     }
 
     /**

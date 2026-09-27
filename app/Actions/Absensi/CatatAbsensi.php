@@ -8,6 +8,7 @@ use App\Enums\StatusPerangkat;
 use App\Enums\TipeTap;
 use App\Models\Absensi;
 use App\Models\AbsensiAttempt;
+use App\Models\HariLibur;
 use App\Models\JadwalKerja;
 use App\Models\Lokasi;
 use App\Models\PengaturanAbsensi;
@@ -216,9 +217,22 @@ class CatatAbsensi
      * buka_masuk_menit sebelum jam_masuk dan ditutup tutup_masuk_menit
      * sesudahnya, pulang dibuka buka_pulang_menit sebelum jam_pulang. Hari tanpa
      * jadwal tidak punya jendela, jadi tapnya diteruskan seperti sebelumnya.
+     *
+     * Hari non-kerja menurut jadwal guru dan hari libur sekolah ditolak: rekap
+     * tidak menghitung tap di hari itu, jadi menerimanya hanya membingungkan.
      */
     private function diLuarJendela(?JadwalKerja $jadwal, TipeTap $tipe): ?string
     {
+        if ($jadwal !== null && ! $jadwal->is_hari_kerja) {
+            return 'Hari ini bukan hari kerjamu, jadi tidak perlu absen.';
+        }
+
+        $libur = HariLibur::query()->whereDate('tanggal', today())->value('nama');
+
+        if (is_string($libur)) {
+            return "Hari ini libur ({$libur}), jadi tidak perlu absen.";
+        }
+
         if ($jadwal === null) {
             return null;
         }
@@ -241,7 +255,7 @@ class CatatAbsensi
         }
 
         return now()->greaterThan($tutup)
-            ? 'Absen masuk sudah ditutup pukul '.$tutup->format('H:i').'.'
+            ? 'Absen masuk sudah ditutup pukul '.$tutup->format('H:i').'. Kalau kamu hadir, lapor ke TU. Kalau berhalangan, ajukan izin.'
             : null;
     }
 
