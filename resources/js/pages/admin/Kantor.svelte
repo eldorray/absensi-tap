@@ -1,7 +1,7 @@
 <script module lang="ts">
     import { index } from '@/routes/admin/kantor';
     export const layout = {
-        breadcrumbs: [{ title: 'Kantor', href: index() }],
+        breadcrumbs: [{ title: 'Unit', href: index() }],
     };
 </script>
 
@@ -86,7 +86,7 @@
 
     function hapus(k: K): void {
         konfirmasi = {
-            judul: `Hapus kantor ${k.nama}?`,
+            judul: `Hapus unit ${k.nama}?`,
             pesan: `${k.jumlah_guru} guru dan ${k.jumlah_lokasi} lokasinya tidak dihapus, hanya lepas penugasan.`,
             aksi: () =>
                 router.delete(kantorDestroy(k.id).url, {
@@ -96,16 +96,16 @@
     }
 </script>
 
-<AppHead title="Kantor" />
+<AppHead title="Unit" />
 
 <div class="mx-auto flex w-full max-w-4xl flex-col gap-4 px-4 py-5 sm:px-6">
     <section class="g-tile g-tone-plain">
         <div>
-            <h3>Kantor</h3>
+            <h3>Unit</h3>
             <p class="text-muted-foreground">
                 Unit sekolah di bawah yayasan, mis. MI dan SMP. Guru ditugaskan
-                ke satu kantor, dan absennya diukur ke lokasi kantor itu
-                ditambah lokasi yang dipakai bersama.
+                ke satu unit, dan absennya diukur ke lokasi unit itu ditambah
+                lokasi yang dipakai bersama.
             </p>
         </div>
 
@@ -113,8 +113,8 @@
             <p
                 class="rounded-2xl border border-dashed border-border px-4 py-6 text-center text-muted-foreground"
             >
-                Belum ada kantor. Tanpa kantor, absen guru diukur ke seluruh
-                lokasi aktif seperti sebelumnya.
+                Belum ada unit. Tanpa unit, absen guru diukur ke seluruh lokasi
+                aktif seperti sebelumnya.
             </p>
         {:else}
             <ul class="grid gap-2">
@@ -152,7 +152,7 @@
                                     nada="biru"
                                     label={diubah === k.id
                                         ? 'Tutup form'
-                                        : `Ubah kantor ${k.nama}`}
+                                        : `Ubah unit ${k.nama}`}
                                     onclick={() =>
                                         diubah === k.id
                                             ? (diubah = null)
@@ -161,7 +161,7 @@
                                 <TombolIkon
                                     ikon={Trash2}
                                     nada="merah"
-                                    label={`Hapus kantor ${k.nama}`}
+                                    label={`Hapus unit ${k.nama}`}
                                     onclick={() => hapus(k)}
                                 />
                             </div>
@@ -180,7 +180,7 @@
                             >
                                 <div class="grid gap-1.5">
                                     <Label for={`ubah-nama-${k.id}`}
-                                        >Nama kantor</Label
+                                        >Nama unit</Label
                                     >
                                     <Input
                                         id={`ubah-nama-${k.id}`}
@@ -220,7 +220,7 @@
                                             bind:checked={ubah.is_active}
                                         />
                                         <Label for={`ubah-aktif-${k.id}`}
-                                            >Kantor aktif</Label
+                                            >Unit aktif</Label
                                         >
                                     </div>
                                     <Button
@@ -239,13 +239,13 @@
         {#if tanpaKantor.length > 0 || lokasiBersama.length > 0}
             <p class="text-xs text-muted-foreground">
                 {tanpaKantor.length} guru belum ditugaskan (atur di menu Akun staf)
-                · {lokasiBersama.length} lokasi dipakai semua kantor (atur di Pengaturan).
+                · {lokasiBersama.length} lokasi dipakai semua unit (atur di Pengaturan).
             </p>
         {/if}
     </section>
 
     <section class="g-tile g-tone-plain">
-        <h3>Tambah kantor</h3>
+        <h3>Tambah unit</h3>
 
         <form
             class="grid gap-3 sm:grid-cols-2"
@@ -255,7 +255,7 @@
             }}
         >
             <div class="grid gap-1.5">
-                <Label for="nama">Nama kantor</Label>
+                <Label for="nama">Nama unit</Label>
                 <Input
                     id="nama"
                     placeholder="SMP Syekh Yusuf"
@@ -279,7 +279,7 @@
             </div>
             <div class="sm:col-span-2">
                 <Button type="submit" disabled={baru.processing}
-                    >Tambah kantor</Button
+                    >Tambah unit</Button
                 >
             </div>
         </form>

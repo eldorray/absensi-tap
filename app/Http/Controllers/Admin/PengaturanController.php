@@ -14,6 +14,7 @@ use App\Models\Kantor;
 use App\Models\Lokasi;
 use App\Models\PengaturanAbsensi;
 use App\Models\PengaturanAplikasi;
+use Carbon\CarbonPeriod;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -147,8 +148,25 @@ class PengaturanController extends Controller
 
     public function simpanHariLibur(SimpanHariLiburRequest $request): RedirectResponse
     {
-        HariLibur::create($request->validated());
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Hari libur ditambahkan.']);
+        $data = $request->validated();
+        $dibuat = 0;
+        $dilewati = 0;
+
+        foreach (CarbonPeriod::create($data['tanggal'], $data['sampai'] ?? $data['tanggal']) as $tanggal) {
+            if (HariLibur::query()->whereDate('tanggal', $tanggal)->exists()) {
+                $dilewati++;
+
+                continue;
+            }
+
+            HariLibur::create(['tanggal' => $tanggal->toDateString(), 'nama' => $data['nama']]);
+            $dibuat++;
+        }
+
+        Inertia::flash('toast', [
+            'type' => $dibuat > 0 ? 'success' : 'warning',
+            'message' => $dibuat.' hari libur ditambahkan'.($dilewati > 0 ? ', '.$dilewati.' tanggal sudah terdaftar.' : '.'),
+        ]);
 
         return to_route('admin.pengaturan.edit');
     }

@@ -6,6 +6,7 @@ use App\Models\Lokasi;
 use App\Models\PengaturanAbsensi;
 use App\Models\User;
 use Database\Seeders\JadwalKerjaSeeder;
+use Inertia\Support\SessionKey;
 
 test('guru tidak boleh membuka pengaturan', function () {
     $this->actingAs(User::factory()->create())->get(route('admin.pengaturan.edit'))->assertForbidden();
@@ -80,3 +81,24 @@ test('tanggal libur unik', function () {
     HariLibur::factory()->create(['tanggal' => '2026-08-17']);
     $this->actingAs(User::factory()->admin()->create())->post(route('admin.hari-libur.store'), ['tanggal' => '2026-08-17', 'nama' => 'X'])->assertSessionHasErrors('tanggal');
 });
+
+test('hari libur bisa ditambahkan sebagai rentang tanggal dan tanggal yang ada dilewati', function () {
+    HariLibur::factory()->create(['tanggal' => '2026-12-24', 'nama' => 'Cuti bersama']);
+
+    $this->actingAs(User::factory()->admin()->create())
+        ->post(route('admin.hari-libur.store'), ['tanggal' => '2026-12-22', 'sampai' => '2026-12-26', 'nama' => 'Libur semester'])
+        ->assertSessionHasNoErrors();
+
+    expect(HariLibur::whereBetween('tanggal', ['2026-12-22', '2026-12-26 23:59:59'])->count())->toBe(5)
+        ->and(HariLibur::where('nama', 'Libur semester')->count())->toBe(4)
+        ->and(session(SessionKey::FLASH_DATA)['toast']['message'])->toBe('4 hari libur ditambahkan, 1 tanggal sudah terdaftar.');
+});
+
+test('rentang hari libur terlalu panjang atau terbalik ditolak', function (array $data) {
+    $this->actingAs(User::factory()->admin()->create())
+        ->post(route('admin.hari-libur.store'), [...$data, 'nama' => 'Libur'])
+        ->assertSessionHasErrors('sampai');
+})->with([
+    'terbalik' => [['tanggal' => '2026-12-26', 'sampai' => '2026-12-20']],
+    'lebih dari 60 hari' => [['tanggal' => '2026-01-01', 'sampai' => '2026-03-15']],
+]);

@@ -9,6 +9,7 @@
     import { Form, Link } from '@inertiajs/svelte';
     import ArrowLeft from 'lucide-svelte/icons/arrow-left';
     import ShieldCheck from 'lucide-svelte/icons/shield-check';
+    import { onMount } from 'svelte';
     import AppHead from '@/components/AppHead.svelte';
     import InputError from '@/components/InputError.svelte';
     import PasswordInput from '@/components/PasswordInput.svelte';
@@ -30,6 +31,20 @@
         status?: string;
         canResetPassword: boolean;
     } = $props();
+
+    /**
+     * Dari aplikasi terpasang (PWA) "Ingat saya" langsung tercentang: HP itu
+     * milik pribadi, dan tanpa ini guru diminta login ulang tiap dua jam.
+     * Di browser biasa (bisa komputer bersama) tetap tidak tercentang.
+     */
+    let ingatSaya = $state(false);
+
+    onMount(() => {
+        ingatSaya =
+            window.matchMedia('(display-mode: standalone)').matches ||
+            (navigator as Navigator & { standalone?: boolean }).standalone ===
+                true;
+    });
 </script>
 
 <AppHead title="Masuk" />
@@ -79,7 +94,11 @@
 
         <div class="flex flex-wrap items-center justify-between gap-3">
             <Label for="remember" class="flex items-center gap-2.5">
-                <Checkbox id="remember" name="remember" />
+                <Checkbox
+                    id="remember"
+                    name="remember"
+                    bind:checked={ingatSaya}
+                />
                 <span class="text-[0.9375rem]">Ingat saya di HP ini</span>
             </Label>
             {#if canResetPassword}

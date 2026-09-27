@@ -111,7 +111,7 @@
         favicon: null,
     });
     const aturan = useForm({ ...pengaturan });
-    const libur = useForm({ tanggal: '', nama: '' });
+    const libur = useForm({ tanggal: '', sampai: '', nama: '' });
 
     const hari = [
         'Minggu',
@@ -335,7 +335,7 @@
                                 <p class="text-xs text-muted-foreground">
                                     {l.kantor
                                         ? l.kantor.nama
-                                        : 'Dipakai semua kantor'}
+                                        : 'Dipakai semua unit'}
                                 </p>
                             </div>
                             <div class="flex flex-wrap items-center gap-2">
@@ -381,16 +381,14 @@
                             >
                                 <div class="grid gap-1.5">
                                     <Label for={`ubah-kantor-${l.id}`}
-                                        >Kantor</Label
+                                        >Unit</Label
                                     >
                                     <select
                                         id={`ubah-kantor-${l.id}`}
                                         class="h-12 rounded-2xl border border-input bg-background px-3"
                                         bind:value={ubahLokasi.kantor_id}
                                     >
-                                        <option value={null}
-                                            >Semua kantor</option
-                                        >
+                                        <option value={null}>Semua unit</option>
                                         {#each kantors as k (k.id)}
                                             <option value={k.id}
                                                 >{k.nama}</option
@@ -494,13 +492,13 @@
             }}
         >
             <div class="grid gap-1.5">
-                <Label for="lokasi-kantor">Kantor</Label>
+                <Label for="lokasi-kantor">Unit</Label>
                 <select
                     id="lokasi-kantor"
                     class="h-12 rounded-2xl border border-input bg-background px-3"
                     bind:value={lokasi.kantor_id}
                 >
-                    <option value={null}>Semua kantor</option>
+                    <option value={null}>Semua unit</option>
                     {#each kantors as k (k.id)}
                         <option value={k.id}>{k.nama}</option>
                     {/each}
@@ -522,7 +520,7 @@
                 <Input
                     id="lokasi-radius"
                     type="number"
-                    min="10"
+                    min="20"
                     max="1000"
                     bind:value={lokasi.radius_meter}
                 />
@@ -775,7 +773,9 @@
         <div>
             <h3>Hari libur</h3>
             <p class="text-muted-foreground">
-                Tanggal di sini dihitung libur pada rekap, menimpa jadwal kerja.
+                Tanggal di sini dihitung libur pada rekap, menimpa jadwal kerja,
+                dan guru tidak bisa absen di hari itu. Isi "Sampai" untuk libur
+                beberapa hari sekaligus.
             </p>
         </div>
 
@@ -809,7 +809,7 @@
         {/if}
 
         <form
-            class="grid gap-3 sm:grid-cols-[auto_1fr_auto] sm:items-end"
+            class="grid gap-3 sm:grid-cols-[auto_auto_1fr_auto] sm:items-end"
             onsubmit={(e) => {
                 e.preventDefault();
                 libur.submit(liburStore(), { onSuccess: () => libur.reset() });
@@ -824,6 +824,21 @@
                 />
                 {#if libur.errors.tanggal}<p class="text-xs text-destructive">
                         {libur.errors.tanggal}
+                    </p>{/if}
+            </div>
+            <div class="grid gap-1.5">
+                <Label for="libur-sampai"
+                    >Sampai <span class="text-muted-foreground">(opsional)</span
+                    ></Label
+                >
+                <Input
+                    id="libur-sampai"
+                    type="date"
+                    min={libur.tanggal || undefined}
+                    bind:value={libur.sampai}
+                />
+                {#if libur.errors.sampai}<p class="text-xs text-destructive">
+                        {libur.errors.sampai}
                     </p>{/if}
             </div>
             <div class="grid gap-1.5">
