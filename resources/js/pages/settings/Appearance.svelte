@@ -4,7 +4,7 @@
     export const layout = {
         breadcrumbs: [
             {
-                title: 'Appearance settings',
+                title: 'Pengaturan tampilan',
                 href: editAppearance(),
             },
         ],
@@ -17,15 +17,15 @@
     import Heading from '@/components/Heading.svelte';
 </script>
 
-<AppHead title="Appearance settings" />
+<AppHead title="Pengaturan tampilan" />
 
-<h1 class="sr-only">Appearance settings</h1>
+<h1 class="sr-only">Pengaturan tampilan</h1>
 
 <div class="space-y-6">
     <Heading
         variant="small"
-        title="Appearance settings"
-        description="Update the appearance settings for your account"
+        title="Pengaturan tampilan"
+        description="Pilih tema tampilan aplikasi. Pilihan tersimpan di perangkat ini."
     />
     <AppearanceTabs />
 </div>

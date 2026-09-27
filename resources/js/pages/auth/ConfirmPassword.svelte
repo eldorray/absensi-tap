@@ -1,8 +1,8 @@
 <script module lang="ts">
     export const layout = {
-        title: 'Confirm password',
+        title: 'Konfirmasi password',
         description:
-            'This is a secure area of the application. Please confirm your password before continuing.',
+            'Ini area yang dilindungi. Masukkan password dulu untuk melanjutkan.',
     };
 </script>
 
@@ -22,16 +22,16 @@
     import { store } from '@/routes/password/confirm';
 </script>
 
-<AppHead title="Confirm password" />
+<AppHead title="Konfirmasi password" />
 
 <PasskeyVerify
     routes={{
         options: confirmOptions(),
         submit: confirmStore(),
     }}
-    label="Confirm with passkey"
-    loadingLabel="Confirming..."
-    separator="Or confirm with password"
+    label="Konfirmasi dengan passkey"
+    loadingLabel="Mengonfirmasi…"
+    separator="Atau konfirmasi dengan password"
 />
 
 <Form {...store.form()} resetOnSuccess>
@@ -57,7 +57,7 @@
                     data-test="confirm-password-button"
                 >
                     {#if processing}<Spinner />{/if}
-                    Confirm password
+                    Konfirmasi password
                 </Button>
             </div>
         </div>

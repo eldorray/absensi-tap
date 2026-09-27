@@ -4,10 +4,16 @@
     export const layout = {
         breadcrumbs: [
             {
-                title: 'Security settings',
+                title: 'Pengaturan keamanan',
                 href: edit(),
             },
         ],
+    };
+
+    const labelStatusPerangkat: Record<string, string> = {
+        active: 'Aktif',
+        pending: 'Menunggu persetujuan',
+        revoked: 'Dicabut',
     };
 </script>
 
@@ -49,15 +55,15 @@
     }: { passwordRules: string; perangkats: Perangkat[] } = $props();
 </script>
 
-<AppHead title="Security settings" />
+<AppHead title="Pengaturan keamanan" />
 
-<h1 class="sr-only">Security settings</h1>
+<h1 class="sr-only">Pengaturan keamanan</h1>
 
 <div class="space-y-6">
     <Heading
         variant="small"
-        title="Update password"
-        description="Ensure your account is using a long, random password to stay secure"
+        title="Ganti password"
+        description="Pakai password yang panjang dan acak supaya akunmu tetap aman"
     />
 
     <Form
@@ -69,38 +75,38 @@
     >
         {#snippet children({ errors, processing })}
             <div class="grid gap-2">
-                <Label for="current_password">Current password</Label>
+                <Label for="current_password">Password saat ini</Label>
                 <PasswordInput
                     id="current_password"
                     name="current_password"
                     class="mt-1 block w-full"
                     autocomplete="current-password"
-                    placeholder="Current password"
+                    placeholder="Password saat ini"
                 />
                 <InputError message={errors.current_password} />
             </div>
 
             <div class="grid gap-2">
-                <Label for="password">New password</Label>
+                <Label for="password">Password baru</Label>
                 <PasswordInput
                     id="password"
                     name="password"
                     class="mt-1 block w-full"
                     autocomplete="new-password"
-                    placeholder="New password"
+                    placeholder="Password baru"
                     passwordrules={passwordRules}
                 />
                 <InputError message={errors.password} />
             </div>
 
             <div class="grid gap-2">
-                <Label for="password_confirmation">Confirm password</Label>
+                <Label for="password_confirmation">Ulangi password baru</Label>
                 <PasswordInput
                     id="password_confirmation"
                     name="password_confirmation"
                     class="mt-1 block w-full"
                     autocomplete="new-password"
-                    placeholder="Confirm password"
+                    placeholder="Ulangi password baru"
                     passwordrules={passwordRules}
                 />
                 <InputError message={errors.password_confirmation} />
@@ -112,7 +118,7 @@
                     disabled={processing}
                     data-test="update-password-button"
                 >
-                    Save
+                    Simpan
                 </Button>
             </div>
         {/snippet}
@@ -150,7 +156,7 @@
                         ? 'default'
                         : 'outline'}
                 >
-                    {perangkat.status}
+                    {labelStatusPerangkat[perangkat.status] ?? perangkat.status}
                 </Badge>
             </li>
         {/each}

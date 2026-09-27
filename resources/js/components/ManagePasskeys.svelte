@@ -30,8 +30,8 @@
     <div class="space-y-6">
         <Heading
             variant="small"
-            title="Passkeys"
-            description="Manage your passkeys for passwordless sign-in"
+            title="Passkey"
+            description="Kelola passkey untuk masuk tanpa password"
         />
 
         <div class="overflow-hidden rounded-lg border border-border">
@@ -46,9 +46,9 @@
                     >
                         <KeyRound class="h-7 w-7 text-muted-foreground" />
                     </div>
-                    <p class="font-medium">No passkeys yet</p>
+                    <p class="font-medium">Belum ada passkey</p>
                     <p class="mt-1 text-sm text-muted-foreground">
-                        Add a passkey to sign in without a password
+                        Tambahkan passkey supaya bisa masuk tanpa password
                     </p>
                 </div>
             {/if}
