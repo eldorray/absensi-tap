@@ -15,7 +15,7 @@
 </script>
 
 <script lang="ts">
-    import { Link, router } from '@inertiajs/svelte';
+    import { Link, page, router } from '@inertiajs/svelte';
     import CalendarClock from 'lucide-svelte/icons/calendar-clock';
     import CircleCheck from 'lucide-svelte/icons/circle-check';
     import MapPin from 'lucide-svelte/icons/map-pin';
@@ -242,6 +242,16 @@
                 Permintaan ganti HP sudah masuk. Absen baru bisa dipakai setelah
                 TU menyetujui HP ini.
             </p>
+        </section>
+    {:else if statusPerangkat === null && page.props.errors.device_uuid}
+        <!-- Pendaftaran HP ditolak (mis. uuid di browser ini milik guru lain).
+             Tanpa pesan ini tombol absen hanya terlihat mati tanpa alasan. -->
+        <section class="g-tile g-tone-red gap-2" role="alert">
+            <div class="flex items-center gap-2">
+                <ShieldAlert class="size-4" aria-hidden="true" />
+                <h3 class="text-base">HP ini belum bisa dipakai absen</h3>
+            </div>
+            <p class="text-sm">{page.props.errors.device_uuid}</p>
         </section>
     {:else if statusPerangkat === 'revoked'}
         <section class="g-tile g-tone-red gap-2">

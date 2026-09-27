@@ -116,3 +116,21 @@ test('halaman absen tidak mendaftarkan ulang uuid yang sudah dikenal server', fu
         ->toContain('uuidTerkirim === uuid')
         ->toContain('uuidTerkirim = uuid');
 });
+
+test('pendaftaran HP yang ditolak tampil sebagai pesan di dashboard', function () {
+    $perangkatOrangLain = Perangkat::factory()->for(User::factory()->create())->create();
+    $guru = User::factory()->create();
+
+    $this->actingAs($guru)
+        ->from(route('dashboard'))
+        ->post(route('perangkat.store'), ['device_uuid' => $perangkatOrangLain->uuid])
+        ->assertRedirect(route('dashboard'));
+
+    $this->actingAs($guru)
+        ->get(route('dashboard'))
+        ->assertInertia(fn ($page) => $page->where('statusPerangkat', null)
+            ->where('errors.device_uuid', 'HP ini sudah terdaftar untuk guru lain. Hubungi TU.'));
+
+    expect(file_get_contents(resource_path('js/pages/Dashboard.svelte')))
+        ->toContain('statusPerangkat === null && page.props.errors.device_uuid');
+});
