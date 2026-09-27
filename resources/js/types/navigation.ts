@@ -15,4 +15,6 @@ export type NavItem = {
     href: NonNullable<LinkComponentBaseProps['href']>;
     icon?: NavIcon;
     isActive?: boolean;
+    /** Angka kecil di kanan menu, mis. jumlah izin yang menunggu. */
+    badge?: number;
 };

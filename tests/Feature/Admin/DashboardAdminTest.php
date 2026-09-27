@@ -2,9 +2,13 @@
 
 use App\Enums\HasilTap;
 use App\Enums\StatusIzin;
+use App\Models\AnggotaKelas;
 use App\Models\Izin;
+use App\Models\IzinOrangTua;
 use App\Models\Kantor;
+use App\Models\Pengumuman;
 use App\Models\Perangkat;
+use App\Models\Siswa;
 use App\Models\TahunAjaran;
 use App\Models\User;
 use Database\Seeders\JadwalKerjaSeeder;
@@ -137,4 +141,58 @@ test('menu dashboard ada di atas kelompok master', function () {
     expect($sidebar)->toContain('dashboardNavItems')
         ->and(strpos($sidebar, 'label="RINGKASAN"'))
         ->toBeLessThan(strpos($sidebar, 'label="Master"'));
+});
+
+test('dashboard menghitung pekerjaan kesiswaan dan tautannya membawa filter', function () {
+    tahunAjaranAktif('2027/2028');
+    $siswaTanpaKelas = Siswa::factory()->create();
+    Siswa::factory()->create(['is_active' => false]);
+    $siswaBerkelas = Siswa::factory()->create();
+    AnggotaKelas::factory()->create(['siswa_id' => $siswaBerkelas->id, 'tanggal_mulai' => now()->subMonth()]);
+    User::factory()->orangTua()->create();
+    $waliTertaut = User::factory()->orangTua()->create();
+    $siswaTanpaKelas->orangTuas()->attach($waliTertaut->id);
+    IzinOrangTua::factory()->create([
+        'siswa_id' => $siswaTanpaKelas->id,
+        'user_id' => $waliTertaut->id,
+        'status' => StatusIzin::Pending,
+    ]);
+
+    $this->actingAs(User::factory()->admin()->create())
+        ->get(route('admin.dashboard'))
+        ->assertInertia(fn ($p) => $p
+            ->where('perluTindakan.siswa_tanpa_kelas', 1)
+            ->where('perluTindakan.orang_tua_belum_tertaut', 1)
+            ->where('perluTindakan.izin_orang_tua_menunggu', 1));
+
+    expect(file_get_contents(resource_path('js/pages/admin/Dashboard.svelte')))
+        ->toContain("siswaIndex({ query: { kelas_id: 'tanpa' } })")
+        ->toContain("userIndex({ query: { saring: 'tanpa_unit' } })")
+        ->toContain("guruIndex({ query: { saring: 'hp_menunggu' } })")
+        ->toContain("orangTuaIndex({ query: { penautan: 'belum' } })");
+});
+
+test('jumlah izin menunggu dibagikan ke sidebar admin saja', function () {
+    Izin::factory()->create(['status' => StatusIzin::Pending]);
+    IzinOrangTua::factory()->count(2)->create(['status' => StatusIzin::Pending]);
+
+    $this->actingAs(User::factory()->admin()->create())
+        ->get(route('admin.dashboard'))
+        ->assertInertia(fn ($p) => $p->where('menunggu', ['izin_guru' => 1, 'izin_orang_tua' => 2]));
+
+    $this->actingAs(User::factory()->create())
+        ->get(route('jadwal.index'))
+        ->assertInertia(fn ($p) => $p->where('menunggu', null));
+});
+
+test('waktu pengumuman terbaru dibagikan ke pegawai untuk penanda baru', function () {
+    $pengumuman = Pengumuman::factory()->create(['is_active' => true]);
+
+    $this->actingAs(User::factory()->create())
+        ->get(route('jadwal.index'))
+        ->assertInertia(fn ($p) => $p->where('pengumumanTerbaru', $pengumuman->created_at->toIso8601String()));
+
+    $this->actingAs(User::factory()->orangTua()->create())
+        ->get(route('orang-tua.dashboard'))
+        ->assertInertia(fn ($p) => $p->where('pengumumanTerbaru', null));
 });

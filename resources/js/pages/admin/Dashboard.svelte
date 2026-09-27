@@ -15,7 +15,10 @@
     import { toUrl } from '@/lib/utils';
     import { index as guruIndex } from '@/routes/admin/guru';
     import { index as izinIndex } from '@/routes/admin/izin';
+    import { index as izinOrangTuaIndex } from '@/routes/admin/izin-orang-tua';
+    import { index as orangTuaIndex } from '@/routes/admin/orang-tua';
     import { index as rekapHarianIndex } from '@/routes/admin/rekap-harian';
+    import { index as siswaIndex } from '@/routes/admin/siswa';
     import { index as userIndex } from '@/routes/admin/user';
 
     type Log = {
@@ -96,27 +99,46 @@
         Object.entries(ringkasanHariIni).sort((a, b) => b[1] - a[1]),
     );
 
+    /**
+     * Setiap tautan membawa filter, jadi admin langsung melihat baris yang
+     * perlu ditangani -- bukan seluruh daftar lalu mencari sendiri.
+     */
     const tindakan = $derived(
         [
             {
                 kunci: 'izin_menunggu',
-                label: 'Izin menunggu persetujuan',
+                label: 'Izin guru menunggu persetujuan',
                 href: izinIndex(),
+            },
+            {
+                kunci: 'izin_orang_tua_menunggu',
+                label: 'Izin orang tua menunggu persetujuan',
+                href: izinOrangTuaIndex(),
             },
             {
                 kunci: 'perangkat_menunggu',
                 label: 'HP menunggu persetujuan',
-                href: guruIndex(),
+                href: guruIndex({ query: { saring: 'hp_menunggu' } }),
             },
             {
                 kunci: 'guru_tanpa_kantor',
-                label: 'Guru belum punya kantor',
-                href: userIndex(),
+                label: 'Guru belum punya unit',
+                href: userIndex({ query: { saring: 'tanpa_unit' } }),
             },
             {
                 kunci: 'guru_nonaktif',
                 label: 'Guru nonaktif',
-                href: userIndex(),
+                href: userIndex({ query: { saring: 'nonaktif' } }),
+            },
+            {
+                kunci: 'siswa_tanpa_kelas',
+                label: 'Siswa aktif belum masuk kelas',
+                href: siswaIndex({ query: { kelas_id: 'tanpa' } }),
+            },
+            {
+                kunci: 'orang_tua_belum_tertaut',
+                label: 'Akun orang tua belum ditautkan ke siswa',
+                href: orangTuaIndex({ query: { penautan: 'belum' } }),
             },
         ].filter((t) => (perluTindakan[t.kunci] ?? 0) > 0),
     );
@@ -231,7 +253,7 @@
                     <dd class="font-mono font-bold">{master.admin}</dd>
                 </div>
                 <div class="flex items-center justify-between gap-3">
-                    <dt class="text-sm text-muted-foreground">Kantor</dt>
+                    <dt class="text-sm text-muted-foreground">Unit</dt>
                     <dd class="font-mono font-bold">{master.kantor}</dd>
                 </div>
                 <div class="flex items-center justify-between gap-3">

@@ -22,6 +22,7 @@
     import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
     import { Input } from '@/components/ui/input';
     import { Label } from '@/components/ui/label';
+    import { queryAwal } from '@/lib/query-awal';
     import {
         destroy as userDestroy,
         resetPassword as userResetPassword,
@@ -87,12 +88,27 @@
     let passwordDitutup = $state(false);
     const passwordTampil = $derived(passwordDitutup ? null : passwordBaru);
     let cari = $state('');
+    type Saring = 'semua' | 'tanpa_unit' | 'nonaktif';
+    const saringAwal = queryAwal('saring');
+    let saring = $state<Saring>(
+        saringAwal === 'tanpa_unit' || saringAwal === 'nonaktif'
+            ? saringAwal
+            : 'semua',
+    );
 
     const terfilter = $derived(
-        users.filter((u) =>
-            `${u.name} ${u.nip ?? ''} ${u.email}`
-                .toLowerCase()
-                .includes(cari.trim().toLowerCase()),
+        users.filter(
+            (u) =>
+                `${u.name} ${u.nip ?? ''} ${u.email}`
+                    .toLowerCase()
+                    .includes(cari.trim().toLowerCase()) &&
+                (saring === 'semua' ||
+                    (saring === 'tanpa_unit' &&
+                        u.role === 'guru' &&
+                        u.kantor_id === null) ||
+                    (saring === 'nonaktif' &&
+                        u.role === 'guru' &&
+                        !u.is_active)),
         ),
     );
 
@@ -106,11 +122,54 @@
         is_active?: boolean;
     };
 
-    function ubah(u: U, data: Perubahan): void {
-        router.patch(update(u.id).url, data, { preserveScroll: true });
+    /**
+     * Simpan perubahan inline. Kalau server menolak (mis. admin aktif
+     * terakhir), select dikembalikan ke nilai lama -- props tidak berubah,
+     * jadi tanpa ini select tetap menampilkan pilihan yang tidak tersimpan.
+     */
+    function ubah(
+        u: U,
+        data: Perubahan,
+        select?: HTMLSelectElement,
+        nilaiLama?: string,
+    ): void {
+        router.patch(update(u.id).url, data, {
+            preserveScroll: true,
+            onError: () => {
+                if (select && nilaiLama !== undefined) {
+                    select.value = nilaiLama;
+                }
+            },
+        });
     }
 
     let konfirmasi = $state<Konfirmasi | null>(null);
+
+    /**
+     * Ganti role selalu dikonfirmasi: satu salah pilih di dropdown bisa
+     * menjadikan guru admin dengan akses penuh.
+     */
+    function ubahRole(u: U, select: HTMLSelectElement): void {
+        const baru = select.value;
+        const lama = u.role;
+
+        // Tampilan dikembalikan dulu; baru berubah setelah dikonfirmasi.
+        select.value = lama;
+
+        konfirmasi = {
+            judul: `Ubah role ${u.name} menjadi ${labelRole[baru] ?? baru}?`,
+            pesan:
+                baru === 'admin'
+                    ? 'Admin bisa membuka seluruh menu: rekap, akun, jadwal, pengaturan, dan menyetujui izin.'
+                    : 'Akses admin akun ini dicabut. Ia hanya bisa memakai menu guru.',
+            label: 'Ubah role',
+            destruktif: baru !== 'admin',
+            aksi: () => {
+                select.value = baru;
+                ubah(u, { role: baru }, select, lama);
+            },
+        };
+    }
 
     function mulaiUbah(u: U): void {
         ubahForm.name = u.name;
@@ -181,25 +240,36 @@
             </Button>
         </div>
 
-        <div class="relative">
-            <Label for="cari-user" class="sr-only">Cari akun</Label>
-            <Search
-                class="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground"
-                aria-hidden="true"
-            />
-            <Input
-                id="cari-user"
-                class="pl-11"
-                placeholder="Cari nama, NIP, email"
-                bind:value={cari}
-            />
+        <div class="flex flex-wrap items-center gap-2">
+            <div class="relative min-w-56 flex-1">
+                <Label for="cari-user" class="sr-only">Cari akun</Label>
+                <Search
+                    class="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground"
+                    aria-hidden="true"
+                />
+                <Input
+                    id="cari-user"
+                    class="pl-11"
+                    placeholder="Cari nama, NIP, email"
+                    bind:value={cari}
+                />
+            </div>
+            <select
+                aria-label="Saring akun"
+                class="h-12 rounded-2xl border border-input bg-background px-3"
+                bind:value={saring}
+            >
+                <option value="semua">Semua akun</option>
+                <option value="tanpa_unit">Guru belum punya unit</option>
+                <option value="nonaktif">Guru nonaktif</option>
+            </select>
         </div>
 
         {#if terfilter.length === 0}
             <p
                 class="rounded-2xl border border-dashed border-border px-4 py-6 text-center text-muted-foreground"
             >
-                Tidak ada akun cocok dengan "{cari}".
+                Tidak ada akun yang cocok.
             </p>
         {:else}
             <div class="overflow-x-auto">
@@ -208,7 +278,7 @@
                         <tr class="text-left text-muted-foreground">
                             <th class="px-2 py-2 font-medium">Nama</th>
                             <th class="px-2 py-2 font-medium">Role</th>
-                            <th class="px-2 py-2 font-medium">Kantor</th>
+                            <th class="px-2 py-2 font-medium">Unit</th>
                             <th class="px-2 py-2 font-medium">Status</th>
                             <th class="px-2 py-2 font-medium"></th>
                         </tr>
@@ -230,9 +300,7 @@
                                         class="h-10 rounded-xl border border-input bg-background px-2"
                                         value={u.role}
                                         onchange={(e) =>
-                                            ubah(u, {
-                                                role: e.currentTarget.value,
-                                            })}
+                                            ubahRole(u, e.currentTarget)}
                                     >
                                         {#each roles as r (r.value)}
                                             <option value={r.value}
@@ -243,21 +311,28 @@
                                 </td>
                                 <td class="px-2 py-3">
                                     <select
-                                        aria-label={`Kantor ${u.name}`}
+                                        aria-label={`Unit ${u.name}`}
                                         class="h-10 rounded-xl border border-input bg-background px-2"
                                         value={u.kantor_id ?? ''}
                                         onchange={(e) =>
-                                            ubah(u, {
-                                                kantor_id:
-                                                    e.currentTarget.value === ''
-                                                        ? null
-                                                        : Number(
-                                                              e.currentTarget
-                                                                  .value,
-                                                          ),
-                                            })}
+                                            ubah(
+                                                u,
+                                                {
+                                                    kantor_id:
+                                                        e.currentTarget
+                                                            .value === ''
+                                                            ? null
+                                                            : Number(
+                                                                  e
+                                                                      .currentTarget
+                                                                      .value,
+                                                              ),
+                                                },
+                                                e.currentTarget,
+                                                String(u.kantor_id ?? ''),
+                                            )}
                                     >
-                                        <option value="">Tanpa kantor</option>
+                                        <option value="">Tanpa unit</option>
                                         {#each kantors as k (k.id)}
                                             <option value={k.id}
                                                 >{k.nama}</option
@@ -385,13 +460,13 @@
                     </select>
                 </div>
                 <div class="grid gap-1.5">
-                    <Label for="user-kantor">Kantor</Label>
+                    <Label for="user-kantor">Unit</Label>
                     <select
                         id="user-kantor"
                         class="h-12 rounded-2xl border border-input bg-background px-3"
                         bind:value={form.kantor_id}
                     >
-                        <option value={null}>Tanpa kantor</option>
+                        <option value={null}>Tanpa unit</option>
                         {#each kantors as k (k.id)}
                             <option value={k.id}>{k.nama}</option>
                         {/each}
@@ -489,13 +564,13 @@
                             </p>{/if}
                     </div>
                     <div class="grid gap-1.5">
-                        <Label for="ubah-kantor">Kantor</Label>
+                        <Label for="ubah-kantor">Unit</Label>
                         <select
                             id="ubah-kantor"
                             class="h-12 rounded-2xl border border-input bg-background px-3"
                             bind:value={ubahForm.kantor_id}
                         >
-                            <option value={null}>Tanpa kantor</option>
+                            <option value={null}>Tanpa unit</option>
                             {#each kantors as k (k.id)}
                                 <option value={k.id}>{k.nama}</option>
                             {/each}

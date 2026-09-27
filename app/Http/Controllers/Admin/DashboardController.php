@@ -10,10 +10,13 @@ use App\Enums\StatusPerangkat;
 use App\Http\Controllers\Controller;
 use App\Models\Absensi;
 use App\Models\AbsensiAttempt;
+use App\Models\AnggotaKelas;
 use App\Models\Izin;
+use App\Models\IzinOrangTua;
 use App\Models\Kantor;
 use App\Models\Lokasi;
 use App\Models\Perangkat;
+use App\Models\Siswa;
 use App\Models\User;
 use App\Support\AnomaliAbsensi;
 use Illuminate\Support\Carbon;
@@ -53,6 +56,18 @@ class DashboardController extends Controller
                     ->count(),
                 'guru_tanpa_kantor' => User::query()->where('role', Role::Guru)->whereNull('kantor_id')->count(),
                 'guru_nonaktif' => User::query()->where('role', Role::Guru)->where('is_active', false)->count(),
+                'izin_orang_tua_menunggu' => IzinOrangTua::query()->where('status', StatusIzin::Pending)->count(),
+                // Kelas hari ini pada tahun ajaran yang dilihat -- sama dengan
+                // filter "Belum ada kelas" di halaman Siswa yang dituju tautannya.
+                'siswa_tanpa_kelas' => Siswa::query()
+                    ->where('is_active', true)
+                    ->whereNotIn('id', AnggotaKelas::query()->berlakuPada(today())->whereHas('kelas')->select('siswa_id'))
+                    ->count(),
+                'orang_tua_belum_tertaut' => User::query()
+                    ->where('role', Role::OrangTua)
+                    ->where('is_active', true)
+                    ->whereDoesntHave('siswas')
+                    ->count(),
             ],
             'master' => [
                 'guru' => User::query()->where('role', Role::Guru)->count(),

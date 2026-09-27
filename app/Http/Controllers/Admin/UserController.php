@@ -115,7 +115,25 @@ class UserController extends Controller
 
         $user->save();
 
+        Inertia::flash('toast', ['type' => 'success', 'message' => $this->pesanPerubahan($user, $data)]);
+
         return back();
+    }
+
+    /**
+     * Toast yang menyebut apa yang berubah. Perubahan inline (role, kantor,
+     * status) sebelumnya tersimpan tanpa kabar apa pun.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    private function pesanPerubahan(User $user, array $data): string
+    {
+        return match (true) {
+            array_key_exists('role', $data) && count($data) === 1 => 'Role '.$user->name.' sekarang '.$user->role->label().'.',
+            array_key_exists('kantor_id', $data) && count($data) === 1 => 'Unit '.$user->name.' sekarang '.($user->kantor->nama ?? 'kosong').'.',
+            array_key_exists('is_active', $data) && count($data) === 1 => 'Akun '.$user->name.($user->is_active ? ' diaktifkan.' : ' dinonaktifkan.'),
+            default => 'Data '.$user->name.' diperbarui.',
+        };
     }
 
     /**

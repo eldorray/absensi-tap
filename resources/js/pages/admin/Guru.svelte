@@ -28,6 +28,7 @@
     import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
     import { Input } from '@/components/ui/input';
     import { Label } from '@/components/ui/label';
+    import { queryAwal } from '@/lib/query-awal';
     import { toUrl } from '@/lib/utils';
     import {
         impor as guruImpor,
@@ -69,15 +70,30 @@
 
     let {
         gurus,
+        kantors = [],
         hasilImpor = null,
         passwordBaru = null,
     }: {
         gurus: G[];
+        kantors?: { id: number; nama: string }[];
         hasilImpor?: Hasil | null;
         passwordBaru?: PasswordBaru | null;
     } = $props();
 
-    const form = useForm({ name: '', nip: '', email: '', password: '' });
+    const form = useForm<{
+        name: string;
+        nip: string;
+        email: string;
+        password: string;
+        kantor_id: number | null;
+    }>({
+        name: '',
+        nip: '',
+        email: '',
+        password: '',
+        // Satu unit saja? Langsung terpilih.
+        kantor_id: kantors.length === 1 ? kantors[0].id : null,
+    });
     const impor = useForm<{ berkas: File | null }>({ berkas: null });
 
     // Aksi akun memakai endpoint kelola user: guru adalah User, dan penjaga
@@ -99,12 +115,17 @@
     let cari = $state('');
     let perHalaman = $state<number>(10);
     let tampil = $state(10);
+    // Tautan "HP menunggu persetujuan" di dashboard membuka ?saring=hp_menunggu.
+    let hpMenunggu = $state(queryAwal('saring') === 'hp_menunggu');
 
     const terfilter = $derived(
-        gurus.filter((g) =>
-            `${g.name} ${g.nip ?? ''} ${g.email}`
-                .toLowerCase()
-                .includes(cari.trim().toLowerCase()),
+        gurus.filter(
+            (g) =>
+                `${g.name} ${g.nip ?? ''} ${g.email}`
+                    .toLowerCase()
+                    .includes(cari.trim().toLowerCase()) &&
+                (!hpMenunggu ||
+                    g.perangkats.some((p) => p.status === 'pending')),
         ),
     );
 
@@ -265,7 +286,7 @@
                     data-test="buka-impor"
                 >
                     <Upload class="size-4" aria-hidden="true" />
-                    Impor Excel
+                    Impor CSV
                 </Button>
                 <Button
                     onclick={() => (dialogTambah = true)}
@@ -358,6 +379,18 @@
                     oninput={() => ulangDariAwal()}
                 />
             </div>
+            <select
+                aria-label="Saring guru"
+                class="h-12 rounded-2xl border border-input bg-background px-3"
+                value={hpMenunggu ? 'hp_menunggu' : 'semua'}
+                onchange={(e) => {
+                    hpMenunggu = e.currentTarget.value === 'hp_menunggu';
+                    ulangDariAwal();
+                }}
+            >
+                <option value="semua">Semua guru</option>
+                <option value="hp_menunggu">HP menunggu persetujuan</option>
+            </select>
             <select
                 aria-label="Jumlah baris"
                 class="h-12 rounded-2xl border border-input bg-background px-3"
@@ -490,7 +523,7 @@
                         variant="outline"
                         size="sm"
                         onclick={() => (tampil += perHalaman)}
-                        >Next ({Math.min(sisa, perHalaman)})</Button
+                        >Tampilkan {Math.min(sisa, perHalaman)} lagi</Button
                     >
                 {/if}
             </div>
@@ -537,6 +570,22 @@
                     </p>{/if}
             </div>
             <div class="grid gap-1.5">
+                <Label for="guru-unit">Unit</Label>
+                <select
+                    id="guru-unit"
+                    class="h-11 w-full rounded-xl border border-input bg-background px-3"
+                    bind:value={form.kantor_id}
+                >
+                    <option value={null}>Pilih unit</option>
+                    {#each kantors as k (k.id)}
+                        <option value={k.id}>{k.nama}</option>
+                    {/each}
+                </select>
+                {#if form.errors.kantor_id}<p class="text-xs text-destructive">
+                        {form.errors.kantor_id}
+                    </p>{/if}
+            </div>
+            <div class="grid gap-1.5">
                 <Label for="guru-email">Email</Label>
                 <Input id="guru-email" type="email" bind:value={form.email} />
                 {#if form.errors.email}<p class="text-xs text-destructive">
@@ -571,7 +620,7 @@
 
 <Dialog bind:open={dialogImpor}>
     <DialogContent class="max-h-[85svh] overflow-y-auto">
-        <DialogTitle class="text-xl font-bold">Impor dari Excel</DialogTitle>
+        <DialogTitle class="text-xl font-bold">Impor dari CSV</DialogTitle>
         <p class="mt-1 mb-4 text-sm text-muted-foreground">
             Unduh templatenya, isi di Excel, simpan sebagai CSV, lalu unggah di
             sini. Yang wajib hanya kolom <b>nama</b> — email dan password dibuatkan

@@ -2,9 +2,11 @@
 
 use App\Enums\Role;
 use App\Enums\StatusPerangkat;
+use App\Models\Kantor;
 use App\Models\Perangkat;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Inertia\Support\SessionKey;
 
 test('guru dilarang', fn () => $this->actingAs(User::factory()->create())->get(route('admin.guru.index'))->assertForbidden());
 test('admin melihat guru', function () {
@@ -104,4 +106,30 @@ test('halaman guru menerima password baru untuk ditampilkan sekali', function ()
     $this->actingAs($admin)
         ->get(route('admin.guru.index'))
         ->assertInertia(fn ($p) => $p->has('passwordBaru.password'));
+});
+
+test('guru baru bisa langsung diberi unit', function () {
+    $kantor = Kantor::factory()->create();
+
+    $this->actingAs(User::factory()->admin()->create())
+        ->post(route('admin.guru.store'), [
+            'name' => 'Bu Siti',
+            'email' => 'siti@sekolah.test',
+            'password' => 'RahasiaKuat123!',
+            'kantor_id' => $kantor->id,
+        ])->assertSessionHasNoErrors();
+
+    expect(User::where('email', 'siti@sekolah.test')->value('kantor_id'))->toBe($kantor->id);
+});
+
+test('menyetujui dan menonaktifkan memberi pesan sukses', function () {
+    $guru = User::factory()->create();
+    $perangkat = Perangkat::factory()->for($guru)->pending()->create();
+    $admin = User::factory()->admin()->create();
+
+    $this->actingAs($admin)->patch(route('admin.perangkat.update', $perangkat), ['status' => 'active']);
+    expect(session(SessionKey::FLASH_DATA)['toast']['message'])->toContain('disetujui');
+
+    $this->actingAs($admin)->patch(route('admin.guru.update', $guru), ['is_active' => false]);
+    expect(session(SessionKey::FLASH_DATA)['toast']['message'])->toBe($guru->name.' dinonaktifkan.');
 });

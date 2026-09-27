@@ -82,13 +82,32 @@
             icon: CalendarCheck,
         },
         { title: 'Rekap bulanan', href: rekapIndex(), icon: Table2 },
-        { title: 'Izin guru', href: adminIzinIndex(), icon: CalendarOff },
+    ];
+
+    /**
+     * Pekerjaan yang menunggu keputusan admin, dengan jumlahnya. Dulu izin
+     * terselip di "Laporan Kehadiran" yang isinya hanya untuk dibaca.
+     */
+    const menunggu = $derived(
+        (page.props.menunggu as
+            | { izin_guru: number; izin_orang_tua: number }
+            | null
+            | undefined) ?? { izin_guru: 0, izin_orang_tua: 0 },
+    );
+    const tindakanNavItems = $derived<NavItem[]>([
+        {
+            title: 'Izin guru',
+            href: adminIzinIndex(),
+            icon: CalendarOff,
+            badge: menunggu.izin_guru,
+        },
         {
             title: 'Izin orang tua',
             href: izinOrangTuaIndex(),
             icon: FileHeart,
+            badge: menunggu.izin_orang_tua,
         },
-    ];
+    ]);
 
     const dashboardNavItems: NavItem[] = [
         { title: 'Dashboard', href: adminDashboard(), icon: LayoutDashboard },
@@ -104,7 +123,7 @@
             href: tahunAjaranIndex(),
             icon: GraduationCap,
         },
-        { title: 'Kantor', href: kantorIndex(), icon: Building2 },
+        { title: 'Unit', href: kantorIndex(), icon: Building2 },
         { title: 'Guru', href: guruIndex(), icon: Users },
         { title: 'Akun staf', href: userIndex(), icon: UserCog },
         { title: 'Orang tua', href: orangTuaIndex(), icon: UsersRound },
@@ -167,6 +186,7 @@
         -->
         {#if isAdmin}
             <NavMain items={dashboardNavItems} label="RINGKASAN" />
+            <NavMain items={tindakanNavItems} label="PERLU TINDAKAN" />
             <NavDropdown
                 label="Master"
                 icon={Database}
@@ -184,7 +204,7 @@
             />
             <NavMain items={adminNavItems} label="ADMIN" />
         {/if}
-        <NavMain items={settingsNavItems} label="PENGATURAN" />
+        <NavMain items={settingsNavItems} label="AKUN SAYA" />
     </SidebarContent>
 
     <SidebarFooter>

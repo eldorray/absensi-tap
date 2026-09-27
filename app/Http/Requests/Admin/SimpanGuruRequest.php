@@ -11,6 +11,6 @@ class SimpanGuruRequest extends FormRequest
     /** @return array<string, ValidationRule|array<mixed>|string> */
     public function rules(): array
     {
-        return ['name' => ['required', 'string', 'max:255'], 'nip' => ['nullable', 'string', 'max:30'], 'email' => ['required', 'email', 'max:255', 'unique:users,email'], 'password' => ['required', 'string', Password::default()]];
+        return ['name' => ['required', 'string', 'max:255'], 'nip' => ['nullable', 'string', 'max:30'], 'email' => ['required', 'email', 'max:255', 'unique:users,email'], 'password' => ['required', 'string', Password::default()], 'kantor_id' => ['nullable', 'integer', 'exists:kantors,id']];
     }
 }

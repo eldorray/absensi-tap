@@ -26,6 +26,7 @@
     import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
     import { Input } from '@/components/ui/input';
     import { Label } from '@/components/ui/label';
+    import { queryAwal } from '@/lib/query-awal';
     import {
         destroy,
         impor as orangTuaImpor,
@@ -72,7 +73,12 @@
     let dialogTambah = $state(false);
     let diubah = $state<OrangTua | null>(null);
     let cari = $state('');
-    let filterPenautan = $state<FilterPenautan>('semua');
+    const penautanAwal = queryAwal('penautan');
+    let filterPenautan = $state<FilterPenautan>(
+        penautanAwal === 'sudah' || penautanAwal === 'belum'
+            ? penautanAwal
+            : 'semua',
+    );
     let perHalaman = $state(10);
     let halaman = $state(1);
     let konfirmasi = $state<Konfirmasi | null>(null);
@@ -224,7 +230,7 @@
                     data-test="buka-impor-orang-tua"
                 >
                     <Upload class="size-4" aria-hidden="true" />
-                    Upload CSV
+                    Impor CSV
                 </Button>
                 <Button type="button" onclick={() => (dialogTambah = true)}>
                     <UserPlus class="size-4" aria-hidden="true" />
@@ -561,8 +567,7 @@
 
 <Dialog bind:open={dialogImpor}>
     <DialogContent class="max-h-[85svh] overflow-y-auto">
-        <DialogTitle class="text-xl font-bold">Upload akun dari CSV</DialogTitle
-        >
+        <DialogTitle class="text-xl font-bold">Impor akun dari CSV</DialogTitle>
         <p class="mt-1 mb-4 text-sm text-muted-foreground">
             Unduh template, isi di Excel, simpan sebagai CSV, lalu unggah di
             sini. Kolom <b>nama</b> wajib; email dan password boleh dikosongkan karena

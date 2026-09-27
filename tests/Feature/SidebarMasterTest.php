@@ -9,7 +9,7 @@ test('menu master dikelompokkan sebagai dropdown di sidebar', function () {
         ->toContain('label="Master"')
         // Kelima menu ini pindah ke dalam kelompok Master.
         ->toContain("title: 'Tahun ajaran'")
-        ->toContain("title: 'Kantor'")
+        ->toContain("title: 'Unit'")
         ->toContain("title: 'Guru'")
         ->toContain("title: 'Akun staf'")
         ->toContain("title: 'Orang tua'")
@@ -55,38 +55,30 @@ test('sidebar admin tidak memuat menu absen dan izin milik guru', function () {
         ->toContain('Izin');
 });
 
-test('rekap dan izin dikelompokkan dalam dropdown Laporan Kehadiran', function () {
+test('rekap di Laporan Kehadiran, izin di Perlu tindakan dengan badge', function () {
     $sidebar = file_get_contents(resource_path('js/components/AppSidebar.svelte'));
-
-    expect($sidebar)
-        ->toContain('const laporanNavItems: NavItem[] = [')
-        ->toContain('label="Laporan Kehadiran"')
-        ->toContain("title: 'Rekap harian'")
-        ->toContain("title: 'Rekap bulanan'")
-        ->toContain("title: 'Izin guru'")
-        ->toContain("title: 'Izin orang tua'");
-
-    // Urutan sidebar: Dashboard, Master, Kesiswaan, lalu Laporan Kehadiran.
-    expect(strpos($sidebar, 'label="RINGKASAN"'))
-        ->toBeLessThan(strpos($sidebar, 'label="Master"'));
-    expect(strpos($sidebar, 'label="Master"'))
-        ->toBeLessThan(strpos($sidebar, 'label="Kesiswaan"'));
-    expect(strpos($sidebar, 'label="Kesiswaan"'))
-        ->toBeLessThan(strpos($sidebar, 'label="Laporan Kehadiran"'));
-
-    // Ketiganya keluar dari kelompok ADMIN.
-    $adminBlok = substr(
+    $laporan = substr(
         $sidebar,
-        strpos($sidebar, 'const adminNavItems'),
-        strpos($sidebar, 'const laporanNavItems') - strpos($sidebar, 'const adminNavItems'),
+        strpos($sidebar, 'const laporanNavItems'),
+        strpos($sidebar, 'const menunggu') - strpos($sidebar, 'const laporanNavItems'),
     );
 
-    expect($adminBlok)
-        ->not->toContain("title: 'Rekap harian'")
-        ->not->toContain("title: 'Rekap bulanan'")
-        ->not->toContain("title: 'Izin guru'")
-        ->not->toContain("title: 'Izin orang tua'")
-        ->toContain("title: 'Jadwal guru'");
+    expect($laporan)
+        ->toContain("title: 'Rekap harian'")
+        ->toContain("title: 'Rekap bulanan'")
+        ->not->toContain("title: 'Izin guru'");
+
+    expect($sidebar)
+        ->toContain('label="Laporan Kehadiran"')
+        ->toContain('label="PERLU TINDAKAN"')
+        ->toContain('badge: menunggu.izin_guru')
+        ->toContain('badge: menunggu.izin_orang_tua');
+
+    // Urutan: Ringkasan, Perlu tindakan, Master, Kesiswaan, Laporan Kehadiran.
+    expect(strpos($sidebar, 'label="RINGKASAN"'))->toBeLessThan(strpos($sidebar, 'label="PERLU TINDAKAN"'))
+        ->and(strpos($sidebar, 'label="PERLU TINDAKAN"'))->toBeLessThan(strpos($sidebar, 'label="Master"'))
+        ->and(strpos($sidebar, 'label="Master"'))->toBeLessThan(strpos($sidebar, 'label="Kesiswaan"'))
+        ->and(strpos($sidebar, 'label="Kesiswaan"'))->toBeLessThan(strpos($sidebar, 'label="Laporan Kehadiran"'));
 });
 
 test('tautan bawaan starter kit tidak ada di sidebar', function () {

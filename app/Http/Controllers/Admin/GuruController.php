@@ -8,6 +8,7 @@ use App\Enums\StatusPerangkat;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ImporGuruRequest;
 use App\Http\Requests\Admin\SimpanGuruRequest;
+use App\Models\Kantor;
 use App\Models\Perangkat;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -22,13 +23,15 @@ class GuruController extends Controller
 {
     public function index(): Response
     {
-        return Inertia::render('admin/Guru', ['hasilImpor' => session('impor_guru'), 'passwordBaru' => session('password_baru'), 'gurus' => User::query()->where('role', Role::Guru)->with(['perangkats' => fn ($q) => $q->latest()])->orderBy('name')->get()->map(fn (User $g) => ['id' => $g->id, 'name' => $g->name, 'nip' => $g->nip, 'email' => $g->email, 'role' => $g->role->value, 'is_active' => $g->is_active, 'perangkats' => $g->perangkats->map(fn (Perangkat $p) => ['id' => $p->id, 'label' => $p->label, 'status' => $p->status->value, 'terdaftar' => $p->created_at?->format('d M Y')])->all()])->all()]);
+        return Inertia::render('admin/Guru', ['kantors' => Kantor::query()->orderBy('nama')->get(['id', 'nama']), 'hasilImpor' => session('impor_guru'), 'passwordBaru' => session('password_baru'), 'gurus' => User::query()->where('role', Role::Guru)->with(['perangkats' => fn ($q) => $q->latest()])->orderBy('name')->get()->map(fn (User $g) => ['id' => $g->id, 'name' => $g->name, 'nip' => $g->nip, 'email' => $g->email, 'role' => $g->role->value, 'is_active' => $g->is_active, 'perangkats' => $g->perangkats->map(fn (Perangkat $p) => ['id' => $p->id, 'label' => $p->label, 'status' => $p->status->value, 'terdaftar' => $p->created_at?->format('d M Y')])->all()])->all()]);
     }
 
     public function store(SimpanGuruRequest $request): RedirectResponse
     {
         $g = User::create($request->safe()->only(['name', 'nip', 'email', 'password']));
-        $g->forceFill(['role' => Role::Guru, 'is_active' => true, 'email_verified_at' => now()])->save();
+        // Unit diisi sejak dibuat supaya guru baru tidak langsung memicu
+        // peringatan "guru belum punya unit" di dashboard.
+        $g->forceFill(['role' => Role::Guru, 'is_active' => true, 'email_verified_at' => now(), 'kantor_id' => $request->validated('kantor_id')])->save();
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Akun guru dibuat.']);
 
         return to_route('admin.guru.index');
@@ -73,6 +76,7 @@ class GuruController extends Controller
     public function update(Request $request, User $guru): RedirectResponse
     {
         $guru->forceFill($request->validate(['is_active' => ['required', 'boolean'], 'role' => ['sometimes', Rule::enum(Role::class)]]))->save();
+        Inertia::flash('toast', ['type' => 'success', 'message' => $guru->name.($guru->is_active ? ' diaktifkan.' : ' dinonaktifkan.')]);
 
         return to_route('admin.guru.index');
     }
@@ -86,6 +90,7 @@ class GuruController extends Controller
                 Perangkat::query()->where('user_id', $perangkat->user_id)->whereKeyNot($perangkat->id)->where('status', StatusPerangkat::Active)->update(['status' => StatusPerangkat::Revoked->value]);
             } $perangkat->forceFill(['status' => $status, 'approved_by' => $request->user()->id, 'approved_at' => now()])->save();
         });
+        Inertia::flash('toast', ['type' => 'success', 'message' => $status === StatusPerangkat::Active ? $perangkat->label.' disetujui. HP lain milik guru ini dicabut.' : $perangkat->label.' dicabut.']);
 
         return to_route('admin.guru.index');
     }

@@ -2,8 +2,12 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\StatusIzin;
+use App\Models\Izin;
+use App\Models\IzinOrangTua;
 use App\Models\Kelas;
 use App\Models\PengaturanAplikasi;
+use App\Models\Pengumuman;
 use App\Models\TahunAjaran;
 use App\Support\TahunAjaranTerpilih;
 use Illuminate\Http\Request;
@@ -64,6 +68,16 @@ class HandleInertiaRequests extends Middleware
             // menengok tahun lain, dan setiap angka di layar bukan tahun aktif.
             'tahunAjaran' => fn (): ?array => $this->tahunAjaran(),
             'percobaan' => config('absensi.percobaan'),
+            // Waktu pengumuman aktif terbaru, untuk titik "baru" di navigasi guru.
+            // Perbandingannya dengan yang sudah dibaca terjadi di HP (localStorage).
+            'pengumumanTerbaru' => fn (): ?string => $request->user()?->can('pegawai')
+                ? Pengumuman::query()->where('is_active', true)->latest()->value('created_at')?->toIso8601String()
+                : null,
+            // Angka badge di sidebar admin: pekerjaan yang menunggu keputusan.
+            'menunggu' => fn (): ?array => $request->user()?->can('admin') ? [
+                'izin_guru' => Izin::query()->where('status', StatusIzin::Pending)->count(),
+                'izin_orang_tua' => IzinOrangTua::query()->where('status', StatusIzin::Pending)->count(),
+            ] : null,
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }

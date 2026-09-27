@@ -5,6 +5,7 @@ use App\Models\Kantor;
 use App\Models\Perangkat;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Inertia\Support\SessionKey;
 
 test('guru tidak boleh membuka kelola user maupun kelola role', function () {
     $guru = User::factory()->create();
@@ -225,4 +226,16 @@ test('tombol aksi kelola user dan kelola guru berupa ikon yang sama', function (
         ->toContain('title={label}')
         ->toContain('aria-label={label}')
         ->toContain('hover:bg-destructive/10 hover:text-destructive');
+});
+
+test('ubah role lewat daftar akun dikonfirmasi dan memberi pesan sukses', function () {
+    $guru = User::factory()->create();
+
+    $this->actingAs(User::factory()->admin()->create())
+        ->patch(route('admin.user.update', $guru), ['role' => 'admin']);
+
+    expect(session(SessionKey::FLASH_DATA)['toast']['message'])->toBe('Role '.$guru->name.' sekarang Admin.')
+        ->and(file_get_contents(resource_path('js/pages/admin/User.svelte')))
+        ->toContain('ubahRole(u, e.currentTarget)')
+        ->toContain("label: 'Ubah role'");
 });
