@@ -30,3 +30,10 @@ test('halaman siswa, kelas, dan absensi siswa terjangkau admin', function () {
     $this->actingAs($admin)->get(route('admin.kelas.index'))->assertOk();
     $this->actingAs($admin)->get(route('absensi-siswa.index'))->assertOk();
 });
+
+test('pilihan wali kelas yang panjang tidak melebarkan dialog kelas', function () {
+    $kelas = file_get_contents(resource_path('js/pages/admin/Kelas.svelte'));
+
+    expect($kelas)->toContain('id="kelas-wali"')
+        ->and($kelas)->toMatch('/id="kelas-wali"\s+class="[^"]*w-full min-w-0/');
+});

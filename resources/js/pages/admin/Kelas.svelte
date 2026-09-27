@@ -192,12 +192,12 @@
             ><DialogTitle>{diubah ? 'Ubah kelas' : 'Tambah kelas'}</DialogTitle
             >{#each Object.values(form.errors) as error, i (i)}<p
                     role="alert"
-                    class="text-destructive"
+                    class="mt-3 text-sm text-destructive"
                 >
                     {error}
                 </p>{/each}
             <form
-                class="grid gap-3 sm:grid-cols-2"
+                class="mt-5 grid gap-4 sm:grid-cols-2"
                 onsubmit={(e) => {
                     e.preventDefault();
                     form.submit(diubah ? update(diubah) : store(), {
@@ -209,7 +209,7 @@
                     });
                 }}
             >
-                <div class="grid gap-2">
+                <div class="grid min-w-0 gap-2">
                     <Label for="kelas-nama">Nama kelas</Label><Input
                         id="kelas-nama"
                         bind:value={form.nama}
@@ -217,7 +217,7 @@
                         maxlength={30}
                     />
                 </div>
-                <div class="grid gap-2">
+                <div class="grid min-w-0 gap-2">
                     <Label for="kelas-tingkat">Tingkat</Label><Input
                         id="kelas-tingkat"
                         type="number"
@@ -227,10 +227,10 @@
                         required
                     />
                 </div>
-                <div class="grid gap-2">
+                <div class="grid min-w-0 gap-2">
                     <Label for="kelas-unit">Unit</Label><select
                         id="kelas-unit"
-                        class="h-11 rounded-xl border border-border bg-background px-3"
+                        class="h-11 w-full min-w-0 truncate rounded-xl border border-border bg-background px-3"
                         bind:value={form.kantor_id}
                         ><option value={0}>Pilih unit</option
                         >{#each kantors as k (k.id)}<option value={k.id}
@@ -238,10 +238,10 @@
                             >{/each}</select
                     >
                 </div>
-                <div class="grid gap-2">
+                <div class="grid min-w-0 gap-2">
                     <Label for="kelas-wali">Wali kelas</Label><select
                         id="kelas-wali"
-                        class="h-11 rounded-xl border border-border bg-background px-3"
+                        class="h-11 w-full min-w-0 truncate rounded-xl border border-border bg-background px-3"
                         bind:value={form.wali_kelas_id}
                         ><option value={null}>Tanpa wali</option
                         >{#each gurus as g (g.id)}<option value={g.id}
@@ -249,25 +249,25 @@
                             >{/each}</select
                     >
                 </div>
-                <div class="flex min-h-11 items-center gap-2">
+                <div class="flex min-h-11 items-center gap-2 sm:col-span-2">
                     <Checkbox
                         id="kelas-aktif"
                         bind:checked={form.is_active}
                     /><Label for="kelas-aktif">Kelas aktif</Label>
                 </div>
-                <div class="flex gap-2">
+                <div class="flex justify-end gap-2 sm:col-span-2">
                     <Button
-                        type="submit"
-                        class="min-h-14"
-                        disabled={form.processing}>Simpan kelas</Button
-                    >{#if diubah}<Button
-                            onclick={() => {
-                                diubah = null;
-                                dialogKelas = false;
-                                form.reset();
-                                form.clearErrors();
-                            }}>Batal</Button
-                        >{/if}
+                        type="button"
+                        variant="outline"
+                        onclick={() => {
+                            diubah = null;
+                            dialogKelas = false;
+                            form.reset();
+                            form.clearErrors();
+                        }}>Batal</Button
+                    ><Button type="submit" disabled={form.processing}
+                        >Simpan kelas</Button
+                    >
                 </div>
             </form>
         </DialogContent></Dialog
