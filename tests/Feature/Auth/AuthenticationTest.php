@@ -3,6 +3,8 @@
 use App\Models\User;
 use Illuminate\Support\Facades\RateLimiter;
 use Laravel\Fortify\Features;
+use Laravel\Passkeys\Passkey;
+use Laravel\Passkeys\Passkeys;
 
 test('login screen can be rendered', function () {
     $response = $this->get(route('login'));
@@ -129,4 +131,38 @@ test('users are rate limited', function () {
         ->assertSessionHas('retry_after');
 
     $this->assertGuest();
+});
+
+test('akun nonaktif ditolak saat login dengan pesan yang jelas', function () {
+    $user = User::factory()->create(['is_active' => false]);
+
+    $this->post(route('login.store'), ['email' => $user->email, 'password' => 'password'])
+        ->assertSessionHasErrors(['email' => 'Akun Anda dinonaktifkan. Hubungi TU sekolah.']);
+
+    $this->assertGuest();
+});
+
+test('password salah pada akun nonaktif tidak membocorkan status akun', function () {
+    $user = User::factory()->create(['is_active' => false]);
+
+    $this->post(route('login.store'), ['email' => $user->email, 'password' => 'salah-sekali'])
+        ->assertSessionHasErrors(['email' => 'Email atau password salah.']);
+
+    $this->assertGuest();
+});
+
+test('akun nonaktif juga tidak bisa masuk lewat passkey', function () {
+    $passkey = new Passkey;
+    $passkey->setRelation('user', User::factory()->create(['is_active' => false]));
+
+    expect(Passkeys::allowsLogin(request(), $passkey))->toBeFalse();
+
+    $passkey->setRelation('user', User::factory()->create());
+
+    expect(Passkeys::allowsLogin(request(), $passkey))->toBeTrue();
+});
+
+test('halaman masuk menampilkan pesan batas percobaan', function () {
+    expect(file_get_contents(resource_path('js/pages/auth/Login.svelte')))
+        ->toContain('<InputError message={errors.rate_limit} />');
 });

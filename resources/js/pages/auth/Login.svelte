@@ -89,6 +89,10 @@
             {/if}
         </div>
 
+        <!-- Terlalu banyak percobaan (429). Tanpa ini tombol Masuk terlihat
+             tidak bereaksi setelah lima kali salah. -->
+        <InputError message={errors.rate_limit} />
+
         <Button
             type="submit"
             class="mt-1 min-h-14 w-full rounded-[1.35rem] text-base font-bold"
