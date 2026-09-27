@@ -38,16 +38,21 @@ class RekapBulanan
      *     }>
      * }
      */
-    public function __invoke(int $tahun, int $bulan, ?int $userId = null): array
+    public function __invoke(int $tahun, int $bulan, ?int $userId = null, ?int $kantorId = null): array
     {
         $mulai = Carbon::create($tahun, $bulan, 1)->startOfMonth();
 
-        return $this->periode($mulai, $mulai->copy()->endOfMonth(), $userId);
+        return $this->periode($mulai, $mulai->copy()->endOfMonth(), $userId, $kantorId);
     }
 
     /**
      * Rekap rentang tanggal bebas. Rumus hari efektif dan persentase sama
      * persis dengan rekap bulanan -- bulanan hanyalah periode satu bulan.
+     *
+     * Tanpa $userId, rekap hanya memuat akun guru (opsional dipersempit ke satu
+     * unit lewat $kantorId). Dengan $userId, peran tidak disaring: admin juga
+     * bisa tap absen dan membuka riwayatnya sendiri, jadi rekap satu orang
+     * harus tetap ada walau orangnya bukan guru.
      *
      * @return array{
      *     tanggals: list<string>,
@@ -67,7 +72,7 @@ class RekapBulanan
      *     }>
      * }
      */
-    public function periode(Carbon $mulai, Carbon $selesai, ?int $userId = null): array
+    public function periode(Carbon $mulai, Carbon $selesai, ?int $userId = null, ?int $kantorId = null): array
     {
         $mulai = $mulai->copy()->startOfDay();
         $selesai = $selesai->copy()->endOfDay();
@@ -90,8 +95,12 @@ class RekapBulanan
             ->get()
             ->keyBy(fn (HariLibur $libur): string => $libur->tanggal->toDateString());
         $gurus = User::query()
-            ->where('role', Role::Guru)
-            ->when($userId !== null, fn ($query) => $query->where('id', $userId))
+            ->when(
+                $userId !== null,
+                fn ($query) => $query->where('id', $userId),
+                fn ($query) => $query->where('role', Role::Guru),
+            )
+            ->when($kantorId !== null, fn ($query) => $query->where('kantor_id', $kantorId))
             ->orderBy('name')
             ->get(['id', 'name', 'nip']);
         $absensis = Absensi::query()

@@ -37,6 +37,7 @@
     let {
         filter,
         gurus,
+        kantors,
         rekap,
     }: {
         filter: {
@@ -46,8 +47,10 @@
             mulai: string;
             selesai: string;
             user_id: number | null;
+            kantor_id: number | null;
         };
-        gurus: { id: number; name: string }[];
+        gurus: { id: number; name: string; kantor_id: number | null }[];
+        kantors: { id: number; nama: string }[];
         rekap: { tanggals: string[]; baris: Baris[] };
     } = $props();
     let mode = $state<Mode>(filter.mode);
@@ -56,6 +59,13 @@
     let mulai = $state(filter.mulai);
     let selesai = $state(filter.selesai);
     let guruId = $state<number | null>(filter.user_id);
+    let kantorId = $state<number | null>(filter.kantor_id);
+    /** Pilihan guru mengikuti unit yang dipilih; "Semua unit" = semua guru. */
+    let guruTerpilih = $derived(
+        kantorId === null
+            ? gurus
+            : gurus.filter((guru) => guru.kantor_id === kantorId),
+    );
     const namaBulan = [
         'Januari',
         'Februari',
@@ -70,14 +80,31 @@
         'November',
         'Desember',
     ];
+    /**
+     * Izin, sakit, dan cuti sama-sama "tidak masuk dengan alasan sah", jadi
+     * tetap satu keluarga warna; bedanya lewat isian (muda, pekat, garis putus)
+     * supaya tetap terbaca di layar maupun bagi yang sulit membedakan warna.
+     */
     const warna: Record<string, string> = {
         hadir: 'bg-[var(--g-green-c)] text-[var(--g-green-ink)]',
         terlambat: 'bg-[var(--g-yellow-c)] text-[var(--g-yellow-ink)]',
         alfa: 'bg-[var(--g-red-c)] text-[var(--g-red-ink)]',
-        izin: 'bg-[var(--g-blue-c)] text-[var(--g-blue-ink)]',
-        sakit: 'bg-[var(--g-blue-c)] text-[var(--g-blue-ink)]',
-        cuti: 'bg-[var(--g-blue-c)] text-[var(--g-blue-ink)]',
+        izin: 'bg-[var(--g-blue-c)] text-[var(--g-blue-ink)] ring-1 ring-inset ring-[var(--g-blue-ink-2)]',
+        sakit: 'bg-[var(--g-blue)] text-[var(--g-on-blue)]',
+        cuti: 'border border-dashed border-[var(--g-blue-ink-2)] text-[var(--g-blue-ink)]',
+        libur: 'bg-muted text-muted-foreground',
     };
+    const legenda: { status: string; huruf: string; arti: string }[] = [
+        { status: 'hadir', huruf: 'H', arti: 'Hadir' },
+        { status: 'terlambat', huruf: 'T', arti: 'Terlambat' },
+        { status: 'alfa', huruf: 'A', arti: 'Alfa' },
+        { status: 'izin', huruf: 'I', arti: 'Izin' },
+        { status: 'sakit', huruf: 'S', arti: 'Sakit' },
+        { status: 'cuti', huruf: 'C', arti: 'Cuti' },
+        { status: 'libur', huruf: 'L', arti: 'Libur' },
+        { status: 'belum', huruf: 'B', arti: 'Belum absen (hari ini)' },
+        { status: 'bukan_hari_kerja', huruf: '-', arti: 'Bukan hari kerja' },
+    ];
     const formatTanggal = new Intl.DateTimeFormat('id-ID', {
         timeZone: 'UTC',
         day: 'numeric',
@@ -101,6 +128,10 @@
             params.user_id = String(guruId);
         }
 
+        if (kantorId) {
+            params.kantor_id = String(kantorId);
+        }
+
         return params;
     }
     function terapkan(): void {
@@ -115,6 +146,16 @@
     /** Laporan siap cetak dibuka di tab baru supaya filternya tidak hilang. */
     function cetakLaporan(): void {
         window.open(cetak.url({ query: query() }), '_blank', 'noopener');
+    }
+
+    /** Guru yang sudah dipilih dilepas bila bukan anggota unit yang baru. */
+    function gantiUnit(): void {
+        if (
+            guruId !== null &&
+            !guruTerpilih.some((guru) => guru.id === guruId)
+        ) {
+            guruId = null;
+        }
     }
 
     function judulAnomali(hari: Hari): string {
@@ -172,13 +213,26 @@
                     aria-label="Tahun"
                 />
             {/if}
+            {#if kantors.length > 0}
+                <select
+                    bind:value={kantorId}
+                    onchange={gantiUnit}
+                    class="h-10 rounded-md border border-input bg-background px-3"
+                    aria-label="Unit"
+                >
+                    <option value={null}>Semua unit</option>
+                    {#each kantors as kantor (kantor.id)}<option
+                            value={kantor.id}>{kantor.nama}</option
+                        >{/each}
+                </select>
+            {/if}
             <select
                 bind:value={guruId}
                 class="h-10 rounded-md border border-input bg-background px-3"
                 aria-label="Guru"
             >
                 <option value={null}>Semua guru</option>
-                {#each gurus as guru (guru.id)}<option value={guru.id}
+                {#each guruTerpilih as guru (guru.id)}<option value={guru.id}
                         >{guru.name}</option
                     >{/each}
             </select>
@@ -188,7 +242,7 @@
             >
             <Button variant="outline" onclick={cetakLaporan}>
                 <Printer class="size-4" aria-hidden="true" />
-                Laporan PDF
+                Cetak / PDF
             </Button>
         </div>
         {#each Object.values(page.props.errors) as error, i (i)}<p
@@ -325,6 +379,27 @@
                     >
                 </table>
             </div>
+            <ul
+                class="flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground"
+                aria-label="Keterangan"
+            >
+                {#each legenda as item (item.status)}
+                    <li class="flex items-center gap-1.5">
+                        <span
+                            class="inline-flex size-6 items-center justify-center rounded-md font-semibold {warna[
+                                item.status
+                            ] ?? 'text-muted-foreground'}"
+                            aria-hidden="true">{item.huruf}</span
+                        >{item.arti}
+                    </li>
+                {/each}
+                <li class="flex items-center gap-1.5">
+                    <span
+                        class="inline-flex size-6 items-center justify-center rounded-md font-semibold text-muted-foreground"
+                        aria-hidden="true">!</span
+                    >Koordinat kembar dengan guru lain
+                </li>
+            </ul>
         </section>
         <section class="g-tile g-tone-plain">
             <h3>Ringkasan</h3>
@@ -336,10 +411,9 @@
                             class="text-muted-foreground"
                             >Hadir {baris.ringkasan.hadir ?? 0} · Terlambat {baris
                                 .ringkasan.terlambat ?? 0} · Alfa {baris
-                                .ringkasan.alfa ?? 0} · Izin {(baris.ringkasan
-                                .izin ?? 0) +
-                                (baris.ringkasan.sakit ?? 0) +
-                                (baris.ringkasan.cuti ?? 0)}</span
+                                .ringkasan.alfa ?? 0} · Izin {baris.ringkasan
+                                .izin ?? 0} · Sakit {baris.ringkasan.sakit ?? 0} ·
+                            Cuti {baris.ringkasan.cuti ?? 0}</span
                         >
                     </li>{/each}
             </ul>

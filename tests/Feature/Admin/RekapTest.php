@@ -9,6 +9,7 @@ use App\Models\Absensi;
 use App\Models\AbsensiAttempt;
 use App\Models\HariLibur;
 use App\Models\Izin;
+use App\Models\Kantor;
 use App\Models\User;
 use Database\Seeders\JadwalKerjaSeeder;
 use Illuminate\Support\Carbon;
@@ -181,4 +182,60 @@ test('laporan cetak periode menampilkan rentang tanggal', function () {
         ->get(route('admin.rekap.cetak', ['mode' => 'periode', 'mulai' => '2026-09-01', 'selesai' => '2026-09-05']))
         ->assertOk()
         ->assertSee('1 September 2026 – 5 September 2026');
+});
+
+test('filter unit hanya memuat guru unit itu di halaman rekap', function () {
+    $mi = Kantor::factory()->create(['nama' => 'MI Harapan']);
+    $smp = Kantor::factory()->create(['nama' => 'SMP Harapan']);
+    $guruMi = User::factory()->create(['kantor_id' => $mi->id]);
+    User::factory()->create(['kantor_id' => $smp->id]);
+
+    $this->actingAs(User::factory()->admin()->create())
+        ->get(route('admin.rekap.index', ['tahun' => 2026, 'bulan' => 9, 'kantor_id' => $mi->id]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('filter.kantor_id', $mi->id)
+            ->has('kantors', 2)
+            ->has('gurus', 2)
+            ->has('gurus.0.kantor_id')
+            ->has('rekap.baris', 1)
+            ->where('rekap.baris.0.user_id', $guruMi->id));
+});
+
+test('filter unit ikut membatasi export CSV dan laporan cetak', function () {
+    $mi = Kantor::factory()->create(['nama' => 'MI Harapan']);
+    $smp = Kantor::factory()->create(['nama' => 'SMP Harapan']);
+    User::factory()->create(['name' => 'Bu Aminah', 'kantor_id' => $mi->id]);
+    User::factory()->create(['name' => 'Pak Budi', 'kantor_id' => $smp->id]);
+    $admin = User::factory()->admin()->create();
+    $query = ['tahun' => 2026, 'bulan' => 9, 'kantor_id' => $mi->id];
+
+    $isi = $this->actingAs($admin)->get(route('admin.rekap.export', $query))->assertOk()->streamedContent();
+
+    expect($isi)->toContain('Bu Aminah')->and($isi)->not->toContain('Pak Budi');
+
+    $this->actingAs($admin)
+        ->get(route('admin.rekap.cetak', $query))
+        ->assertOk()
+        ->assertSee('Bu Aminah')
+        ->assertSee('MI Harapan')
+        ->assertDontSee('Pak Budi');
+});
+
+test('filter unit menolak unit yang tidak ada', function () {
+    $this->actingAs(User::factory()->admin()->create())
+        ->get(route('admin.rekap.index', ['kantor_id' => 999]))
+        ->assertSessionHasErrors('kantor_id');
+});
+
+test('rekap semua guru tidak memuat admin, rekap satu orang tetap memuat admin', function () {
+    $guru = User::factory()->create();
+    $admin = User::factory()->admin()->create();
+
+    $semua = app(RekapBulanan::class)(2026, 9);
+    $satu = app(RekapBulanan::class)(2026, 9, $admin->id);
+
+    expect(array_column($semua['baris'], 'user_id'))->toBe([$guru->id])
+        ->and($satu['baris'])->toHaveCount(1)
+        ->and($satu['baris'][0]['user_id'])->toBe($admin->id);
 });

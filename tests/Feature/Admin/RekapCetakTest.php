@@ -186,3 +186,25 @@ test('menit terlambat tetap mengikuti jadwal saat tap walau jam masuk diundur se
     expect($baris['terlambat'])->toBe(1)
         ->and($baris['menit_terlambat'])->toBe(30);
 });
+
+test('laporan cetak memuat kolom izin, sakit, cuti, dan alfa seperti ringkasan layar', function () {
+    $guru = User::factory()->create();
+    // 1-5 September Selasa-Sabtu: sakit 1-3, sisanya (4-5) alfa. Hari ini belum.
+    Izin::factory()->for($guru)->disetujui()->create([
+        'tipe' => TipeIzin::Sakit,
+        'tanggal_mulai' => '2026-09-01',
+        'tanggal_selesai' => '2026-09-03',
+    ]);
+
+    $this->actingAs(User::factory()->admin()->create())
+        ->get(route('admin.rekap.cetak', ['tahun' => 2026, 'bulan' => 9]))
+        ->assertOk()
+        ->assertSeeInOrder(['Menit terlambat', 'Izin', 'Sakit', 'Cuti', 'Alfa', '% Kehadiran'])
+        ->assertSeeInOrder([
+            '<td class="angka">0 menit</td>',
+            '<td class="angka">0</td>',
+            '<td class="angka">3</td>',
+            '<td class="angka">0</td>',
+            '<td class="angka">2</td>',
+        ], false);
+});

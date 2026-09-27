@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Actions\Absensi\RekapBulanan;
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
+use App\Models\Kantor;
 use App\Models\PengaturanAplikasi;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -30,7 +31,7 @@ class RekapController extends Controller
     public function index(Request $request, RekapBulanan $rekapBulanan): Response
     {
         $filter = $this->filter($request);
-        $rekap = $rekapBulanan->periode($filter['mulai'], $filter['selesai'], $filter['user_id']);
+        $rekap = $rekapBulanan->periode($filter['mulai'], $filter['selesai'], $filter['user_id'], $filter['kantor_id']);
 
         if ($filter['mode'] === 'periode') {
             // Periode hanya menampilkan ringkasan per guru; grid per tanggal
@@ -49,11 +50,15 @@ class RekapController extends Controller
                 'mulai' => $filter['mulai']->toDateString(),
                 'selesai' => $filter['selesai']->toDateString(),
                 'user_id' => $filter['user_id'],
+                'kantor_id' => $filter['kantor_id'],
             ],
+            // kantor_id ikut dikirim supaya pilihan guru bisa dipersempit per
+            // unit langsung di peramban, tanpa bolak-balik ke server.
             'gurus' => User::query()
                 ->where('role', Role::Guru)
                 ->orderBy('name')
-                ->get(['id', 'name']),
+                ->get(['id', 'name', 'kantor_id']),
+            'kantors' => Kantor::query()->orderBy('nama')->get(['id', 'nama']),
             'rekap' => $rekap,
         ]);
     }
@@ -68,11 +73,12 @@ class RekapController extends Controller
     public function cetak(Request $request, RekapBulanan $rekapBulanan): View
     {
         $filter = $this->filter($request);
-        $rekap = $rekapBulanan->periode($filter['mulai'], $filter['selesai'], $filter['user_id']);
+        $rekap = $rekapBulanan->periode($filter['mulai'], $filter['selesai'], $filter['user_id'], $filter['kantor_id']);
 
         return view('admin.rekap-cetak', [
             'aplikasi' => PengaturanAplikasi::current(),
             'periode' => $this->labelPeriode($filter),
+            'unit' => $filter['kantor_id'] !== null ? Kantor::query()->find($filter['kantor_id'])?->nama : null,
             'dicetak' => now()->translatedFormat('d F Y H:i'),
             'baris' => $rekap['baris'],
             // Jumlah, bukan maksimum: tiap guru punya jadwal sendiri, jadi
@@ -84,7 +90,7 @@ class RekapController extends Controller
     public function export(Request $request, RekapBulanan $rekapBulanan): StreamedResponse
     {
         $filter = $this->filter($request);
-        $rekap = $rekapBulanan->periode($filter['mulai'], $filter['selesai'], $filter['user_id']);
+        $rekap = $rekapBulanan->periode($filter['mulai'], $filter['selesai'], $filter['user_id'], $filter['kantor_id']);
         $periode = $filter['mode'] === 'periode';
         $nama = $periode
             ? sprintf('rekap-absensi-%s-sd-%s.csv', $filter['mulai']->toDateString(), $filter['selesai']->toDateString())
@@ -134,7 +140,7 @@ class RekapController extends Controller
     }
 
     /**
-     * @param  array{mode: string, tahun: int, bulan: int, mulai: Carbon, selesai: Carbon, user_id: int|null}  $filter
+     * @param  array{mode: string, tahun: int, bulan: int, mulai: Carbon, selesai: Carbon, user_id: int|null, kantor_id: int|null}  $filter
      */
     private function labelPeriode(array $filter): string
     {
@@ -149,7 +155,7 @@ class RekapController extends Controller
      * Bulanan memakai tahun + bulan; periode memakai tanggal mulai-selesai.
      * Keduanya diterjemahkan jadi satu rentang tanggal untuk RekapBulanan.
      *
-     * @return array{mode: string, tahun: int, bulan: int, mulai: Carbon, selesai: Carbon, user_id: int|null}
+     * @return array{mode: string, tahun: int, bulan: int, mulai: Carbon, selesai: Carbon, user_id: int|null, kantor_id: int|null}
      */
     private function filter(Request $request): array
     {
@@ -175,6 +181,7 @@ class RekapController extends Controller
                 },
             ],
             'user_id' => ['nullable', 'integer', 'exists:users,id'],
+            'kantor_id' => ['nullable', 'integer', 'exists:kantors,id'],
         ]);
 
         $mode = $data['mode'] ?? 'bulanan';
@@ -196,6 +203,7 @@ class RekapController extends Controller
             'mulai' => $mulai,
             'selesai' => $selesai,
             'user_id' => isset($data['user_id']) ? (int) $data['user_id'] : null,
+            'kantor_id' => isset($data['kantor_id']) ? (int) $data['kantor_id'] : null,
         ];
     }
 }
