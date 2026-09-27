@@ -8,6 +8,7 @@
     import History from 'lucide-svelte/icons/history';
     import Megaphone from 'lucide-svelte/icons/megaphone';
     import UsersRound from 'lucide-svelte/icons/users-round';
+    import { pembacaBaru } from '@/lib/pengumuman';
     import { toUrl } from '@/lib/utils';
     import { dashboard } from '@/routes';
     import { index as absensiSiswaIndex } from '@/routes/absensi-siswa';
@@ -19,15 +20,33 @@
 
     let terbuka = $state(false);
 
+    /*
+     * Riwayat di slot utama karena dibuka rutin untuk mengecek kehadiran;
+     * Jadwal jarang berubah, jadi cukup di "Lainnya".
+     */
     const utama = [
         { label: 'Absensi', href: dashboard(), icon: Fingerprint },
         { label: 'Izin', href: izinIndex(), icon: CalendarOff },
-        { label: 'Jadwal', href: jadwalIndex(), icon: CalendarClock },
+        { label: 'Riwayat', href: riwayatIndex(), icon: History },
     ];
+
+    /**
+     * Ada pengumuman yang belum dilihat di HP ini? Dibaca ulang setiap pindah
+     * halaman, jadi titiknya hilang begitu halaman Pengumuman dibuka.
+     */
+    const adaPengumumanBaru = $derived.by(() => {
+        void page.url;
+        const terbaru = page.props.pengumumanTerbaru as
+            string | null | undefined;
+
+        return terbaru
+            ? pembacaBaru()({ id: 0, judul: '', isi: '', dibuat: terbaru })
+            : false;
+    });
 
     const punyaKelas = $derived(page.props.auth.punyaKelas === true);
     const lainnyaAktif = $derived(
-        isActive(toUrl(riwayatIndex())) ||
+        isActive(toUrl(jadwalIndex())) ||
             isActive(toUrl(pengumumanIndex())) ||
             (punyaKelas &&
                 (isActive(toUrl(kelasSayaIndex())) ||
@@ -62,11 +81,20 @@
                 ? 'bg-primary/10 text-primary'
                 : 'hover:bg-muted'}"
         >
-            <span class="grid size-10 place-items-center rounded-2xl bg-muted"
-                ><Megaphone class="size-5" /></span
+            <span
+                class="relative grid size-10 place-items-center rounded-2xl bg-muted"
+                ><Megaphone
+                    class="size-5"
+                    aria-hidden="true"
+                />{#if adaPengumumanBaru}<span
+                        class="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-red-500 ring-2 ring-background"
+                    ></span>{/if}</span
             >
             <span
-                >Pengumuman<span
+                >Pengumuman{#if adaPengumumanBaru}<span
+                        class="ml-2 rounded-full bg-primary px-2 py-0.5 text-[0.6875rem] font-bold text-primary-foreground"
+                        >Baru</span
+                    >{/if}<span
                     class="block text-xs font-normal text-muted-foreground"
                     >Informasi dari sekolah</span
                 ></span
@@ -74,18 +102,23 @@
         </Link>
 
         <Link
-            href={toUrl(riwayatIndex())}
+            href={toUrl(jadwalIndex())}
             onclick={() => (terbuka = false)}
             class="flex min-h-14 items-center gap-3 rounded-2xl px-3 font-semibold {isActive(
-                toUrl(riwayatIndex()),
+                toUrl(jadwalIndex()),
             )
                 ? 'bg-primary/10 text-primary'
                 : 'hover:bg-muted'}"
         >
             <span class="grid size-10 place-items-center rounded-2xl bg-muted"
-                ><History class="size-5" /></span
+                ><CalendarClock class="size-5" aria-hidden="true" /></span
             >
-            Riwayat
+            <span
+                >Jadwal<span
+                    class="block text-xs font-normal text-muted-foreground"
+                    >Jam masuk dan pulang</span
+                ></span
+            >
         </Link>
 
         {#if punyaKelas}
@@ -100,7 +133,7 @@
             >
                 <span
                     class="grid size-10 place-items-center rounded-2xl bg-muted"
-                    ><UsersRound class="size-5" /></span
+                    ><UsersRound class="size-5" aria-hidden="true" /></span
                 >
                 <span
                     >Kelas Saya<span
@@ -112,11 +145,15 @@
             <Link
                 href={toUrl(absensiSiswaIndex())}
                 onclick={() => (terbuka = false)}
-                class="flex min-h-14 items-center gap-3 rounded-2xl px-3 font-semibold hover:bg-muted"
+                class="flex min-h-14 items-center gap-3 rounded-2xl px-3 font-semibold {isActive(
+                    toUrl(absensiSiswaIndex()),
+                )
+                    ? 'bg-primary/10 text-primary'
+                    : 'hover:bg-muted'}"
             >
                 <span
                     class="grid size-10 place-items-center rounded-2xl bg-muted"
-                    ><ClipboardCheck class="size-5" /></span
+                    ><ClipboardCheck class="size-5" aria-hidden="true" /></span
                 >
                 <span
                     >Absensi Siswa<span
@@ -156,7 +193,9 @@
 
         <button
             type="button"
-            aria-label="Buka menu lainnya"
+            aria-label={adaPengumumanBaru
+                ? 'Buka menu lainnya, ada pengumuman baru'
+                : 'Buka menu lainnya'}
             aria-expanded={terbuka}
             onclick={() => (terbuka = !terbuka)}
             class="flex min-h-14 flex-col items-center justify-center gap-1 rounded-2xl px-1 text-[0.6875rem] font-semibold transition-colors {terbuka ||
@@ -164,10 +203,17 @@
                 ? 'bg-primary/10 text-primary'
                 : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
         >
-            <MoreHorizontal
-                class="size-5"
-                strokeWidth={terbuka || lainnyaAktif ? 2.5 : 2}
-            />
+            <span class="relative">
+                <MoreHorizontal
+                    class="size-5"
+                    strokeWidth={terbuka || lainnyaAktif ? 2.5 : 2}
+                />
+                {#if adaPengumumanBaru}
+                    <span
+                        class="absolute -top-1 -right-1.5 size-2.5 rounded-full bg-red-500 ring-2 ring-background"
+                    ></span>
+                {/if}
+            </span>
             <span>Lainnya</span>
         </button>
     </div>

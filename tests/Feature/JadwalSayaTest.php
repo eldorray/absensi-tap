@@ -26,14 +26,15 @@ test('tamu tidak dapat membuka jadwal saya', function () {
     $this->get(route('jadwal.index'))->assertRedirect(route('login'));
 });
 
-test('avatar header menuju profil dan navbar bawah memakai jadwal saya', function () {
+test('avatar header menuju profil dan jadwal saya ada di menu lainnya navbar bawah', function () {
     $layout = file_get_contents(resource_path('js/layouts/app/AppSidebarLayout.svelte'));
     $navigation = file_get_contents(resource_path('js/components/GuruBottomNavigation.svelte'));
 
     expect($layout)
         ->toContain('<GuruProfileSheet />')
         ->and($navigation)
-        ->toContain("label: 'Jadwal'")
+        // Jadwal pindah ke menu "Lainnya"; slot utama dipakai Riwayat.
+        ->toContain('href={toUrl(jadwalIndex())}')
         ->toContain('@/routes/jadwal')
         ->not->toContain("label: 'Profil'");
 });

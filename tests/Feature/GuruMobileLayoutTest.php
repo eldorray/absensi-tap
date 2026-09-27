@@ -11,9 +11,9 @@ test('layout guru memakai navigasi bawah mobile sementara admin tetap memakai si
         ->and($mobileNavigation)
         ->toContain('Absensi')
         ->toContain('Izin')
-        ->toContain("label: 'Jadwal'")
+        ->toContain("label: 'Riwayat'")
         ->toContain('Lainnya')
-        ->toContain('Riwayat')
+        ->toContain('Jadwal')
         ->toContain('@/routes/riwayat')
         ->not->toContain("label: 'Keamanan'")
         ->toContain('env(safe-area-inset-bottom)');
