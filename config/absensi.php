@@ -14,4 +14,21 @@ return [
     */
 
     'domain_email' => env('ABSENSI_DOMAIN_EMAIL', 'sekolah.local'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Fitur percobaan
+    |--------------------------------------------------------------------------
+    |
+    | Fitur yang masih dicoba, masing-masing bernama percobaanNNN dan mati
+    | kecuali dinyalakan di .env. Kalau hasilnya disukai, jadikan fitur tetap
+    | dan buang flag-nya; kalau tidak, hapus kodenya.
+    |
+    | percobaan001: letupan konfeti di dashboard guru setiap absen berhasil.
+    |
+    */
+
+    'percobaan' => [
+        'percobaan001' => (bool) env('PERCOBAAN001', false),
+    ],
 ];

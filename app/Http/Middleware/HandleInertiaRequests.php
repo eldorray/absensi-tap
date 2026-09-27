@@ -63,6 +63,7 @@ class HandleInertiaRequests extends Middleware
             // Penanda tahun ajaran: is_active false berarti admin sedang
             // menengok tahun lain, dan setiap angka di layar bukan tahun aktif.
             'tahunAjaran' => fn (): ?array => $this->tahunAjaran(),
+            'percobaan' => config('absensi.percobaan'),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }

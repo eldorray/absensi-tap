@@ -31,6 +31,8 @@ declare module '@inertiajs/core' {
             } | null;
             auth: Auth;
             sidebarOpen: boolean;
+            /** Fitur percobaan dari config/absensi.php. */
+            percobaan?: { percobaan001: boolean };
             [key: string]: unknown;
         };
     }

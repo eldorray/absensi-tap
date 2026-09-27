@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { router } from '@inertiajs/svelte';
+    import { page, router } from '@inertiajs/svelte';
     import type { PasskeyError } from '@laravel/passkeys';
     import { usePasskeyVerify } from '@laravel/passkeys/svelte';
     import Fingerprint from 'lucide-svelte/icons/fingerprint';
@@ -11,6 +11,7 @@
     } from '@/actions/App/Http/Controllers/AbsensiPasskeyController';
     import InputError from '@/components/InputError.svelte';
     import { Spinner } from '@/components/ui/spinner';
+    import { letupan } from '@/lib/letupan';
 
     type Props = {
         tipe: 'masuk' | 'pulang';
@@ -31,6 +32,7 @@
     let sedangProses = $state(false);
     let pesanGalat = $state('');
     let posisi: GeolocationPosition | null = null;
+    let tombol = $state<HTMLButtonElement | null>(null);
 
     const passkeyVerify = usePasskeyVerify({
         routes: {
@@ -61,6 +63,10 @@
             return;
         }
 
+        // Dicatat sebelum kirim: setelah berhasil, halaman memuat ulang props
+        // dan tombol ini bisa sudah hilang saat onSuccess berjalan.
+        const kotak = tombol?.getBoundingClientRect();
+
         router.post(
             tapAbsensi.url(),
             {
@@ -72,6 +78,7 @@
             },
             {
                 preserveScroll: true,
+                onSuccess: () => rayakan(kotak),
                 onError: (errors: Record<string, string>) => {
                     pesanGalat =
                         errors.rate_limit ??
@@ -83,6 +90,15 @@
                 },
             },
         );
+    }
+
+    /** Percobaan001: letupan dari tengah tombol, hanya saat absen berhasil. */
+    function rayakan(kotak: DOMRect | undefined): void {
+        if (!page.props.percobaan?.percobaan001 || kotak === undefined) {
+            return;
+        }
+
+        letupan(kotak.left + kotak.width / 2, kotak.top + kotak.height / 2);
     }
 
     async function tap(): Promise<void> {
@@ -145,6 +161,7 @@
 
 <div class="grid gap-3">
     <button
+        bind:this={tombol}
         type="button"
         class="tap"
         onclick={tap}
