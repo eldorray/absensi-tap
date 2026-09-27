@@ -9,8 +9,12 @@
         children,
     }: { open?: boolean; onOpenChange?: (value: boolean) => void; children?: Snippet } = $props();
 
+    const uid = $props.id();
+    const titleId = `dialog-judul-${uid}`;
+
     const context: DialogContext = {
         open: () => open,
+        titleId,
         setOpen: (value: boolean) => {
             open = value;
             onOpenChange?.(value);

@@ -3,6 +3,7 @@
     import { getContext } from 'svelte';
     import X from 'lucide-svelte/icons/x';
     import { fly } from 'svelte/transition';
+    import { focusTrap } from '@/components/ui/dialog/focus-trap';
     import { cn } from '@/lib/utils';
     import { SHEET_CONTEXT, type SheetContext } from './context';
 
@@ -54,7 +55,11 @@
                     ? { x: 0, y: -320 }
                     : { x: 0, y: 320 };
 
-        return { ...axis, duration: 260, opacity: 1 };
+        const reduceMotion = window.matchMedia?.(
+            '(prefers-reduced-motion: reduce)',
+        ).matches;
+
+        return { ...axis, duration: reduceMotion ? 0 : 260, opacity: 1 };
     };
 </script>
 
@@ -62,28 +67,30 @@
     <div class="fixed inset-0 z-50" use:portal>
         <button
             type="button"
+            tabindex="-1"
             class="fixed inset-0 border-0 bg-black/50"
-            aria-label="Close"
+            aria-label="Tutup"
             onclick={close}
         ></button>
         <div
             class={cn(
-                'fixed flex flex-col gap-4 overflow-y-auto border-none bg-background p-6 shadow-lg',
+                'fixed flex flex-col gap-4 overflow-y-auto border-none bg-background p-6 shadow-lg outline-none',
                 sideClasses[side] ?? sideClasses.right,
                 sizeClasses[side] ?? sizeClasses.right,
                 className,
             )}
+            tabindex="-1"
+            use:focusTrap={{ onEscape: close }}
             in:fly={panelTransition()}
             out:fly={panelTransition()}
         >
             <button
                 type="button"
                 class="ring-offset-background focus-visible:ring-ring absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden disabled:pointer-events-none"
-                aria-label="Close"
+                aria-label="Tutup"
                 onclick={close}
             >
-                <X class="size-4" />
-                <span class="sr-only">Close</span>
+                <X class="size-4" aria-hidden="true" />
             </button>
             {@render children?.()}
         </div>
