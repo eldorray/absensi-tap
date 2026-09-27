@@ -96,7 +96,11 @@ test('hal yang perlu tindakan dihitung', function () {
     Izin::factory()->for($guru)->create(['status' => StatusIzin::Pending]);
     User::factory()->create(['is_active' => false]);
 
-    $this->actingAs(User::factory()->admin()->create())
+    $admin = User::factory()->admin()->create();
+    // HP admin tidak bisa disetujui dari halaman Guru, jadi tidak dihitung.
+    Perangkat::factory()->for($admin)->pending()->create();
+
+    $this->actingAs($admin)
         ->get(route('admin.dashboard'))
         ->assertInertia(fn ($p) => $p
             ->where('perluTindakan.izin_menunggu', 1)

@@ -44,7 +44,13 @@ class DashboardController extends Controller
             'ringkasanHariIni' => $hariIni['ringkasan'],
             'perluTindakan' => [
                 'izin_menunggu' => Izin::query()->where('status', StatusIzin::Pending)->count(),
-                'perangkat_menunggu' => Perangkat::query()->where('status', StatusPerangkat::Pending)->count(),
+                // Hanya HP guru: tautannya menuju halaman Guru, satu-satunya tempat
+                // persetujuan HP. HP akun admin tidak tampil di sana, jadi kalau
+                // ikut dihitung peringatannya tidak pernah bisa diselesaikan.
+                'perangkat_menunggu' => Perangkat::query()
+                    ->where('status', StatusPerangkat::Pending)
+                    ->whereHas('user', fn ($query) => $query->where('role', Role::Guru))
+                    ->count(),
                 'guru_tanpa_kantor' => User::query()->where('role', Role::Guru)->whereNull('kantor_id')->count(),
                 'guru_nonaktif' => User::query()->where('role', Role::Guru)->where('is_active', false)->count(),
             ],
