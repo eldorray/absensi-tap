@@ -67,8 +67,8 @@ class OrangTuaController extends Controller
         $hasil = $imporOrangTua($request->file('berkas')->getRealPath());
 
         Inertia::flash('toast', [
-            'type' => $hasil['dibuat'] > 0 ? 'success' : 'error',
-            'message' => $hasil['dibuat'].' akun dibuat, '.$hasil['dilewati'].' dilewati.',
+            'type' => $hasil['dibuat'] + $hasil['diperbarui'] > 0 ? 'success' : 'error',
+            'message' => $hasil['dibuat'].' akun dibuat, '.$hasil['diperbarui'].' diperbarui, '.$hasil['dilewati'].' dilewati.',
         ]);
 
         return to_route('admin.orang-tua.index')->with('impor_orang_tua', $hasil);

@@ -13,6 +13,7 @@ class ImporSiswaRequest extends FormRequest
         return [
             'kantor_id' => ['required', 'integer', 'exists:kantors,id'],
             'berkas' => ['required', 'file', 'max:1024', 'mimes:csv,txt'],
+            'nonaktifkan_yang_hilang' => ['sometimes', 'boolean'],
         ];
     }
 

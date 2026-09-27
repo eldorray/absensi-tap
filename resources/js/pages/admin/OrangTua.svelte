@@ -47,6 +47,7 @@
     type AkunImpor = { nama: string; email: string; password: string };
     type HasilImpor = {
         dibuat: number;
+        diperbarui: number;
         dilewati: number;
         galat: string[];
         akun: AkunImpor[];
@@ -235,7 +236,8 @@
         {#if hasilImpor}
             <div class="grid gap-2 rounded-2xl border border-border px-4 py-3">
                 <p class="text-sm font-semibold">
-                    Impor terakhir: {hasilImpor.dibuat} dibuat · {hasilImpor.dilewati}
+                    Impor terakhir: {hasilImpor.dibuat} dibuat · {hasilImpor.diperbarui}
+                    diperbarui · {hasilImpor.dilewati}
                     dilewati
                 </p>
                 {#if hasilImpor.galat.length > 0}
@@ -564,7 +566,8 @@
         <p class="mt-1 mb-4 text-sm text-muted-foreground">
             Unduh template, isi di Excel, simpan sebagai CSV, lalu unggah di
             sini. Kolom <b>nama</b> wajib; email dan password boleh dikosongkan karena
-            akan dibuatkan otomatis.
+            akan dibuatkan otomatis. Email yang sudah terdaftar hanya diperbarui namanya;
+            password dan anak yang ditautkan tetap.
         </p>
         <form
             class="grid gap-3"

@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\Role;
+use App\Models\Siswa;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
@@ -126,4 +127,38 @@ test('berkas selain csv ditolak dan guru tidak dapat mengimpor orang tua', funct
         ->assertForbidden();
 
     expect(User::query()->where('name', 'Tidak Boleh')->exists())->toBeFalse();
+});
+
+test('email orang tua yang sudah terdaftar diperbarui tanpa mengganti password dan anaknya', function () {
+    $wali = User::factory()->create(['role' => Role::OrangTua, 'email' => 'wali.siti@example.test', 'name' => 'Siti', 'is_active' => false]);
+    $passwordLama = $wali->password;
+    $siswa = Siswa::factory()->create();
+    $siswa->orangTuas()->attach($wali->id);
+
+    $this->actingAs(User::factory()->admin()->create())
+        ->post(route('admin.orang-tua.impor'), [
+            'berkas' => berkasOrangTua("nama,email,password\nSiti Aminah,wali.siti@example.test,PasswordBaru123\n"),
+        ])
+        ->assertSessionHas('impor_orang_tua', fn (array $hasil): bool => $hasil['dibuat'] === 0 && $hasil['diperbarui'] === 1);
+
+    $wali->refresh();
+
+    expect(User::where('email', 'wali.siti@example.test')->count())->toBe(1)
+        ->and($wali->name)->toBe('Siti Aminah')
+        ->and($wali->is_active)->toBeTrue()
+        ->and($wali->password)->toBe($passwordLama)
+        ->and($wali->siswas()->pluck('siswas.id')->all())->toBe([$siswa->id]);
+});
+
+test('email milik guru tidak diubah jadi orang tua lewat impor', function () {
+    $guru = User::factory()->create(['email' => 'guru@example.test', 'name' => 'Pak Guru']);
+
+    $this->actingAs(User::factory()->admin()->create())
+        ->post(route('admin.orang-tua.impor'), [
+            'berkas' => berkasOrangTua("nama,email\nBukan Wali,guru@example.test\n"),
+        ])
+        ->assertSessionHas('impor_orang_tua', fn (array $hasil): bool => $hasil['dilewati'] === 1);
+
+    expect($guru->refresh()->name)->toBe('Pak Guru')
+        ->and($guru->role)->toBe(Role::Guru);
 });

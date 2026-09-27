@@ -10,10 +10,14 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 
 /**
- * Membuat akun orang tua dari berkas CSV hasil ekspor atau pengisian Excel.
+ * Sinkronkan akun orang tua dari berkas CSV hasil ekspor atau pengisian Excel.
  *
  * Kolom nama wajib. Email dan password dapat dikosongkan; sistem membuatkan
  * keduanya dan mengembalikannya sekali agar admin dapat membagikannya.
+ *
+ * Email yang sudah terdaftar sebagai orang tua diperbarui namanya dan diaktifkan
+ * kembali -- password, HP, dan tautan anaknya tidak disentuh, jadi wali lama
+ * tidak perlu dibagikan akun baru setiap tahun ajaran.
  */
 class ImporOrangTua
 {
@@ -23,7 +27,7 @@ class ImporOrangTua
     public const MAKSIMAL_BARIS = 500;
 
     /**
-     * @return array{dibuat: int, dilewati: int, galat: list<string>, akun: list<array{nama: string, email: string, password: string}>}
+     * @return array{dibuat: int, diperbarui: int, dilewati: int, galat: list<string>, akun: list<array{nama: string, email: string, password: string}>}
      */
     public function __invoke(string $path): array
     {
@@ -42,7 +46,7 @@ class ImporOrangTua
 
     /**
      * @param  resource  $berkas
-     * @return array{dibuat: int, dilewati: int, galat: list<string>, akun: list<array{nama: string, email: string, password: string}>}
+     * @return array{dibuat: int, diperbarui: int, dilewati: int, galat: list<string>, akun: list<array{nama: string, email: string, password: string}>}
      */
     private function baca($berkas): array
     {
@@ -92,6 +96,34 @@ class ImporOrangTua
             if (isset($emailTerpakai[$email])) {
                 $hasil['dilewati']++;
                 $hasil['galat'][] = 'Baris '.$nomor.': email '.$email.' muncul dua kali di berkas.';
+
+                continue;
+            }
+
+            // Email kosong selalu dibuatkan yang baru, jadi hanya email dari
+            // berkas yang bisa menunjuk akun lama.
+            $ada = $emailBerkas === null ? null : User::query()->where('email', $email)->first();
+
+            if ($ada !== null && $ada->role !== Role::OrangTua) {
+                $hasil['dilewati']++;
+                $hasil['galat'][] = 'Baris '.$nomor.': email '.$email.' sudah dipakai akun selain orang tua.';
+
+                continue;
+            }
+
+            if ($ada !== null) {
+                $validator = Validator::make(['name' => $nama], ['name' => ['required', 'string', 'max:255']]);
+
+                if ($validator->fails()) {
+                    $hasil['dilewati']++;
+                    $hasil['galat'][] = 'Baris '.$nomor.': '.implode(' ', $validator->errors()->all());
+
+                    continue;
+                }
+
+                $ada->forceFill(['name' => $validator->validated()['name'], 'is_active' => true])->save();
+                $emailTerpakai[$email] = true;
+                $hasil['diperbarui']++;
 
                 continue;
             }
@@ -212,12 +244,14 @@ class ImporOrangTua
     }
 
     /**
-     * @return array{dibuat: int, dilewati: int, galat: list<string>, akun: list<array{nama: string, email: string, password: string}>}
+     * @param  list<string>|null  $galat
+     * @return array{dibuat: int, diperbarui: int, dilewati: int, galat: list<string>, akun: list<array{nama: string, email: string, password: string}>}
      */
     private function hasil(?array $galat = null): array
     {
         return [
             'dibuat' => 0,
+            'diperbarui' => 0,
             'dilewati' => 0,
             'galat' => $galat ?? [],
             'akun' => [],

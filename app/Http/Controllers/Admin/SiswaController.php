@@ -142,7 +142,11 @@ class SiswaController extends Controller
     {
         $berkas = $request->file('berkas');
         abort_unless($berkas instanceof UploadedFile, 422);
-        $hasil = $impor((string) $berkas->getRealPath(), $request->integer('kantor_id'));
+        $hasil = $impor(
+            (string) $berkas->getRealPath(),
+            $request->integer('kantor_id'),
+            $request->boolean('nonaktifkan_yang_hilang'),
+        );
 
         return to_route('admin.siswa.index')->with('impor_siswa', $hasil);
     }

@@ -73,8 +73,11 @@
         filter: { cari: string; kantor_id: number | null };
         hasilImpor: {
             dibuat: number;
+            diperbarui: number;
             dilewati: number;
             galat: string[];
+            dinonaktifkan: string[];
+            orang_tua_dinonaktifkan: number;
         } | null;
         orangTuas: OrangTua[];
     } = $props();
@@ -85,7 +88,11 @@
     let dialogOrangTua = $state(false);
     let cari = $state(filter.cari);
     let unitFilter = $state(filter.kantor_id ?? 0);
-    const impor = useForm({ kantor_id: 0, berkas: null as File | null });
+    const impor = useForm({
+        kantor_id: 0,
+        berkas: null as File | null,
+        nonaktifkan_yang_hilang: false,
+    });
     let diubah = $state<number | null>(null);
     let konfirmasi = $state<Konfirmasi | null>(null);
     let siswaOrangTua = $state<S | null>(null);
@@ -473,6 +480,11 @@
             baris. Jenis kelamin kosong menggunakan L; periksa buku induk
             sebelum mengunggah.
         </p>
+        <p class="text-muted-foreground">
+            NIS yang sudah terdaftar diperbarui dan dipindah ke kelas di berkas,
+            jadi awal tahun ajaran cukup unggah buku induk terbaru. Sel kosong
+            tidak menghapus data lama.
+        </p>
         <form
             class="grid gap-3"
             onsubmit={(e) => {
@@ -497,6 +509,17 @@
                 onchange={(e) =>
                     (impor.berkas = e.currentTarget.files?.[0] ?? null)}
             />
+            <Label class="flex items-start gap-3 font-normal"
+                ><Checkbox
+                    class="mt-0.5"
+                    bind:checked={impor.nonaktifkan_yang_hilang}
+                /><span
+                    >Nonaktifkan siswa unit ini yang tidak ada di berkas (lulus
+                    atau pindah), beserta akun orang tua yang tidak lagi punya
+                    anak aktif. Centang hanya jika berkas memuat
+                    <strong>seluruh</strong> siswa unit.</span
+                ></Label
+            >
             {#each Object.values(impor.errors) as error, i (i)}<p
                     class="text-destructive"
                 >
@@ -512,8 +535,21 @@
         </form>
         {#if hasilImpor}<div role="status">
                 <p>
-                    {hasilImpor.dibuat} siswa dibuat · {hasilImpor.dilewati} dilewati
+                    {hasilImpor.dibuat} siswa dibuat · {hasilImpor.diperbarui}
+                    diperbarui · {hasilImpor.dilewati} dilewati
                 </p>
+                {#if hasilImpor.dinonaktifkan.length > 0}
+                    <p>
+                        {hasilImpor.dinonaktifkan.length} siswa dinonaktifkan{#if hasilImpor.orang_tua_dinonaktifkan > 0}
+                            · {hasilImpor.orang_tua_dinonaktifkan} akun orang tua
+                            dinonaktifkan{/if}:
+                    </p>
+                    <ul class="text-muted-foreground">
+                        {#each hasilImpor.dinonaktifkan as siswa, i (i)}<li>
+                                {siswa}
+                            </li>{/each}
+                    </ul>
+                {/if}
                 <ul>
                     {#each hasilImpor.galat as galat, i (i)}<li>
                             {galat}
