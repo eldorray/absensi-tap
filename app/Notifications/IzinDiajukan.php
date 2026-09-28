@@ -72,7 +72,9 @@ class IzinDiajukan extends Notification
             ->title($this->judul)
             ->body($this->isi)
             ->icon('/pwa-192.png')
-            ->data(['url' => $this->url]);
+            ->data(['url' => $this->url])
+            // Apple: tanpa urgency high, pengiriman boleh ditunda demi daya baterai HP.
+            ->options(['urgency' => 'high']);
     }
 
     private static function rentang(CarbonInterface $mulai, CarbonInterface $selesai): string

@@ -154,6 +154,8 @@ test('kirim tes melaporkan push yang diterima layanan push', function () {
         'type' => 'success',
         'message' => 'Diterima layanan push untuk 1 perangkat. Kalau tidak muncul, cek pengaturan notifikasi di HP.',
     ]);
+    // Tanpa Urgency high, Apple boleh menunda pengiriman demi daya baterai.
+    Http::assertSent(fn ($request): bool => $request->header('Urgency') === ['high']);
 });
 
 test('kirim tes menampilkan dan mencatat alasan penolakan layanan push', function () {
