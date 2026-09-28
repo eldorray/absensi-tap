@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\IzinOrangTuaController as AdminIzinOrangTuaContro
 use App\Http\Controllers\Admin\JadwalGuruController;
 use App\Http\Controllers\Admin\KantorController;
 use App\Http\Controllers\Admin\KelasController;
+use App\Http\Controllers\Admin\LanggananPushController;
 use App\Http\Controllers\Admin\OrangTuaController;
 use App\Http\Controllers\Admin\PengaturanController;
 use App\Http\Controllers\Admin\PengumumanController;
@@ -104,6 +105,8 @@ Route::middleware(['auth', 'verified', 'can:admin'])
         Route::get('rekap-harian', [RekapHarianController::class, 'index'])->name('rekap-harian.index');
         Route::get('rekap-harian/export', [RekapHarianController::class, 'export'])->name('rekap-harian.export');
         Route::delete('rekap-harian/{guru}', [RekapHarianController::class, 'reset'])->name('rekap-harian.reset');
+        Route::post('langganan-push', [LanggananPushController::class, 'store'])->name('langganan-push.store');
+        Route::delete('langganan-push', [LanggananPushController::class, 'destroy'])->name('langganan-push.destroy');
         Route::get('izin', [AdminIzinController::class, 'index'])->name('izin.index');
         Route::patch('izin/{izin}', [AdminIzinController::class, 'update'])->name('izin.update');
         Route::get('izin-orang-tua', [AdminIzinOrangTuaController::class, 'index'])->name('izin-orang-tua.index');

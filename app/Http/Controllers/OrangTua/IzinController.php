@@ -8,6 +8,7 @@ use App\Http\Requests\OrangTua\AjukanIzinRequest;
 use App\Models\IzinOrangTua;
 use App\Models\Siswa;
 use App\Models\TahunAjaran;
+use App\Notifications\IzinDiajukan;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -68,7 +69,7 @@ class IzinController extends Controller
         $data['email_pengaju'] = $request->user()->email;
 
         try {
-            DB::transaction(function () use ($data): void {
+            $izin = DB::transaction(function () use ($data): IzinOrangTua {
                 Siswa::query()->whereKey($data['siswa_id'])->lockForUpdate()->firstOrFail();
 
                 $bertabrakan = IzinOrangTua::query()
@@ -84,7 +85,7 @@ class IzinController extends Controller
                     ]);
                 }
 
-                IzinOrangTua::create($data);
+                return IzinOrangTua::create($data);
             });
         } catch (Throwable $throwable) {
             if ($lampiranPath !== null) {
@@ -93,6 +94,8 @@ class IzinController extends Controller
 
             throw $throwable;
         }
+
+        IzinDiajukan::dariIzinOrangTua($izin)->kirimKeAdmin();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Pengajuan izin anak terkirim.']);
 

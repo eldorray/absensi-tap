@@ -41,3 +41,31 @@ self.addEventListener('fetch', (event) => {
         event.respondWith(fetch(request).catch(() => caches.match(OFFLINE)));
     }
 });
+
+// Web Push dari server (App\Notifications\IzinDiajukan). Payload berbentuk
+// WebPushMessage::toArray(): { title, body, icon, data: { url } }.
+self.addEventListener('push', (event) => {
+    const pesan = event.data?.json() ?? {};
+
+    event.waitUntil(
+        self.registration.showNotification(pesan.title ?? 'Notifikasi', {
+            body: pesan.body,
+            icon: pesan.icon,
+            badge: '/pwa-192.png',
+            data: pesan.data,
+        }),
+    );
+});
+
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    const url = event.notification.data?.url ?? '/';
+
+    event.waitUntil(
+        self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((tab) => {
+            const terbuka = tab.find((client) => new URL(client.url).origin === self.location.origin);
+
+            return terbuka ? terbuka.navigate(url).then((client) => client?.focus()) : self.clients.openWindow(url);
+        }),
+    );
+});

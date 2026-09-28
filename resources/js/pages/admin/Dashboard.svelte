@@ -10,6 +10,7 @@
     import ArrowRight from 'lucide-svelte/icons/arrow-right';
     import ShieldAlert from 'lucide-svelte/icons/shield-alert';
     import AppHead from '@/components/AppHead.svelte';
+    import NotifikasiPush from '@/components/NotifikasiPush.svelte';
     import { Badge } from '@/components/ui/badge';
     import { Button } from '@/components/ui/button';
     import { toUrl } from '@/lib/utils';
@@ -40,6 +41,7 @@
         master,
         bulanIni,
         log,
+        vapidPublicKey,
     }: {
         tanggal: string;
         ringkasanHariIni: Record<string, number>;
@@ -47,6 +49,7 @@
         master: Record<string, number>;
         bulanIni: Record<string, number>;
         log: Log[];
+        vapidPublicKey: string | null;
     } = $props();
 
     const tanggalPanjang = new Intl.DateTimeFormat('id-ID', {
@@ -211,6 +214,8 @@
             </ul>
         </section>
     {/if}
+
+    <NotifikasiPush {vapidPublicKey} />
 
     <div class="grid gap-4 lg:grid-cols-2">
         <section class="g-tile g-tone-plain gap-3">

@@ -78,6 +78,7 @@ class DashboardController extends Controller
             'bulanIni' => $this->bulanIni(),
             'log' => $this->log(),
             'labelAnomali' => AnomaliAbsensi::label(),
+            'vapidPublicKey' => config('webpush.vapid.public_key'),
         ]);
     }
 
