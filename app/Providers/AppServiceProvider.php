@@ -10,13 +10,16 @@ use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View as ViewView;
 use Inertia\ExceptionResponse;
 use Inertia\Inertia;
+use NotificationChannels\WebPush\Events\NotificationFailed;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -56,6 +59,17 @@ class AppServiceProvider extends ServiceProvider
         // pemeriksaan is_active saat login adalah keputusan terpisah.
         Gate::define('pegawai', fn (User $user): bool => in_array($user->role, [Role::Guru, Role::Admin], true));
         Gate::define('orang-tua', fn (User $user): bool => $user->role === Role::OrangTua && $user->is_active);
+
+        // Paket webpush hanya memicu event saat layanan push menolak kiriman.
+        // Tanpa log ini penolakan (mis. kunci VAPID tidak cocok) tidak berjejak.
+        Event::listen(function (NotificationFailed $event): void {
+            Log::warning('Web push ditolak layanan push.', [
+                'user_id' => $event->subscription->subscribable_id,
+                'layanan' => parse_url($event->report->getEndpoint(), PHP_URL_HOST),
+                'status' => $event->report->getResponse()?->getStatusCode(),
+                'alasan' => (string) $event->report->getResponse()?->getBody() ?: $event->report->getReason(),
+            ]);
+        });
 
         // Nama dan favicon dipakai di <head> root template, yang dirender di
         // luar Inertia. Ditunda lewat closure supaya tabelnya tidak disentuh

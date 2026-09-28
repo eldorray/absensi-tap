@@ -107,6 +107,9 @@ Route::middleware(['auth', 'verified', 'can:admin'])
         Route::delete('rekap-harian/{guru}', [RekapHarianController::class, 'reset'])->name('rekap-harian.reset');
         Route::post('langganan-push', [LanggananPushController::class, 'store'])->name('langganan-push.store');
         Route::delete('langganan-push', [LanggananPushController::class, 'destroy'])->name('langganan-push.destroy');
+        Route::post('langganan-push/tes', [LanggananPushController::class, 'tes'])
+            ->middleware('throttle:6,1')
+            ->name('langganan-push.tes');
         Route::get('izin', [AdminIzinController::class, 'index'])->name('izin.index');
         Route::patch('izin/{izin}', [AdminIzinController::class, 'update'])->name('izin.update');
         Route::get('izin-orang-tua', [AdminIzinOrangTuaController::class, 'index'])->name('izin-orang-tua.index');

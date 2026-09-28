@@ -4,7 +4,11 @@ use App\Models\Siswa;
 use App\Models\User;
 use App\Notifications\IzinDiajukan;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
+use Inertia\Support\SessionKey;
+use Minishlink\WebPush\VAPID;
 
 beforeEach(function () {
     tahunAjaranAktif('2026/2027');
@@ -117,4 +121,69 @@ test('izin dari orang tua dikirim ke admin yang berlangganan', function () {
             && $notifikasi->isi === 'Izin, 17 September 2026 (oleh Ibu Sari)'
             && $notifikasi->url === route('admin.izin-orang-tua.index'),
     );
+});
+
+/**
+ * Kunci VAPID asli dan langganan dengan kunci p256dh yang sah, supaya
+ * enkripsi payload benar-benar berjalan sampai ke permintaan HTTP.
+ */
+function langgananSah(User $admin, string $endpoint = 'https://web.push.apple.com/QGxhbGFsYQ'): void
+{
+    $vapid = VAPID::createVapidKeys();
+    config(['webpush.vapid.public_key' => $vapid['publicKey'], 'webpush.vapid.private_key' => $vapid['privateKey']]);
+
+    $ec = openssl_pkey_get_details(openssl_pkey_new(['curve_name' => 'prime256v1', 'private_key_type' => OPENSSL_KEYTYPE_EC]))['ec'];
+    $base64url = fn (string $bytes): string => rtrim(strtr(base64_encode($bytes), '+/', '-_'), '=');
+
+    $admin->updatePushSubscription(
+        $endpoint,
+        $base64url("\x04".str_pad($ec['x'], 32, "\0", STR_PAD_LEFT).str_pad($ec['y'], 32, "\0", STR_PAD_LEFT)),
+        $base64url(random_bytes(16)),
+    );
+}
+
+test('kirim tes melaporkan push yang diterima layanan push', function () {
+    Http::preventStrayRequests();
+    Http::fake(['web.push.apple.com/*' => Http::response('', 201)]);
+    $admin = User::factory()->admin()->create();
+    langgananSah($admin);
+
+    $this->actingAs($admin)->post(route('admin.langganan-push.tes'))->assertRedirect();
+
+    expect(session(SessionKey::FLASH_DATA)['toast'])->toBe([
+        'type' => 'success',
+        'message' => 'Diterima layanan push untuk 1 perangkat. Kalau tidak muncul, cek pengaturan notifikasi di HP.',
+    ]);
+});
+
+test('kirim tes menampilkan dan mencatat alasan penolakan layanan push', function () {
+    Http::preventStrayRequests();
+    Http::fake(['web.push.apple.com/*' => Http::response('{"reason":"BadJwtToken"}', 403)]);
+    Log::spy();
+    $admin = User::factory()->admin()->create();
+    langgananSah($admin);
+
+    $this->actingAs($admin)->post(route('admin.langganan-push.tes'))->assertRedirect();
+
+    expect(session(SessionKey::FLASH_DATA)['toast'])->toBe([
+        'type' => 'error',
+        'message' => 'Ditolak layanan push (403): {"reason":"BadJwtToken"}',
+    ]);
+    Log::shouldHaveReceived('warning')->once()->with('Web push ditolak layanan push.', [
+        'user_id' => $admin->id,
+        'layanan' => 'web.push.apple.com',
+        'status' => 403,
+        'alasan' => '{"reason":"BadJwtToken"}',
+    ]);
+});
+
+test('kirim tes tanpa langganan meminta admin mengaktifkan dulu', function () {
+    $this->actingAs(User::factory()->admin()->create())
+        ->post(route('admin.langganan-push.tes'))
+        ->assertRedirect();
+
+    expect(session(SessionKey::FLASH_DATA)['toast'])->toBe([
+        'type' => 'error',
+        'message' => 'Belum ada perangkat yang berlangganan. Tekan Aktifkan dulu.',
+    ]);
 });

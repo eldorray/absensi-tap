@@ -2,10 +2,12 @@
     import { router } from '@inertiajs/svelte';
     import Bell from 'lucide-svelte/icons/bell';
     import BellOff from 'lucide-svelte/icons/bell-off';
+    import Send from 'lucide-svelte/icons/send';
     import { Button } from '@/components/ui/button';
     import {
         destroy as langgananDestroy,
         store as langgananStore,
+        tes as langgananTes,
     } from '@/routes/admin/langganan-push';
 
     let { vapidPublicKey }: { vapidPublicKey: string | null } = $props();
@@ -86,6 +88,18 @@
             onFinish: () => (sibuk = false),
         });
     }
+
+    function kirimTes(): void {
+        router.post(
+            langgananTes().url,
+            {},
+            {
+                preserveScroll: true,
+                onStart: () => (sibuk = true),
+                onFinish: () => (sibuk = false),
+            },
+        );
+    }
 </script>
 
 <section class="g-tile g-tone-plain gap-3">
@@ -93,7 +107,11 @@
         <div>
             <h3 class="text-base">Notifikasi izin di perangkat ini</h3>
             <p class="text-sm text-muted-foreground">
-                {#if !didukung}
+                {#if vapidPublicKey === null}
+                    Kunci VAPID server belum terbaca. Isi VAPID_PUBLIC_KEY dan
+                    VAPID_PRIVATE_KEY di .env, lalu jalankan php artisan
+                    config:cache.
+                {:else if !didukung}
                     Browser ini belum mendukung notifikasi. Di iPhone, pasang
                     aplikasi ke Layar Utama lalu buka dari sana.
                 {:else if ditolak}
@@ -110,10 +128,24 @@
 
         {#if didukung && !ditolak}
             {#if langganan}
-                <Button variant="outline" disabled={sibuk} onclick={matikan}>
-                    <BellOff class="size-4" aria-hidden="true" />
-                    Matikan
-                </Button>
+                <div class="flex flex-wrap gap-2">
+                    <Button
+                        variant="outline"
+                        disabled={sibuk}
+                        onclick={kirimTes}
+                    >
+                        <Send class="size-4" aria-hidden="true" />
+                        Kirim tes
+                    </Button>
+                    <Button
+                        variant="outline"
+                        disabled={sibuk}
+                        onclick={matikan}
+                    >
+                        <BellOff class="size-4" aria-hidden="true" />
+                        Matikan
+                    </Button>
+                </div>
             {:else}
                 <Button disabled={sibuk} onclick={aktifkan}>
                     <Bell class="size-4" aria-hidden="true" />
