@@ -23,3 +23,12 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
+
+# Service worker harus selalu diperiksa ulang. Cache 7 hari bawaan hosting
+# (dan CDN-nya) membuat HP tertahan di sw.js lama tanpa handler push.
+<Files "sw.js">
+    <IfModule mod_headers.c>
+        Header set Cache-Control "no-cache"
+        Header unset Expires
+    </IfModule>
+</Files>

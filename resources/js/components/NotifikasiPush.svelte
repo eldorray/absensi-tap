@@ -41,6 +41,7 @@
             }
         };
         navigator.serviceWorker.addEventListener('message', terimaPesan);
+        navigator.serviceWorker.startMessages();
 
         navigator.serviceWorker.ready.then((registrasi) => {
             registrasi.active?.postMessage('versi');

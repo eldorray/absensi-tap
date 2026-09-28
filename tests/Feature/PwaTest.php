@@ -31,3 +31,10 @@ test('service worker tetap hanya menangani GET', function () {
     expect($sw)->toContain("request.method !== 'GET'")
         ->and($sw)->not->toContain('sync');
 });
+
+test('service worker tidak di-cache supaya HP selalu mendapat versi terbaru', function () {
+    expect(file_get_contents(public_path('.htaccess')))->toContain('<Files "sw.js">')
+        ->toContain('Header set Cache-Control "no-cache"');
+
+    $this->get(route('login'))->assertSee("register('/sw.js', { updateViaCache: 'none' })", false);
+});
