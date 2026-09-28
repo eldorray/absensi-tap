@@ -2,6 +2,7 @@
     import { router } from '@inertiajs/svelte';
     import Bell from 'lucide-svelte/icons/bell';
     import BellOff from 'lucide-svelte/icons/bell-off';
+    import BellRing from 'lucide-svelte/icons/bell-ring';
     import Send from 'lucide-svelte/icons/send';
     import { Button } from '@/components/ui/button';
     import {
@@ -16,6 +17,8 @@
     let ditolak = $state(false);
     let langganan = $state<PushSubscription | null>(null);
     let sibuk = $state(false);
+    let versiSw = $state<string | null>(null);
+    let laporanPush = $state<string | null>(null);
 
     $effect(() => {
         didukung =
@@ -25,11 +28,29 @@
         ditolak =
             'Notification' in window && Notification.permission === 'denied';
 
-        if (didukung) {
-            navigator.serviceWorker.ready
-                .then((registrasi) => registrasi.pushManager.getSubscription())
-                .then((s) => (langganan = s));
+        if (!didukung) {
+            return;
         }
+
+        // Laporan dari sw.js: versi yang aktif dan apakah push sampai ke HP ini.
+        const terimaPesan = (event: MessageEvent) => {
+            if (event.data?.jenis === 'versi') {
+                versiSw = event.data.teks;
+            } else if (event.data?.jenis === 'push') {
+                laporanPush = event.data.teks;
+            }
+        };
+        navigator.serviceWorker.addEventListener('message', terimaPesan);
+
+        navigator.serviceWorker.ready.then((registrasi) => {
+            registrasi.active?.postMessage('versi');
+            registrasi.pushManager
+                .getSubscription()
+                .then((s) => (langganan = s));
+        });
+
+        return () =>
+            navigator.serviceWorker.removeEventListener('message', terimaPesan);
     });
 
     /**
@@ -89,7 +110,25 @@
         });
     }
 
+    /**
+     * Tampilkan notifikasi langsung dari HP tanpa server. Kalau ini pun tidak
+     * muncul, penyebabnya pengaturan HP, bukan pengiriman push.
+     */
+    async function tesLokal(): Promise<void> {
+        try {
+            const registrasi = await navigator.serviceWorker.ready;
+            await registrasi.showNotification('Tes lokal', {
+                body: 'Notifikasi ini dibuat langsung oleh HP, tanpa server.',
+            });
+            laporanPush = 'Tes lokal dipanggil tanpa galat.';
+        } catch (error) {
+            laporanPush = `Tes lokal gagal: ${error}`;
+        }
+    }
+
     function kirimTes(): void {
+        laporanPush = null;
+
         router.post(
             langgananTes().url,
             {},
@@ -124,6 +163,13 @@
                     izin.
                 {/if}
             </p>
+            {#if langganan}
+                <p class="mt-1 text-xs text-muted-foreground">
+                    Service worker: {versiSw ?? 'belum menjawab'}{laporanPush
+                        ? ` · ${laporanPush}`
+                        : ''}
+                </p>
+            {/if}
         </div>
 
         {#if didukung && !ditolak}
@@ -136,6 +182,10 @@
                     >
                         <Send class="size-4" aria-hidden="true" />
                         Kirim tes
+                    </Button>
+                    <Button variant="outline" onclick={tesLokal}>
+                        <BellRing class="size-4" aria-hidden="true" />
+                        Tes lokal
                     </Button>
                     <Button
                         variant="outline"

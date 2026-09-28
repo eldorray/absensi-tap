@@ -1,4 +1,4 @@
-const CACHE = 'app-v2';
+const CACHE = 'app-v3';
 const OFFLINE = '/offline.html';
 
 self.addEventListener('install', (event) => {
@@ -48,13 +48,30 @@ self.addEventListener('push', (event) => {
     const pesan = event.data?.json() ?? {};
 
     event.waitUntil(
-        self.registration.showNotification(pesan.title ?? 'Notifikasi', {
-            body: pesan.body,
-            icon: pesan.icon,
-            badge: '/pwa-192.png',
-            data: pesan.data,
-        }),
+        self.registration
+            .showNotification(pesan.title ?? 'Notifikasi', {
+                body: pesan.body,
+                icon: pesan.icon,
+                badge: '/pwa-192.png',
+                data: pesan.data,
+            })
+            .then(() => kabariHalaman(`Push masuk dan ditampilkan (${CACHE}).`))
+            .catch((error) => kabariHalaman(`Push masuk tapi gagal ditampilkan: ${error}`)),
     );
+});
+
+// Laporan ke halaman yang sedang terbuka (NotifikasiPush.svelte), supaya
+// admin bisa melihat sendiri apakah push sampai ke HP-nya.
+function kabariHalaman(teks) {
+    return self.clients
+        .matchAll({ type: 'window', includeUncontrolled: true })
+        .then((tab) => tab.forEach((client) => client.postMessage({ jenis: 'push', teks })));
+}
+
+self.addEventListener('message', (event) => {
+    if (event.data === 'versi') {
+        event.source?.postMessage({ jenis: 'versi', teks: CACHE });
+    }
 });
 
 self.addEventListener('notificationclick', (event) => {
