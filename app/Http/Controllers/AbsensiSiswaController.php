@@ -224,7 +224,7 @@ class AbsensiSiswaController extends Controller
     /**
      * Nama berkas unduhan, mis. absensi-siswa-periode-kelas-vii-a-2026-09-01-sd-2026-09-14.pdf.
      *
-     * @param  list<array{kelas: string|null}>  $sesis
+     * @param  array<int, array{kelas: string|null}>  $sesis
      */
     private function namaBerkas(bool $harian, Carbon $dari, Carbon $sampai, array $sesis): string
     {
@@ -266,8 +266,8 @@ class AbsensiSiswaController extends Controller
      * terlambat sepanjang rentang. Bentuk inilah yang dibaca wali kelas untuk
      * periode panjang -- daftar per hari hanya berguna untuk sehari.
      *
-     * @param  list<array{kelas_id: int, kelas: string|null, kantor: string|null, tanggal: string, siswa: list<array{nis: string|null, nama: string|null, status: string}>}>  $sesis
-     * @return list<array{kelas: string|null, kantor: string|null, hari: int, siswa: list<array{nis: string|null, nama: string|null, hitung: array<string, int>, total: int}>}>
+     * @param  array<int, array{kelas_id: int, kelas: string|null, kantor: string|null, tanggal: string, siswa: array<int, array{nis: string|null, nama: string|null, status: string}>}>  $sesis
+     * @return array<int, array{kelas: string|null, kantor: string|null, hari: int, siswa: array<int, array{nis: string|null, nama: string|null, hitung: array<string, int>, total: int}>}>
      */
     private function rekapPerSiswa(array $sesis): array
     {

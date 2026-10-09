@@ -42,7 +42,10 @@ class SesiAbsensiSiswa extends Model
         return $this->hasMany(AbsensiSiswa::class);
     }
 
-    /** @param Builder<SesiAbsensiSiswa> $query */
+    /**
+     * @param  Builder<SesiAbsensiSiswa>  $query
+     * @return Builder<SesiAbsensiSiswa>
+     */
     public function scopeTerpublikasi(Builder $query): Builder
     {
         return $query->whereIn('status', [

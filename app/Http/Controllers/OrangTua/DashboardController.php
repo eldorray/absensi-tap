@@ -38,7 +38,7 @@ class DashboardController extends Controller
         if ($siswaTerpilih instanceof Siswa) {
             $riwayat = AbsensiSiswa::query()
                 ->where('siswa_id', $siswaTerpilih->id)
-                ->whereHas('sesi', fn ($query) => $query->terpublikasi())
+                ->whereIn('sesi_absensi_siswa_id', SesiAbsensiSiswa::query()->terpublikasi()->select('id'))
                 ->with(['sesi' => fn ($query) => $query->terpublikasi()->with('kelas:id,nama')])
                 ->orderByDesc(
                     SesiAbsensiSiswa::query()
@@ -77,7 +77,7 @@ class DashboardController extends Controller
                 'nisn' => $siswaTerpilih->nisn,
                 'tempat_lahir' => $siswaTerpilih->tempat_lahir,
                 'tanggal_lahir' => $siswaTerpilih->tanggal_lahir?->toDateString(),
-                'tanggal_lahir_label' => $siswaTerpilih->tanggal_lahir?->locale('id')->translatedFormat('d F Y'),
+                'tanggal_lahir_label' => $siswaTerpilih->tanggal_lahir?->translatedFormat('d F Y'),
                 'unit' => $siswaTerpilih->kantor?->nama,
                 'kelas' => $kelas,
                 'foto' => $siswaTerpilih->foto,

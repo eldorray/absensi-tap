@@ -88,7 +88,8 @@ class IzinController extends Controller
                 return IzinOrangTua::create($data);
             });
         } catch (Throwable $throwable) {
-            if ($lampiranPath !== null) {
+            // store() mengembalikan false bila gagal menyimpan.
+            if (is_string($lampiranPath)) {
                 Storage::disk('local')->delete($lampiranPath);
             }
 

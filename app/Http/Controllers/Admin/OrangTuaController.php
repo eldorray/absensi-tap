@@ -7,6 +7,7 @@ use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ImporOrangTuaRequest;
 use App\Http\Requests\Admin\SimpanOrangTuaRequest;
+use App\Models\Siswa;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -31,7 +32,7 @@ class OrangTuaController extends Controller
                     'name' => $orangTua->name,
                     'email' => $orangTua->email,
                     'is_active' => $orangTua->is_active,
-                    'anak' => $orangTua->siswas->map(fn ($siswa): array => [
+                    'anak' => $orangTua->siswas->map(fn (Siswa $siswa): array => [
                         'id' => $siswa->id,
                         'nama' => $siswa->nama,
                         'nis' => $siswa->nis,
