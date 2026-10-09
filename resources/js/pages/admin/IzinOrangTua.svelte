@@ -13,8 +13,8 @@
     import Paperclip from 'lucide-svelte/icons/paperclip';
     import X from 'lucide-svelte/icons/x';
     import AppHead from '@/components/AppHead.svelte';
-    import TombolIkon from '@/components/TombolIkon.svelte';
     import { Badge } from '@/components/ui/badge';
+    import { Button } from '@/components/ui/button';
     import { lampiran, update } from '@/routes/admin/izin-orang-tua';
 
     type IzinBaris = {
@@ -43,6 +43,28 @@
         ditolak: 'Ditolak',
     };
 
+    const formatTanggal = new Intl.DateTimeFormat('id-ID', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+    });
+
+    // formatRange meringkas sendiri: "9 Okt 2026" atau "9–12 Okt 2026".
+    function rentang(izin: IzinBaris): string {
+        return formatTanggal.formatRange(
+            new Date(`${izin.tanggal_mulai}T00:00`),
+            new Date(`${izin.tanggal_selesai}T00:00`),
+        );
+    }
+
+    // Akun orang tua hasil impor sering bernama sama dengan anaknya; email
+    // lebih membedakan daripada nama yang diulang.
+    function pengaju(izin: IzinBaris): string {
+        return izin.orang_tua.toLowerCase() === izin.siswa.toLowerCase()
+            ? izin.email_orang_tua
+            : izin.orang_tua;
+    }
+
     function review(id: number, status: 'disetujui' | 'ditolak'): void {
         diproses = id;
         router.patch(
@@ -58,7 +80,7 @@
 
 <AppHead title="Izin Orang Tua" />
 
-<div class="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-5 sm:px-6">
+<div class="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-5 sm:px-6">
     <section class="g-tile g-tone-green overflow-hidden">
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div class="flex items-start gap-3">
@@ -103,24 +125,24 @@
         <section class="g-tile g-tone-plain gap-4">
             <div class="overflow-x-auto rounded-2xl border border-border">
                 <table
-                    class="w-full min-w-[55rem] table-fixed text-left text-sm"
+                    class="w-full min-w-[36rem] table-fixed text-left text-sm"
                 >
+                    <!-- Kolom Status berlebar tetap agar badge tidak terpotong;
+                         kontrol review di sub-baris supaya tabel tidak melebar. -->
                     <colgroup>
-                        <col class="w-[13%]" />
-                        <col class="w-[16%]" />
-                        <col class="w-[17%]" />
-                        <col class="w-[19%]" />
-                        <col class="w-[12%]" />
-                        <col class="w-[23%]" />
+                        <col class="w-[26%]" />
+                        <col class="w-[20%]" />
+                        <col />
+                        <col class="w-40" />
                     </colgroup>
                     <thead class="bg-muted/80 text-foreground">
                         <tr>
-                            <th class="px-4 py-3 font-medium">Siswa</th>
-                            <th class="px-4 py-3 font-medium">Orang tua</th>
+                            <th class="px-4 py-3 font-medium">
+                                Siswa / Orang tua
+                            </th>
                             <th class="px-4 py-3 font-medium">Pengajuan</th>
                             <th class="px-4 py-3 font-medium">Alasan</th>
                             <th class="px-4 py-3 font-medium">Status</th>
-                            <th class="px-4 py-3 font-medium">Review</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -131,23 +153,19 @@
                                     <p class="text-xs text-muted-foreground">
                                         NIS {izin.nis}
                                     </p>
-                                </td>
-                                <td class="px-4 py-3">
-                                    <p class="font-semibold">
-                                        {izin.orang_tua}
-                                    </p>
-                                    <p class="text-xs text-muted-foreground">
-                                        {izin.email_orang_tua}
+                                    <p
+                                        class="truncate text-xs text-muted-foreground"
+                                        title={izin.email_orang_tua}
+                                    >
+                                        oleh {pengaju(izin)}
                                     </p>
                                 </td>
                                 <td class="px-4 py-3">
                                     <p class="font-semibold capitalize">
                                         {izin.tipe}
                                     </p>
-                                    <p
-                                        class="whitespace-nowrap text-xs text-muted-foreground"
-                                    >
-                                        {izin.tanggal_mulai} – {izin.tanggal_selesai}
+                                    <p class="text-xs text-muted-foreground">
+                                        {rentang(izin)}
                                     </p>
                                     {#if izin.ada_lampiran}
                                         <a
@@ -158,7 +176,7 @@
                                                 class="size-4"
                                                 aria-hidden="true"
                                             />
-                                            Unduh lampiran
+                                            Lampiran
                                         </a>
                                     {/if}
                                 </td>
@@ -177,55 +195,59 @@
                                             izin.status}
                                     </Badge>
                                 </td>
-                                <td class="px-4 py-3">
-                                    {#if izin.status === 'pending'}
-                                        <div class="grid gap-2">
+                            </tr>
+                            {#if izin.status === 'pending'}
+                                <tr>
+                                    <td colspan="4" class="px-4 pb-4">
+                                        <div class="flex items-center gap-2">
                                             <input
                                                 type="text"
                                                 maxlength="1000"
                                                 aria-label={`Catatan review izin ${izin.siswa}`}
-                                                placeholder="Catatan (opsional)"
+                                                placeholder="Catatan untuk orang tua (opsional)"
                                                 bind:value={catatan[izin.id]}
-                                                class="h-10 w-full rounded-xl border border-input bg-background px-3 text-base"
+                                                class="h-10 min-w-0 flex-1 rounded-xl border border-input bg-background px-3 text-base"
                                             />
-                                            <div class="flex justify-end gap-1">
-                                                <TombolIkon
-                                                    ikon={Check}
-                                                    nada="hijau"
-                                                    disabled={diproses ===
-                                                        izin.id}
-                                                    label={`Setujui izin ${izin.siswa}`}
-                                                    onclick={() =>
-                                                        review(
-                                                            izin.id,
-                                                            'disetujui',
-                                                        )}
+                                            <Button
+                                                disabled={diproses === izin.id}
+                                                onclick={() =>
+                                                    review(
+                                                        izin.id,
+                                                        'disetujui',
+                                                    )}
+                                            >
+                                                <Check
+                                                    class="size-4"
+                                                    aria-hidden="true"
                                                 />
-                                                <TombolIkon
-                                                    ikon={X}
-                                                    nada="merah"
-                                                    disabled={diproses ===
-                                                        izin.id}
-                                                    label={`Tolak izin ${izin.siswa}`}
-                                                    onclick={() =>
-                                                        review(
-                                                            izin.id,
-                                                            'ditolak',
-                                                        )}
+                                                Setujui
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                class="text-destructive"
+                                                disabled={diproses === izin.id}
+                                                onclick={() =>
+                                                    review(izin.id, 'ditolak')}
+                                            >
+                                                <X
+                                                    class="size-4"
+                                                    aria-hidden="true"
                                                 />
-                                            </div>
+                                                Tolak
+                                            </Button>
                                         </div>
-                                    {:else}
-                                        <p
-                                            class="text-sm text-muted-foreground"
-                                        >
-                                            {izin.catatan_review
-                                                ? `Catatan: ${izin.catatan_review}`
-                                                : 'Sudah direview tanpa catatan.'}
-                                        </p>
-                                    {/if}
-                                </td>
-                            </tr>
+                                    </td>
+                                </tr>
+                            {:else if izin.catatan_review}
+                                <tr>
+                                    <td
+                                        colspan="4"
+                                        class="px-4 pb-3 text-sm text-muted-foreground"
+                                    >
+                                        Catatan: {izin.catatan_review}
+                                    </td>
+                                </tr>
+                            {/if}
                         {/each}
                     </tbody>
                 </table>

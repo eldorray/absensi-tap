@@ -42,7 +42,8 @@ test('daftar izin orang tua ditampilkan sebagai tabel', function () {
         ->toContain('Pengajuan')
         ->toContain('Alasan')
         ->toContain('Status')
-        ->toContain('Review')
+        // Kontrol review di sub-baris selebar tabel, bukan kolom sempit.
+        ->toContain('colspan="4"')
         ->not->toContain('<article class="g-tile');
 });
 
