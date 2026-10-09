@@ -11,6 +11,7 @@ test('aksi per baris di seluruh halaman admin memakai tombol ikon', function () 
         'admin/JadwalGuru.svelte',
         'admin/RekapHarian.svelte',
         'admin/Izin.svelte',
+        'admin/IzinOrangTua.svelte',
     ];
 
     foreach ($halaman as $berkas) {

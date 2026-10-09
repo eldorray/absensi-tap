@@ -13,8 +13,8 @@
     import Paperclip from 'lucide-svelte/icons/paperclip';
     import X from 'lucide-svelte/icons/x';
     import AppHead from '@/components/AppHead.svelte';
+    import TombolIkon from '@/components/TombolIkon.svelte';
     import { Badge } from '@/components/ui/badge';
-    import { Button } from '@/components/ui/button';
     import { lampiran, update } from '@/routes/admin/izin-orang-tua';
 
     type IzinBaris = {
@@ -199,42 +199,34 @@
                             {#if izin.status === 'pending'}
                                 <tr>
                                     <td colspan="4" class="px-4 pb-4">
-                                        <div class="flex items-center gap-2">
+                                        <div class="flex items-center gap-1">
                                             <input
                                                 type="text"
                                                 maxlength="1000"
                                                 aria-label={`Catatan review izin ${izin.siswa}`}
                                                 placeholder="Catatan untuk orang tua (opsional)"
                                                 bind:value={catatan[izin.id]}
-                                                class="h-10 min-w-0 flex-1 rounded-xl border border-input bg-background px-3 text-base"
+                                                class="mr-1 h-10 min-w-0 flex-1 rounded-xl border border-input bg-background px-3 text-base"
                                             />
-                                            <Button
+                                            <TombolIkon
+                                                ikon={Check}
+                                                nada="hijau"
                                                 disabled={diproses === izin.id}
+                                                label={`Setujui izin ${izin.siswa}`}
                                                 onclick={() =>
                                                     review(
                                                         izin.id,
                                                         'disetujui',
                                                     )}
-                                            >
-                                                <Check
-                                                    class="size-4"
-                                                    aria-hidden="true"
-                                                />
-                                                Setujui
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                class="text-destructive"
+                                            />
+                                            <TombolIkon
+                                                ikon={X}
+                                                nada="merah"
                                                 disabled={diproses === izin.id}
+                                                label={`Tolak izin ${izin.siswa}`}
                                                 onclick={() =>
                                                     review(izin.id, 'ditolak')}
-                                            >
-                                                <X
-                                                    class="size-4"
-                                                    aria-hidden="true"
-                                                />
-                                                Tolak
-                                            </Button>
+                                            />
                                         </div>
                                     </td>
                                 </tr>

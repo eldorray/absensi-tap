@@ -30,7 +30,8 @@ test('daftar izin guru ditampilkan sebagai tabel', function () {
         ->toContain('Pengajuan')
         ->toContain('Alasan')
         ->toContain('Status')
-        ->toContain('Review')
+        // Kontrol review di sub-baris selebar tabel, bukan kolom sempit.
+        ->toContain('colspan="4"')
         ->not->toContain('<ul class="divide-y divide-border">');
 });
 
